@@ -9,9 +9,12 @@ import { ChatScreen } from '../screens/chat/ChatScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
+const SKIP_AUTH_FOR_TESTING = true;
 
 export function RootNavigator() {
   const { user, isLoading } = useAuth();
+  const hasAccess = Boolean(user);
+  const needsProfessionSetup = !SKIP_AUTH_FOR_TESTING && Boolean(user) && !user.profession;
 
   if (isLoading) {
     return <SplashScreen onComplete={() => {}} />;
@@ -24,9 +27,9 @@ export function RootNavigator() {
         contentStyle: { backgroundColor: colors.background }
       }}
     >
-      {!user ? (
+      {!hasAccess ? (
         <Stack.Screen name="AuthFlow" component={AuthNavigator} />
-      ) : !user.profession ? (
+      ) : needsProfessionSetup ? (
         <Stack.Screen name="ProfessionSetup" component={ProfessionSelectScreen} />
       ) : (
         <>

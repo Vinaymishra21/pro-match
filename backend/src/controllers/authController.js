@@ -28,6 +28,22 @@ async function register(req, res) {
     profession: '',
     bio: '',
     age: null,
+    location: '',
+    lookingFor: '',
+    education: '',
+    company: '',
+    jobTitle: '',
+    headline: '',
+    interests: [],
+    photos: [],
+    drinking: '',
+    smoking: '',
+    workout: '',
+    pets: '',
+    professionWhy: '',
+    professionLoveLevel: '',
+    firstDateIdea: '',
+    weekendVibe: '',
     createdAt: new Date().toISOString()
   };
 

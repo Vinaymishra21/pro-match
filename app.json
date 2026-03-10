@@ -9,7 +9,10 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow Pro Match to access your photos so you can upload profile pictures."
+      }
     },
     "android": {
       "edgeToEdgeEnabled": true

@@ -33,7 +33,27 @@ function updateProfession(req, res) {
 }
 
 function updateProfile(req, res) {
-  const { bio, age, name } = req.body;
+  const {
+    bio,
+    age,
+    name,
+    location,
+    lookingFor,
+    education,
+    company,
+    jobTitle,
+    headline,
+    interests,
+    photos,
+    drinking,
+    smoking,
+    workout,
+    pets,
+    professionWhy,
+    professionLoveLevel,
+    firstDateIdea,
+    weekendVibe
+  } = req.body;
 
   const db = readDb();
   const user = db.users.find((u) => u.id === req.auth.id);
@@ -52,6 +72,49 @@ function updateProfile(req, res) {
 
   if (typeof age === 'number' && age >= 18 && age <= 80) {
     user.age = age;
+  }
+
+  if (age === null) {
+    user.age = null;
+  }
+
+  const stringUpdates = {
+    location,
+    lookingFor,
+    education,
+    company,
+    jobTitle,
+    headline,
+    drinking,
+    smoking,
+    workout,
+    pets,
+    professionWhy,
+    professionLoveLevel,
+    firstDateIdea,
+    weekendVibe
+  };
+
+  Object.entries(stringUpdates).forEach(([key, value]) => {
+    if (typeof value === 'string') {
+      user[key] = value.trim();
+    }
+  });
+
+  if (Array.isArray(interests)) {
+    user.interests = interests
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+  }
+
+  if (Array.isArray(photos)) {
+    user.photos = photos
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 6);
   }
 
   writeDb(db);

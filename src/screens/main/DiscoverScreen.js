@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '../../components/AppButton';
+import { AppHeader } from '../../components/AppHeader';
+import { FilterModal } from '../../components/FilterModal';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { useAuth } from '../../hooks/useAuth';
 import { getDiscoverProfiles, swipeProfile } from '../../services/apiService';
@@ -14,6 +16,8 @@ export function DiscoverScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState(FilterModal.DEFAULT_FILTERS);
 
   const current = profiles[0] || null;
 
@@ -50,9 +54,16 @@ export function DiscoverScreen() {
     }
   }
 
+  function handleApplyFilters(next) {
+    setFilters(next);
+  }
+
+  const activeFilterCount = countActiveFilters(filters);
+
   if (isLoading) {
     return (
       <ScreenContainer>
+        <AppHeader onSettingsPress={() => setShowFilters(true)} />
         <View style={styles.center}>
           <ActivityIndicator color={colors.secondary} />
         </View>
@@ -62,8 +73,19 @@ export function DiscoverScreen() {
 
   return (
     <ScreenContainer>
-      <Text style={styles.heading}>Discover</Text>
-      <Text style={styles.caption}>Profession: {user?.profession}</Text>
+      <AppHeader
+        onSettingsPress={() => setShowFilters(true)}
+        trailing={
+          activeFilterCount > 0 ? (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+            </View>
+          ) : null
+        }
+      />
+
+      <Text style={styles.professionTag}>{user?.profession || 'All Professions'}</Text>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       {!current ? (
@@ -90,8 +112,29 @@ export function DiscoverScreen() {
           </View>
         </View>
       )}
+
+      <FilterModal
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onApply={handleApplyFilters}
+      />
     </ScreenContainer>
   );
+}
+
+function countActiveFilters(filters) {
+  const defaults = FilterModal.DEFAULT_FILTERS;
+  let count = 0;
+  if (filters.ageRange[0] !== defaults.ageRange[0] || filters.ageRange[1] !== defaults.ageRange[1]) count++;
+  if (filters.distance !== defaults.distance) count++;
+  if (filters.gender !== defaults.gender) count++;
+  if (filters.activity !== defaults.activity) count++;
+  if (filters.verified !== defaults.verified) count++;
+  if (filters.lookingFor.length > 0) count++;
+  if (!filters.showProfessionOnly && filters.professions.length > 0) count++;
+  if (filters.showProfessionOnly !== defaults.showProfessionOnly) count++;
+  return count;
 }
 
 const styles = StyleSheet.create({
@@ -100,15 +143,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  heading: {
-    ...typography.title,
-    color: colors.text,
-    marginBottom: spacing.xs
-  },
-  caption: {
+  professionTag: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: colors.primary,
+    fontWeight: '700',
+    backgroundColor: '#FDEEE8',
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 999,
+    overflow: 'hidden',
     marginBottom: spacing.md
+  },
+  filterBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: -6,
+    right: -6
+  },
+  filterBadgeText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '800'
   },
   error: {
     color: '#FCA5A5',
@@ -116,24 +177,32 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.lg
+    padding: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1
   },
   name: {
     ...typography.subtitle,
     color: colors.text,
+    fontWeight: '700',
     marginBottom: spacing.xs
   },
   profession: {
     ...typography.body,
     color: colors.secondary,
+    fontWeight: '600',
     marginBottom: spacing.sm
   },
   bio: {
     ...typography.caption,
     color: colors.textMuted,
+    lineHeight: 20,
     marginBottom: spacing.lg
   },
   actions: {
@@ -147,12 +216,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: 18,
     padding: spacing.lg
   },
   emptyTitle: {
     ...typography.subtitle,
     color: colors.text,
+    fontWeight: '700',
     marginBottom: spacing.xs
   },
   emptyText: {
