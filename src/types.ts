@@ -123,6 +123,8 @@ export interface AuthContextValue {
 
 export type AuthStackParamList = {
   Welcome: undefined;
+  SignUpMethod: undefined;
+  LoginMethod: undefined;
   PhoneEntry: undefined;
   OtpVerification: {
     countryCode: string;

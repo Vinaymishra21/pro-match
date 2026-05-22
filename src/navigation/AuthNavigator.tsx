@@ -1,6 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
+import { SignUpMethodScreen } from '../screens/auth/SignUpMethodScreen';
+import { LoginMethodScreen } from '../screens/auth/LoginMethodScreen';
 import { AuthScreen } from '../screens/auth/AuthScreen';
 import { PhoneEntryScreen } from '../screens/auth/PhoneEntryScreen';
 import { OtpVerificationScreen } from '../screens/auth/OtpVerificationScreen';
@@ -12,6 +14,8 @@ export function AuthNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
+      <Stack.Screen name="SignUpMethod" component={SignUpMethodScreen} />
+      <Stack.Screen name="LoginMethod" component={LoginMethodScreen} />
       <Stack.Screen name="PhoneEntry" component={PhoneEntryScreen} />
       <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
       <Stack.Screen name="Auth" component={AuthScreen} />

@@ -31,14 +31,14 @@ export function WelcomeScreen({ navigation }: Props) {
         <View style={styles.actions}>
           <Pressable
             style={({ pressed }) => [styles.primaryButton, pressed ? styles.buttonPressed : null]}
-            onPress={() => navigation.navigate('PhoneEntry')}
+            onPress={() => navigation.navigate('SignUpMethod')}
           >
             <Text style={styles.primaryLabel}>Create an account</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [styles.secondaryButton, pressed ? styles.secondaryPressed : null]}
-            onPress={() => navigation.navigate('Auth', { initialMode: 'login' })}
+            onPress={() => navigation.navigate('LoginMethod')}
           >
             <Text style={styles.secondaryLabel}>I have an account</Text>
           </Pressable>
