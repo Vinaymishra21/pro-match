@@ -61,6 +61,8 @@ const nextPhoto = () => photo(PORTRAITS[pCount++ % PORTRAITS.length]);
 
 const GENDERS = ['Man', 'Woman', 'Non-binary'];
 const LOOKING_FOR = ['Long-term relationship', 'Short-term dating', 'Life partner', 'Still figuring it out'];
+const HEIGHTS = ['5\'6" (168 cm)', '5\'9" (175 cm)', '5\'4" (163 cm)', '6\'0" (183 cm)'];
+const RELIGIONS = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Spiritual', 'Agnostic'];
 
 function buildUser(name, profession, idx) {
   const gender = GENDERS[idx % GENDERS.length];
@@ -79,7 +81,12 @@ function buildUser(name, profession, idx) {
     company: ['Acme', 'Nimbus', 'Vertex', 'Lumen', 'Orbit'][idx % 5],
     photos: [nextPhoto()],
     interests: ['Travel', 'Coffee', 'Music', 'Fitness'].slice(0, 2 + (idx % 3)),
-    lookingFor: LOOKING_FOR[idx % LOOKING_FOR.length]
+    lookingFor: LOOKING_FOR[idx % LOOKING_FOR.length],
+    height: HEIGHTS[idx % HEIGHTS.length],
+    religion: RELIGIONS[idx % RELIGIONS.length],
+    languages: ['English', 'Hindi'],
+    // Verify roughly every other profile so the badge is visible in the deck.
+    professionVerified: idx % 2 === 0
   };
 }
 

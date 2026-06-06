@@ -55,7 +55,11 @@ export function DiscoverScreen({ navigation }: Props) {
   const activeFilterCount =
     (filters.gender.length > 0 ? 1 : 0) +
     (filters.lookingFor.length > 0 ? 1 : 0) +
-    (filters.ageRange[0] !== 22 || filters.ageRange[1] !== 35 ? 1 : 0);
+    (filters.religions.length > 0 ? 1 : 0) +
+    (filters.languages.length > 0 ? 1 : 0) +
+    (filters.verifiedOnly ? 1 : 0) +
+    (filters.ageRange[0] !== 22 || filters.ageRange[1] !== 35 ? 1 : 0) +
+    (filters.heightRange[0] !== 150 || filters.heightRange[1] !== 200 ? 1 : 0);
 
   const load = useCallback(
     async (profession: string, activeFilters: FilterState) => {
@@ -63,11 +67,20 @@ export function DiscoverScreen({ navigation }: Props) {
         setLoading(true);
         setLocked(false);
         setError('');
+        // Only send height bounds when the user narrowed from the full range —
+        // otherwise we'd exclude profiles that simply haven't set a height.
+        const heightNarrowed =
+          activeFilters.heightRange[0] !== 150 || activeFilters.heightRange[1] !== 200;
         const res = await getDiscoverProfiles(token, profession || undefined, {
           minAge: activeFilters.ageRange[0],
           maxAge: activeFilters.ageRange[1],
+          minHeightCm: heightNarrowed ? activeFilters.heightRange[0] : undefined,
+          maxHeightCm: heightNarrowed ? activeFilters.heightRange[1] : undefined,
           genders: activeFilters.gender,
-          lookingFor: activeFilters.lookingFor
+          lookingFor: activeFilters.lookingFor,
+          religions: activeFilters.religions,
+          languages: activeFilters.languages,
+          verifiedOnly: activeFilters.verifiedOnly
         });
         setProfiles(res.profiles || []);
         if (res.unlock) setUnlock(res.unlock);
@@ -315,7 +328,7 @@ function ProfileCard({ profile }: { profile: DiscoverProfile }) {
       )}
 
       <LinearGradient colors={['transparent', 'rgba(8,12,24,0.92)']} style={styles.cardOverlay}>
-        <ProfessionBadge profession={profile.profession} />
+        <ProfessionBadge profession={profile.profession} verified={profile.professionVerified} />
         <Text style={styles.cardName}>
           {profile.name}
           {profile.age ? `, ${profile.age}` : ''}

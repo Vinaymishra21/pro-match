@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { Alert, LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
 import { AppButton } from '../../components/AppButton';
 import { AppInput } from '../../components/AppInput';
 import { Dropdown } from '../../components/Dropdown';
@@ -13,12 +13,17 @@ import { ProfilePhotoGallery } from '../../features/profile/components/ProfilePh
 import { ProfilePreview } from '../../features/profile/components/ProfilePreview';
 import { ProfessionLoveMeter } from '../../features/profile/components/ProfessionLoveMeter';
 import { PromptField } from '../../features/profile/components/PromptField';
+import { VerificationCard } from '../../features/profile/components/VerificationCard';
+import { CustomPrompts } from '../../features/profile/components/CustomPrompts';
 import {
   drinkingOptions,
   genderOptions,
+  heightOptions,
   interestSuggestions,
+  languageOptions,
   lookingForOptions,
   petOptions,
+  religionOptions,
   smokingOptions,
   workoutOptions
 } from '../../features/profile/constants/profileOptions';
@@ -29,6 +34,84 @@ import { updateProfile } from '../../services/apiService';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+
+// Compact stepper-based age range picker. value = [] (no preference) or [min,max].
+function AgeRangePicker({ value, onChange }) {
+  const hasRange = Array.isArray(value) && value.length === 2;
+  const min = hasRange ? value[0] : 22;
+  const max = hasRange ? value[1] : 35;
+
+  function adjust(which, delta) {
+    let nextMin = min;
+    let nextMax = max;
+    if (which === 'min') nextMin = Math.max(18, Math.min(nextMax, min + delta));
+    else nextMax = Math.min(80, Math.max(nextMin, max + delta));
+    onChange([nextMin, nextMax]);
+  }
+
+  if (!hasRange) {
+    return (
+      <Pressable style={ageStyles.enable} onPress={() => onChange([22, 35])}>
+        <Text style={ageStyles.enableText}>+ Set an age preference</Text>
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={ageStyles.wrap}>
+      <View style={ageStyles.col}>
+        <Text style={ageStyles.colLabel}>Min</Text>
+        <View style={ageStyles.stepper}>
+          <Pressable style={ageStyles.btn} onPress={() => adjust('min', -1)}><Text style={ageStyles.btnText}>−</Text></Pressable>
+          <Text style={ageStyles.value}>{min}</Text>
+          <Pressable style={ageStyles.btn} onPress={() => adjust('min', 1)}><Text style={ageStyles.btnText}>+</Text></Pressable>
+        </View>
+      </View>
+      <View style={ageStyles.col}>
+        <Text style={ageStyles.colLabel}>Max</Text>
+        <View style={ageStyles.stepper}>
+          <Pressable style={ageStyles.btn} onPress={() => adjust('max', -1)}><Text style={ageStyles.btnText}>−</Text></Pressable>
+          <Text style={ageStyles.value}>{max}</Text>
+          <Pressable style={ageStyles.btn} onPress={() => adjust('max', 1)}><Text style={ageStyles.btnText}>+</Text></Pressable>
+        </View>
+      </View>
+      <Pressable onPress={() => onChange([])} hitSlop={8} style={ageStyles.clear}>
+        <Text style={ageStyles.clearText}>Clear</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const ageStyles = StyleSheet.create({
+  enable: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    backgroundColor: '#FDEEE8'
+  },
+  enableText: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
+  col: { alignItems: 'center' },
+  colLabel: { ...typography.caption, color: colors.textMuted, fontSize: 11, marginBottom: 4 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  btn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.inputBg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  btnText: { fontSize: 18, fontWeight: '800', color: colors.text },
+  value: { fontSize: 16, fontWeight: '800', color: colors.text, minWidth: 26, textAlign: 'center' },
+  clear: { paddingBottom: 6, marginLeft: 'auto' },
+  clearText: { color: colors.textMuted, fontWeight: '700', fontSize: 12 }
+});
 
 export function ProfileScreen() {
   const { user, token, updateLocalUser, signOut } = useAuth();
@@ -78,13 +161,18 @@ export function ProfileScreen() {
         location: form.location,
         gender: form.gender,
         genderPreference: form.genderPreference,
+        agePreference: form.agePreference,
         lookingFor: form.lookingFor,
+        height: form.height,
+        languages: form.languages,
+        religion: form.religion,
         education: form.education,
         company: form.company,
         jobTitle: form.jobTitle,
         headline: form.headline,
         photos: form.photos,
         interests: parseInterestInput(interestInput),
+        customPrompts: form.customPrompts,
         drinking: form.drinking,
         smoking: form.smoking,
         workout: form.workout,
@@ -140,10 +228,18 @@ export function ProfileScreen() {
 
         {mode === 'preview' ? (
           <AnimatedProfileSection index={1}>
-            <ProfilePreview form={{ ...form, interests: parseInterestInput(interestInput) }} profession={user?.profession} />
+            <ProfilePreview
+              form={{ ...form, interests: parseInterestInput(interestInput) }}
+              profession={user?.profession}
+              verified={Boolean(user?.professionVerified)}
+            />
           </AnimatedProfileSection>
         ) : (
           <>
+            <AnimatedProfileSection index={1}>
+              <VerificationCard profession={user?.profession} />
+            </AnimatedProfileSection>
+
             <AnimatedProfileSection index={1}>
               <ProfileSection title="Photos" subtitle="Profiles with clear photos perform best" icon={'\uD83D\uDCF8'} collapsible>
                 <ProfilePhotoGallery photos={form.photos} token={token} onChange={(value) => updateField('photos', value)} />
@@ -171,6 +267,27 @@ export function ProfileScreen() {
                   onChangeText={(value) => updateField('location', value)}
                   placeholder="City, Country"
                 />
+                <Text style={styles.fieldLabel}>Height</Text>
+                <Dropdown
+                  value={form.height}
+                  options={heightOptions}
+                  placeholder="Select your height"
+                  onChange={(value) => updateField('height', value)}
+                />
+                <Text style={styles.fieldLabel}>Religion</Text>
+                <Dropdown
+                  value={form.religion}
+                  options={religionOptions}
+                  placeholder="Select (optional)"
+                  onChange={(value) => updateField('religion', value)}
+                />
+                <Text style={styles.fieldLabel}>Languages you speak</Text>
+                <ChipSelector
+                  options={languageOptions}
+                  value={form.languages}
+                  onChange={(value) => updateField('languages', value)}
+                  multi
+                />
                 <AppInput
                   value={form.headline}
                   onChangeText={(value) => updateField('headline', value)}
@@ -195,6 +312,16 @@ export function ProfileScreen() {
                   value={form.lookingFor}
                   onChange={(value) => updateField('lookingFor', value)}
                 />
+              </ProfileSection>
+            </AnimatedProfileSection>
+
+            <AnimatedProfileSection index={3}>
+              <ProfileSection
+                title="Who I want to meet"
+                subtitle="Your match preferences (matching stays within your profession)"
+                icon={'\uD83D\uDD0E'}
+                collapsible
+              >
                 <Text style={styles.fieldLabel}>Interested in</Text>
                 <Text style={styles.fieldHint}>Pick the genders you want to be matched with</Text>
                 <ChipSelector
@@ -202,6 +329,11 @@ export function ProfileScreen() {
                   value={form.genderPreference}
                   onChange={(value) => updateField('genderPreference', value)}
                   multi
+                />
+                <Text style={styles.fieldLabel}>Preferred age range</Text>
+                <AgeRangePicker
+                  value={form.agePreference}
+                  onChange={(value) => updateField('agePreference', value)}
                 />
               </ProfileSection>
             </AnimatedProfileSection>
@@ -297,24 +429,11 @@ export function ProfileScreen() {
             </AnimatedProfileSection>
 
             <AnimatedProfileSection index={10}>
-              <PromptField
-                title="Ideal first date"
-                icon={'\u2615'}
-                accentColor={colors.secondary}
-                value={form.firstDateIdea}
-                onChangeText={(value) => updateField('firstDateIdea', value)}
-                placeholder="Coffee walk, museum, street food tour..."
-              />
-            </AnimatedProfileSection>
-
-            <AnimatedProfileSection index={11}>
-              <PromptField
-                title="My weekend vibe"
-                icon={'\uD83C\uDF1F'}
-                accentColor="#F4A261"
-                value={form.weekendVibe}
-                onChangeText={(value) => updateField('weekendVibe', value)}
-                placeholder="How you usually spend weekends"
+              <Text style={styles.fieldLabel}>Your prompts</Text>
+              <Text style={styles.fieldHint}>Pick up to 3 questions and answer them in your own words</Text>
+              <CustomPrompts
+                value={form.customPrompts}
+                onChange={(value) => updateField('customPrompts', value)}
               />
             </AnimatedProfileSection>
           </>

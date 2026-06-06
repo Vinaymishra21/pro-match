@@ -13,22 +13,30 @@ import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
+import {
+  genderOptions,
+  languageOptions,
+  lookingForOptions,
+  religionOptions
+} from '../features/profile/constants/profileOptions';
+
 const AGE_MIN = 18;
 const AGE_MAX = 60;
-const DISTANCE_OPTIONS = ['5 km', '10 km', '25 km', '50 km', '100 km', 'Unlimited'];
-const LOOKING_FOR_OPTIONS = ['Long-term relationship', 'Short-term dating', 'Life partner', 'Still figuring it out'];
-// Match the actual identity values stored on profiles so the filter works.
-const GENDER_OPTIONS = ['Man', 'Woman', 'Non-binary', 'Transgender', 'Genderfluid', 'Other'];
-const ACTIVITY_OPTIONS = ['Active today', 'Active this week', 'Everyone'];
-const VERIFIED_OPTIONS = ['Verified only', 'Everyone'];
+const HEIGHT_MIN = 150; // cm
+const HEIGHT_MAX = 200; // cm
+const LOOKING_FOR_OPTIONS = lookingForOptions;
+const GENDER_OPTIONS = genderOptions;
 
 const DEFAULT_FILTERS = {
   ageRange: [22, 35],
+  heightRange: [HEIGHT_MIN, HEIGHT_MAX],
   distance: '25 km',
   lookingFor: [],
   gender: [], // multi-select; empty = everyone
+  religions: [],
+  languages: [],
   activity: 'Everyone',
-  verified: 'Everyone'
+  verifiedOnly: false
 };
 
 export { DEFAULT_FILTERS };
@@ -89,12 +97,12 @@ function AnimatedChip({ label, selected, onPress }) {
   );
 }
 
-function AgeSlider({ range, onChange }) {
+function RangeStepper({ range, onChange, bound, step = 1, unit = '', minLabel, maxLabel }) {
   const [min, max] = range;
 
   function adjust(index, delta) {
     const next = [...range];
-    next[index] = Math.max(AGE_MIN, Math.min(AGE_MAX, next[index] + delta));
+    next[index] = Math.max(bound[0], Math.min(bound[1], next[index] + delta));
     if (next[0] > next[1]) return;
     onChange(next);
   }
@@ -102,31 +110,31 @@ function AgeSlider({ range, onChange }) {
   return (
     <View>
       <View style={styles.ageDisplay}>
-        <Text style={styles.ageValue}>{min}</Text>
+        <Text style={styles.ageValue}>{min}{unit}</Text>
         <Text style={styles.ageDash}>-</Text>
-        <Text style={styles.ageValue}>{max}</Text>
+        <Text style={styles.ageValue}>{max}{unit}</Text>
       </View>
       <View style={styles.ageControls}>
         <View style={styles.ageControl}>
-          <Text style={styles.ageControlLabel}>Min age</Text>
+          <Text style={styles.ageControlLabel}>{minLabel}</Text>
           <View style={styles.stepperRow}>
-            <Pressable style={styles.stepperBtn} onPress={() => adjust(0, -1)}>
+            <Pressable style={styles.stepperBtn} onPress={() => adjust(0, -step)}>
               <Text style={styles.stepperText}>-</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{min}</Text>
-            <Pressable style={styles.stepperBtn} onPress={() => adjust(0, 1)}>
+            <Pressable style={styles.stepperBtn} onPress={() => adjust(0, step)}>
               <Text style={styles.stepperText}>+</Text>
             </Pressable>
           </View>
         </View>
         <View style={styles.ageControl}>
-          <Text style={styles.ageControlLabel}>Max age</Text>
+          <Text style={styles.ageControlLabel}>{maxLabel}</Text>
           <View style={styles.stepperRow}>
-            <Pressable style={styles.stepperBtn} onPress={() => adjust(1, -1)}>
+            <Pressable style={styles.stepperBtn} onPress={() => adjust(1, -step)}>
               <Text style={styles.stepperText}>-</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{max}</Text>
-            <Pressable style={styles.stepperBtn} onPress={() => adjust(1, 1)}>
+            <Pressable style={styles.stepperBtn} onPress={() => adjust(1, step)}>
               <Text style={styles.stepperText}>+</Text>
             </Pressable>
           </View>
@@ -205,21 +213,37 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
 
           <View style={styles.divider} />
 
-          {/* Age Range */}
-          <SectionHeader title="Age range" />
-          <AgeSlider
-            range={filters.ageRange}
-            onChange={(val) => update('ageRange', val)}
+          {/* Verified only */}
+          <ToggleRow
+            label="Verified profiles only"
+            description="Show only people who verified their profession"
+            value={filters.verifiedOnly}
+            onToggle={() => update('verifiedOnly', !filters.verifiedOnly)}
           />
 
           <View style={styles.divider} />
 
-          {/* Distance */}
-          <SectionHeader title="Maximum distance" />
-          <ChipRow
-            options={DISTANCE_OPTIONS}
-            selected={filters.distance}
-            onToggle={(opt) => update('distance', opt)}
+          {/* Age Range */}
+          <SectionHeader title="Age range" />
+          <RangeStepper
+            range={filters.ageRange}
+            onChange={(val) => update('ageRange', val)}
+            bound={[AGE_MIN, AGE_MAX]}
+            minLabel="Min age"
+            maxLabel="Max age"
+          />
+
+          <View style={styles.divider} />
+
+          {/* Height Range */}
+          <SectionHeader title="Height range" subtitle="In centimetres" />
+          <RangeStepper
+            range={filters.heightRange}
+            onChange={(val) => update('heightRange', val)}
+            bound={[HEIGHT_MIN, HEIGHT_MAX]}
+            unit=" cm"
+            minLabel="Min height"
+            maxLabel="Max height"
           />
 
           <View style={styles.divider} />
@@ -249,22 +273,24 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
 
           <View style={styles.divider} />
 
-          {/* Activity */}
-          <SectionHeader title="Recently active" />
+          {/* Religion */}
+          <SectionHeader title="Religion" subtitle="Leave empty for any" />
           <ChipRow
-            options={ACTIVITY_OPTIONS}
-            selected={filters.activity}
-            onToggle={(opt) => update('activity', opt)}
+            options={religionOptions}
+            selected={filters.religions}
+            onToggle={(opt) => toggleMulti('religions', opt)}
+            multi
           />
 
           <View style={styles.divider} />
 
-          {/* Verified */}
-          <SectionHeader title="Verification" />
+          {/* Languages */}
+          <SectionHeader title="Languages" subtitle="Speaks at least one" />
           <ChipRow
-            options={VERIFIED_OPTIONS}
-            selected={filters.verified}
-            onToggle={(opt) => update('verified', opt)}
+            options={languageOptions}
+            selected={filters.languages}
+            onToggle={(opt) => toggleMulti('languages', opt)}
+            multi
           />
 
           <View style={styles.bottomPad} />

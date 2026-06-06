@@ -8,10 +8,12 @@ import { colors } from '../theme/colors';
 // gradient. The signature recurring element of the PRISM system.
 export function ProfessionBadge({
   profession,
-  size = 'md'
+  size = 'md',
+  verified = false
 }: {
   profession?: string | null;
   size?: 'sm' | 'md';
+  verified?: boolean;
 }) {
   const theme = professionTheme(profession);
   return (
@@ -25,6 +27,7 @@ export function ProfessionBadge({
       <Text style={[styles.label, size === 'sm' ? styles.labelSm : null]} numberOfLines={1}>
         {profession || 'No profession'}
       </Text>
+      {verified ? <Text style={[styles.tick, size === 'sm' ? styles.labelSm : null]}> ✓</Text> : null}
     </LinearGradient>
   );
 }
@@ -41,5 +44,6 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 15, marginRight: 6 },
   emojiSm: { fontSize: 12, marginRight: 4 },
   label: { color: colors.white, fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
-  labelSm: { fontSize: 11 }
+  labelSm: { fontSize: 11 },
+  tick: { color: colors.white, fontWeight: '900', fontSize: 13 }
 });

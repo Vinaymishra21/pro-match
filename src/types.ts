@@ -19,8 +19,14 @@ export interface User {
   location?: string;
   gender?: string;
   genderPreference?: string[];
+  agePreference?: number[];
   lookingFor?: string;
   maxDistance?: string;
+  height?: string;
+  languages?: string[];
+  religion?: string;
+  professionVerified?: boolean;
+  customPrompts?: { prompt: string; answer: string }[];
   education?: string;
   company?: string;
   jobTitle?: string;
@@ -44,13 +50,18 @@ export interface ProfileForm {
   location: string;
   gender: string;
   genderPreference: string[];
+  agePreference: number[];
   lookingFor: string;
+  height: string;
+  languages: string[];
+  religion: string;
   education: string;
   company: string;
   jobTitle: string;
   headline: string;
   interests: string[];
   photos: string[];
+  customPrompts: { prompt: string; answer: string }[];
   drinking: string;
   smoking: string;
   workout: string;
@@ -70,11 +81,14 @@ export interface ProfileCompletion {
 
 export interface FilterState {
   ageRange: [number, number];
+  heightRange: [number, number]; // in cm
   distance: string;
   lookingFor: string[];
   gender: string[];
+  religions: string[];
+  languages: string[];
   activity: string;
-  verified: string;
+  verifiedOnly: boolean;
 }
 
 export interface DiscoverProfile extends User {
