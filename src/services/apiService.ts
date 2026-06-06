@@ -131,6 +131,21 @@ export function unmatch(matchId: string, token: string) {
   );
 }
 
+export function getReportReasons(token: string) {
+  return apiRequest<{ reasons: string[] }>('/safety/report-reasons', { method: 'GET' }, token);
+}
+
+export function reportUser(
+  payload: { userId: string; reason: string; note?: string; alsoBlock?: boolean },
+  token: string
+) {
+  return apiRequest<{ ok: boolean; blocked: boolean }>(
+    '/safety/report',
+    { method: 'POST', body: JSON.stringify(payload) },
+    token
+  );
+}
+
 export function updateProfile(payload: Partial<ProfileForm>, token: string) {
   return apiRequest<{ user: User }>(
     '/users/me',

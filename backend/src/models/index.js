@@ -4,5 +4,6 @@ module.exports = {
   Match: require('./Match'),
   Message: require('./Message'),
   Otp: require('./Otp'),
-  Reveal: require('./Reveal')
+  Reveal: require('./Reveal'),
+  Report: require('./Report')
 };

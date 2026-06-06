@@ -1,4 +1,5 @@
-const { User, Match } = require('../models');
+const { User, Match, Report } = require('../models');
+const { REPORT_REASONS } = require('../models/Report');
 
 // POST /safety/block { userId }
 // Adds userId to my block list and soft-marks any match between us as 'blocked'.
@@ -96,9 +97,65 @@ async function unmatch(req, res) {
   return res.json({ ok: true, matchId: String(matchId) });
 }
 
+// GET /safety/report-reasons — the valid reason list for the client picker.
+function getReportReasons(_req, res) {
+  return res.json({ reasons: REPORT_REASONS });
+}
+
+// POST /safety/report { userId, reason, note?, alsoBlock? }
+// Files a moderation report. If alsoBlock is true, also blocks the user and
+// ends any active match between them (same effect as /safety/block).
+async function reportUser(req, res) {
+  const meId = req.auth.id;
+  const { userId, reason, note, alsoBlock } = req.body;
+
+  if (!userId || !reason) {
+    return res.status(400).json({ message: 'userId and reason are required' });
+  }
+  if (String(userId) === String(meId)) {
+    return res.status(400).json({ message: "You can't report yourself" });
+  }
+  if (!REPORT_REASONS.includes(reason)) {
+    return res.status(400).json({ message: 'Invalid reason' });
+  }
+
+  const target = await User.findById(userId);
+  if (!target) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const wantsBlock = Boolean(alsoBlock);
+
+  await Report.create({
+    reporter: meId,
+    reportedUser: userId,
+    reason,
+    note: typeof note === 'string' ? note.slice(0, 1000) : '',
+    alsoBlocked: wantsBlock
+  });
+
+  if (wantsBlock) {
+    await User.updateOne({ _id: meId }, { $addToSet: { blockedUsers: userId } });
+    await Match.updateMany(
+      {
+        status: 'active',
+        $or: [
+          { userA: meId, userB: userId },
+          { userA: userId, userB: meId }
+        ]
+      },
+      { status: 'blocked', endedBy: meId }
+    );
+  }
+
+  return res.json({ ok: true, blocked: wantsBlock });
+}
+
 module.exports = {
   blockUser,
   unblockUser,
   getBlocked,
-  unmatch
+  unmatch,
+  getReportReasons,
+  reportUser
 };

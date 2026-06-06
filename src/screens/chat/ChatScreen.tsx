@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppButton } from '../../components/AppButton';
 import { AppInput } from '../../components/AppInput';
 import { ScreenContainer } from '../../components/ScreenContainer';
+import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMessages, sendMessage, unmatch } from '../../services/apiService';
 import { getSocket } from '../../services/socket';
@@ -27,6 +28,7 @@ export function ChatScreen({ route, navigation }: Props) {
   const [messages, setMessages] = useState<MessageRecord[]>([]);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
+  const [reportOpen, setReportOpen] = useState(false);
   const listRef = useRef<FlatList<MessageRecord>>(null);
 
   // Append a message, de-duping by id. The sender also receives its own
@@ -75,6 +77,7 @@ export function ChatScreen({ route, navigation }: Props) {
 
   function openActions() {
     Alert.alert(matchName, 'Manage this match', [
+      { text: 'Report', onPress: () => setReportOpen(true) },
       {
         text: 'Unmatch',
         style: 'destructive',
@@ -180,6 +183,16 @@ export function ChatScreen({ route, navigation }: Props) {
         <AppInput value={text} onChangeText={setText} placeholder="Type a message" />
         <AppButton title="Send" onPress={handleSend} disabled={!text.trim()} />
       </KeyboardAvoidingView>
+
+      <ReportSheet
+        visible={reportOpen}
+        userId={matchUserId}
+        name={matchName}
+        onClose={() => setReportOpen(false)}
+        onReported={(blocked) => {
+          if (blocked) navigation.goBack();
+        }}
+      />
     </ScreenContainer>
   );
 }

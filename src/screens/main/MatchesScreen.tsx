@@ -6,6 +6,7 @@ import { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PrismBackground } from '../../components/PrismBackground';
+import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMatches, unmatch } from '../../services/apiService';
 import { isProUser } from '../../utils/entitlements';
@@ -26,6 +27,7 @@ export function MatchesScreen({ navigation }: Props) {
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [reportTarget, setReportTarget] = useState<MatchRecord | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -63,6 +65,7 @@ export function MatchesScreen({ navigation }: Props) {
   function openMatchActions(item: MatchRecord) {
     const name = item.user.name || 'this person';
     Alert.alert(name, 'Manage this match', [
+      { text: 'Report', onPress: () => setReportTarget(item) },
       {
         text: 'Unmatch',
         style: 'destructive',
@@ -172,6 +175,18 @@ export function MatchesScreen({ navigation }: Props) {
               )}
             </Pressable>
           );
+        }}
+      />
+
+      <ReportSheet
+        visible={Boolean(reportTarget)}
+        userId={reportTarget?.user.id}
+        name={reportTarget?.user.name || 'this person'}
+        onClose={() => setReportTarget(null)}
+        onReported={(blocked) => {
+          if (blocked && reportTarget) {
+            setMatches((prev) => prev.filter((m) => m.id !== reportTarget.id));
+          }
         }}
       />
     </PrismBackground>

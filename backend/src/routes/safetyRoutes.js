@@ -1,6 +1,13 @@
 const express = require('express');
 const { authGuard } = require('../middleware/authGuard');
-const { blockUser, unblockUser, getBlocked, unmatch } = require('../controllers/safetyController');
+const {
+  blockUser,
+  unblockUser,
+  getBlocked,
+  unmatch,
+  getReportReasons,
+  reportUser
+} = require('../controllers/safetyController');
 
 const router = express.Router();
 
@@ -8,5 +15,7 @@ router.post('/block', authGuard, blockUser);
 router.post('/unblock', authGuard, unblockUser);
 router.get('/blocked', authGuard, getBlocked);
 router.post('/unmatch', authGuard, unmatch);
+router.get('/report-reasons', authGuard, getReportReasons);
+router.post('/report', authGuard, reportUser);
 
 module.exports = router;
