@@ -103,8 +103,11 @@ export interface MatchRecord {
 
 export interface MessageRecord {
   id: string;
+  matchId?: string;
   senderId: string;
   text: string;
+  createdAt?: string;
+  readAt?: string | null;
 }
 
 export interface AuthResponse {

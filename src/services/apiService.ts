@@ -9,6 +9,7 @@ import type {
   GrantResponse,
   IncomingLikesResponse,
   MatchesResponse,
+  MessageRecord,
   MessagesResponse,
   OtpRequestResponse,
   OtpVerifyResponse,
@@ -215,7 +216,7 @@ export function getMessages(matchId: string, token: string) {
 }
 
 export function sendMessage(matchId: string, text: string, token: string) {
-  return apiRequest<{ message: string }>(
+  return apiRequest<{ message: MessageRecord }>(
     `/messages/${matchId}`,
     {
       method: 'POST',
