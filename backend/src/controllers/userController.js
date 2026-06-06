@@ -29,6 +29,25 @@ async function updatePushToken(req, res) {
   return res.json({ ok: true });
 }
 
+// POST /users/verify-profession
+// Marks the user's profession as verified. Today this is a lightweight stub
+// (instant in dev) so the badge + flow are testable; swap the body for a real
+// check later (work-email domain, LinkedIn OAuth, or doc upload + review).
+async function verifyProfession(req, res) {
+  const user = await User.findById(req.auth.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  if (!user.profession) {
+    return res.status(400).json({ message: 'Set your profession before verifying.' });
+  }
+
+  user.professionVerified = true;
+  await user.save();
+
+  return res.json({ user: sanitizeUser(user) });
+}
+
 async function updateProfession(req, res) {
   const { profession } = req.body;
 
@@ -56,8 +75,12 @@ async function updateProfile(req, res) {
     location,
     gender,
     genderPreference,
+    agePreference,
     lookingFor,
     maxDistance,
+    height,
+    languages,
+    religion,
     education,
     company,
     jobTitle,
@@ -71,7 +94,8 @@ async function updateProfile(req, res) {
     professionWhy,
     professionLoveLevel,
     firstDateIdea,
-    weekendVibe
+    weekendVibe,
+    customPrompts
   } = req.body;
 
   const user = await User.findById(req.auth.id);
@@ -101,6 +125,8 @@ async function updateProfile(req, res) {
     gender,
     lookingFor,
     maxDistance,
+    height,
+    religion,
     education,
     company,
     jobTitle,
@@ -128,6 +154,27 @@ async function updateProfile(req, res) {
       .filter(Boolean);
   }
 
+  if (Array.isArray(agePreference)) {
+    const nums = agePreference.filter((n) => typeof n === 'number' && n >= 18 && n <= 80);
+    user.agePreference = nums.length === 2 ? [Math.min(...nums), Math.max(...nums)] : [];
+  }
+
+  if (Array.isArray(languages)) {
+    user.languages = languages
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+  }
+
+  if (Array.isArray(customPrompts)) {
+    user.customPrompts = customPrompts
+      .filter((p) => p && typeof p.prompt === 'string' && typeof p.answer === 'string')
+      .map((p) => ({ prompt: p.prompt.trim(), answer: p.answer.trim() }))
+      .filter((p) => p.prompt && p.answer)
+      .slice(0, 6);
+  }
+
   if (Array.isArray(interests)) {
     user.interests = interests
       .filter((item) => typeof item === 'string')
@@ -152,5 +199,6 @@ module.exports = {
   getMe,
   updatePushToken,
   updateProfession,
+  verifyProfession,
   updateProfile
 };

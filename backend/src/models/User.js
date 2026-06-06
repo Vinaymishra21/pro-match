@@ -28,9 +28,27 @@ const userSchema = new Schema(
     gender: { type: String, default: '' }, // e.g. 'Man', 'Woman', 'Non-binary', …
     // Genders this user wants to see. Empty = open to everyone.
     genderPreference: { type: [String], default: [] },
+    // Age range this user wants to see [min, max]. Empty = no preference.
+    agePreference: { type: [Number], default: [] },
     lookingFor: { type: String, default: '' },
     // Max distance preference label (display/filter only; no geo yet).
     maxDistance: { type: String, default: '' },
+
+    // Additional profile facts.
+    height: { type: String, default: '' }, // e.g. "5'9\" (175 cm)"
+    languages: { type: [String], default: [] },
+    religion: { type: String, default: '' },
+
+    // User-selected prompts: [{ prompt, answer }]. Replaces the fixed set.
+    customPrompts: {
+      type: [
+        {
+          prompt: { type: String, default: '' },
+          answer: { type: String, default: '' }
+        }
+      ],
+      default: []
+    },
     education: { type: String, default: '' },
     company: { type: String, default: '' },
     jobTitle: { type: String, default: '' },

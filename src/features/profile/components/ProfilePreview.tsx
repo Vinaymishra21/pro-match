@@ -48,7 +48,7 @@ function PromptCard({ prompt, answer, accentColor, icon }) {
   );
 }
 
-export function ProfilePreview({ form, profession }) {
+export function ProfilePreview({ form, profession, verified }) {
   const mainPhoto = form.photos?.[0];
   const interests = Array.isArray(form.interests) ? form.interests : [];
   const gallery = Array.isArray(form.photos) ? form.photos.filter(Boolean).slice(1) : [];
@@ -75,6 +75,7 @@ export function ProfilePreview({ form, profession }) {
           {profession ? (
             <View style={styles.professionBadge}>
               <Text style={styles.professionText}>{profession}</Text>
+              {verified ? <Text style={styles.verifiedTick}>  ✓</Text> : null}
             </View>
           ) : null}
           {form.headline ? <Text style={styles.headline}>{form.headline}</Text> : null}
@@ -92,6 +93,9 @@ export function ProfilePreview({ form, profession }) {
         <Text style={styles.cardTitle}>Quick facts</Text>
         <Row label="Location" value={form.location} icon={'\uD83D\uDCCD'} />
         <Row label="Gender" value={form.gender} icon={'\uD83E\uDDD1'} />
+        <Row label="Height" value={form.height} icon={'\uD83D\uDCCF'} />
+        <Row label="Religion" value={form.religion} icon={'\uD83D\uDD4A\uFE0F'} />
+        <Row label="Languages" value={(form.languages || []).join(', ')} icon={'\uD83D\uDDE3\uFE0F'} />
         <Row label="Looking for" value={form.lookingFor} icon={'\u2764\uFE0F'} />
         <Row label="Job" value={form.jobTitle} icon={'\uD83D\uDCBC'} />
         <Row label="Company" value={form.company} icon={'\uD83C\uDFE2'} />
@@ -130,18 +134,15 @@ export function ProfilePreview({ form, profession }) {
           <Text style={styles.loveValue}>{form.professionLoveLevel}</Text>
         </View>
       ) : null}
-      <PromptCard
-        prompt="My ideal first date"
-        answer={form.firstDateIdea}
-        accentColor={colors.secondary}
-        icon={'\u2615'}
-      />
-      <PromptCard
-        prompt="My weekend vibe"
-        answer={form.weekendVibe}
-        accentColor="#F4A261"
-        icon={'\uD83C\uDF1F'}
-      />
+      {(form.customPrompts || []).map((p, i) => (
+        <PromptCard
+          key={`${p.prompt}-${i}`}
+          prompt={p.prompt}
+          answer={p.answer}
+          accentColor={i % 2 === 0 ? colors.secondary : '#F4A261'}
+          icon={'\uD83D\uDCAC'}
+        />
+      ))}
 
       {gallery.length ? (
         <View style={styles.card}>
@@ -219,6 +220,8 @@ const styles = StyleSheet.create({
     color: colors.text
   },
   professionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     marginTop: spacing.xs,
     backgroundColor: '#FDEEE8',
@@ -230,6 +233,11 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: '700'
+  },
+  verifiedTick: {
+    ...typography.caption,
+    color: colors.secondary,
+    fontWeight: '900'
   },
   headline: {
     ...typography.body,

@@ -31,6 +31,7 @@ export function getProfileCompletion(form: ProfileForm): ProfileCompletion {
     form.bio,
     form.location,
     form.gender,
+    form.height,
     form.lookingFor,
     form.jobTitle,
     form.company,

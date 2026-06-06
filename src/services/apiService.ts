@@ -92,6 +92,10 @@ export function updateProfession(profession: string, token: string) {
   );
 }
 
+export function verifyProfession(token: string) {
+  return apiRequest<{ user: User }>('/users/verify-profession', { method: 'POST' }, token);
+}
+
 export function updateProfile(payload: Partial<ProfileForm>, token: string) {
   return apiRequest<{ user: User }>(
     '/users/me',
@@ -106,8 +110,13 @@ export function updateProfile(payload: Partial<ProfileForm>, token: string) {
 export type DiscoverFilters = {
   minAge?: number;
   maxAge?: number;
+  minHeightCm?: number;
+  maxHeightCm?: number;
   genders?: string[];
   lookingFor?: string[];
+  religions?: string[];
+  languages?: string[];
+  verifiedOnly?: boolean;
 };
 
 export function getDiscoverProfiles(token: string, profession?: string, filters?: DiscoverFilters) {
@@ -115,8 +124,13 @@ export function getDiscoverProfiles(token: string, profession?: string, filters?
   if (profession) params.set('profession', profession);
   if (filters?.minAge) params.set('minAge', String(filters.minAge));
   if (filters?.maxAge) params.set('maxAge', String(filters.maxAge));
+  if (filters?.minHeightCm) params.set('minHeightCm', String(filters.minHeightCm));
+  if (filters?.maxHeightCm) params.set('maxHeightCm', String(filters.maxHeightCm));
   if (filters?.genders?.length) params.set('genders', filters.genders.join(','));
   if (filters?.lookingFor?.length) params.set('lookingFor', filters.lookingFor.join(','));
+  if (filters?.religions?.length) params.set('religions', filters.religions.join(','));
+  if (filters?.languages?.length) params.set('languages', filters.languages.join(','));
+  if (filters?.verifiedOnly) params.set('verifiedOnly', 'true');
   const qs = params.toString();
   return apiRequest<DiscoverResponse>(`/discover${qs ? `?${qs}` : ''}`, { method: 'GET' }, token);
 }

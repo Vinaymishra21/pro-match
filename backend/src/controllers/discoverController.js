@@ -81,7 +81,45 @@ async function getDiscover(req, res) {
     query.lookingFor = { $in: wantLookingFor };
   }
 
+  // Religion filter (CSV).
+  const wantReligions = (req.query.religions || '')
+    .split(',')
+    .map((r) => r.trim())
+    .filter(Boolean);
+  if (wantReligions.length) {
+    query.religion = { $in: wantReligions };
+  }
+
+  // Languages filter (CSV) — match anyone who speaks at least one.
+  const wantLanguages = (req.query.languages || '')
+    .split(',')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (wantLanguages.length) {
+    query.languages = { $in: wantLanguages };
+  }
+
+  // Verified-only filter.
+  if (req.query.verifiedOnly === 'true') {
+    query.professionVerified = true;
+  }
+
   let candidates = await User.find(query);
+
+  // Height range filter (heights are stored as strings like 5'9" (175 cm) —
+  // parse the cm value out and compare). Done in JS since it's a derived value.
+  const minCm = parseInt(req.query.minHeightCm, 10);
+  const maxCm = parseInt(req.query.maxHeightCm, 10);
+  if (!Number.isNaN(minCm) || !Number.isNaN(maxCm)) {
+    candidates = candidates.filter((u) => {
+      const match = /\((\d+)\s*cm\)/.exec(u.height || '');
+      if (!match) return false; // no height set → excluded when filtering on height
+      const cm = parseInt(match[1], 10);
+      if (!Number.isNaN(minCm) && cm < minCm) return false;
+      if (!Number.isNaN(maxCm) && cm > maxCm) return false;
+      return true;
+    });
+  }
 
   // --- Mutual gender preference (profession AND gender) ------------------
   // Only show people whose own genderPreference includes my gender (or who are
