@@ -79,6 +79,9 @@ const userSchema = new Schema(
     // Profession verification (Phase 1.2/2)
     professionVerified: { type: Boolean, default: false },
 
+    // Admin/moderation access (for the admin dashboard). Off for normal users.
+    isAdmin: { type: Boolean, default: false },
+
     // Monetization (Phase 2)
     tier: { type: String, enum: ['free', 'pro'], default: 'free' },
     proExpiresAt: { type: Date, default: null },
