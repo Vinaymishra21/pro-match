@@ -14,6 +14,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { COUNTRY_CODES, type CountryCodeOption } from '../../constants/countryCodes';
+import { useAuth } from '../../hooks/useAuth';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import type { AuthStackParamList } from '../../types';
@@ -21,6 +22,7 @@ import type { AuthStackParamList } from '../../types';
 type Props = NativeStackScreenProps<AuthStackParamList, 'PhoneEntry'>;
 
 export function PhoneEntryScreen({ navigation }: Props) {
+  const { requestOtp } = useAuth();
   const [countryCode, setCountryCode] = useState<CountryCodeOption>({
     code: '+91',
     country: 'India'
@@ -28,9 +30,36 @@ export function PhoneEntryScreen({ navigation }: Props) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [query, setQuery] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState('');
 
   const sanitized = useMemo(() => phoneNumber.replace(/\D/g, ''), [phoneNumber]);
-  const canContinue = sanitized.length >= 8;
+  const canContinue = sanitized.length >= 8 && !isSending;
+
+  async function handleContinue() {
+    if (!canContinue) {
+      return;
+    }
+
+    const fullPhone = `${countryCode.code}${sanitized}`;
+    try {
+      setIsSending(true);
+      setError('');
+      const res = await requestOtp(fullPhone);
+      navigation.navigate('OtpVerification', {
+        countryCode: countryCode.code,
+        phoneNumber: sanitized
+      });
+      // In dev mode the backend returns the code so testers don't need an SMS.
+      if (res.devCode) {
+        console.log(`[DEV] OTP for ${fullPhone}: ${res.devCode}`);
+      }
+    } catch (sendError) {
+      setError((sendError as Error).message);
+    } finally {
+      setIsSending(false);
+    }
+  }
   const filteredCountries = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) {
@@ -98,6 +127,8 @@ export function PhoneEntryScreen({ navigation }: Props) {
                 <View style={styles.helperStrip}>
                   <Text style={styles.helperText}>Use a number you can receive a code on right now.</Text>
                 </View>
+
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
               </View>
             </View>
           </View>
@@ -114,19 +145,14 @@ export function PhoneEntryScreen({ navigation }: Props) {
 
             <Pressable
               disabled={!canContinue}
-              onPress={() =>
-                navigation.navigate('OtpVerification', {
-                  countryCode: countryCode.code,
-                  phoneNumber: sanitized
-                })
-              }
+              onPress={handleContinue}
               style={({ pressed }) => [
                 styles.nextButton,
                 !canContinue ? styles.nextButtonDisabled : null,
                 pressed && canContinue ? styles.nextButtonPressed : null
               ]}
             >
-              <Text style={styles.nextArrow}>→</Text>
+              <Text style={styles.nextArrow}>{isSending ? '…' : '→'}</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -327,6 +353,11 @@ const styles = StyleSheet.create({
     color: '#43665B',
     fontSize: 13,
     lineHeight: 19
+  },
+  errorText: {
+    color: '#C2410C',
+    fontSize: 13,
+    marginTop: spacing.sm
   },
   footer: {
     paddingTop: spacing.xl,

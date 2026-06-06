@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
 import { AppButton } from '../../components/AppButton';
 import { AppInput } from '../../components/AppInput';
+import { Dropdown } from '../../components/Dropdown';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { AnimatedProfileSection } from '../../features/profile/components/AnimatedProfileSection';
 import { ChipSelector } from '../../features/profile/components/ChipSelector';
@@ -14,6 +15,7 @@ import { ProfessionLoveMeter } from '../../features/profile/components/Professio
 import { PromptField } from '../../features/profile/components/PromptField';
 import {
   drinkingOptions,
+  genderOptions,
   interestSuggestions,
   lookingForOptions,
   petOptions,
@@ -74,6 +76,8 @@ export function ProfileScreen() {
         age: parsedAge,
         bio: form.bio,
         location: form.location,
+        gender: form.gender,
+        genderPreference: form.genderPreference,
         lookingFor: form.lookingFor,
         education: form.education,
         company: form.company,
@@ -114,7 +118,7 @@ export function ProfileScreen() {
   }
 
   return (
-    <ScreenContainer>
+    <ScreenContainer bottomInset={false}>
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.heading}>My Profile</Text>
@@ -142,7 +146,7 @@ export function ProfileScreen() {
           <>
             <AnimatedProfileSection index={1}>
               <ProfileSection title="Photos" subtitle="Profiles with clear photos perform best" icon={'\uD83D\uDCF8'} collapsible>
-                <ProfilePhotoGallery photos={form.photos} onChange={(value) => updateField('photos', value)} />
+                <ProfilePhotoGallery photos={form.photos} token={token} onChange={(value) => updateField('photos', value)} />
               </ProfileSection>
             </AnimatedProfileSection>
 
@@ -154,6 +158,13 @@ export function ProfileScreen() {
                   onChangeText={(value) => updateField('age', value)}
                   placeholder="Age"
                   keyboardType="number-pad"
+                />
+                <Text style={styles.fieldLabel}>Gender</Text>
+                <Dropdown
+                  value={form.gender}
+                  options={genderOptions}
+                  placeholder="Select your gender"
+                  onChange={(value) => updateField('gender', value)}
                 />
                 <AppInput
                   value={form.location}
@@ -183,6 +194,14 @@ export function ProfileScreen() {
                   options={lookingForOptions}
                   value={form.lookingFor}
                   onChange={(value) => updateField('lookingFor', value)}
+                />
+                <Text style={styles.fieldLabel}>Interested in</Text>
+                <Text style={styles.fieldHint}>Pick the genders you want to be matched with</Text>
+                <ChipSelector
+                  options={genderOptions}
+                  value={form.genderPreference}
+                  onChange={(value) => updateField('genderPreference', value)}
+                  multi
                 />
               </ProfileSection>
             </AnimatedProfileSection>
@@ -355,6 +374,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: spacing.xs,
     marginTop: spacing.sm
+  },
+  fieldHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontSize: 12,
+    marginBottom: spacing.xs
   },
   promptsSectionHeader: {
     flexDirection: 'row',

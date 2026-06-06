@@ -11,10 +11,16 @@ export interface User {
   email?: string;
   phone?: string;
   profession?: string;
+  tier?: 'free' | 'pro';
+  proExpiresAt?: string | null;
+  credits?: number;
   age?: number | null;
   bio?: string;
   location?: string;
+  gender?: string;
+  genderPreference?: string[];
   lookingFor?: string;
+  maxDistance?: string;
   education?: string;
   company?: string;
   jobTitle?: string;
@@ -36,6 +42,8 @@ export interface ProfileForm {
   age: string;
   bio: string;
   location: string;
+  gender: string;
+  genderPreference: string[];
   lookingFor: string;
   education: string;
   company: string;
@@ -63,12 +71,10 @@ export interface ProfileCompletion {
 export interface FilterState {
   ageRange: [number, number];
   distance: string;
-  professions: string[];
   lookingFor: string[];
-  gender: string;
+  gender: string[];
   activity: string;
   verified: string;
-  showProfessionOnly: boolean;
 }
 
 export interface DiscoverProfile extends User {
@@ -78,6 +84,7 @@ export interface DiscoverProfile extends User {
 export interface MatchRecord {
   id: string;
   user: User;
+  crossProfession?: boolean;
 }
 
 export interface MessageRecord {
@@ -91,8 +98,94 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface OtpRequestResponse {
+  sent: boolean;
+  devCode?: string;
+}
+
+export interface OtpVerifyResponse {
+  token: string;
+  user: User;
+  isNewUser: boolean;
+}
+
+export interface UnlockState {
+  weekStart: string | null;
+  professions: string[];
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
 export interface DiscoverResponse {
   profiles: DiscoverProfile[];
+  profession?: string;
+  isOwnProfession?: boolean;
+  unlock?: UnlockState;
+  isPro?: boolean;
+}
+
+export interface DiscoverAccessResponse {
+  profession: string;
+  unlock: UnlockState;
+  isPro: boolean;
+}
+
+export interface IncomingLike extends Partial<User> {
+  likerId: string;
+  blurred: boolean;
+  profession?: string;
+  crossProfession?: boolean;
+  teaser?: string;
+}
+
+export interface IncomingLikesResponse {
+  likes: IncomingLike[];
+  count: number;
+  isPro: boolean;
+  revealCost: number;
+  credits: number;
+}
+
+export interface RevealResponse {
+  liker: IncomingLike;
+  charged: number;
+  credits: number;
+}
+
+export interface CreditPack {
+  id: string;
+  priceInr: number;
+  credits: number;
+}
+
+export interface BillingCatalog {
+  pro: { priceInr: number; periodDays: number };
+  creditPacks: CreditPack[];
+  creditValueInr: number;
+  devMode: boolean;
+  keyId: string | null;
+}
+
+export interface GrantResponse {
+  ok: boolean;
+  granted: 'pro' | 'credits';
+  credits?: number;
+  user: User;
+  isPro: boolean;
+  dev?: boolean;
+}
+
+export interface CreateOrderResponse {
+  order: { id: string; amount: number; currency: string; stub?: boolean };
+  keyId: string | null;
+  devMode: boolean;
+  purchase: { type: string; packId: string | null; amountInr: number; label: string };
+}
+
+export interface SwipeResponse {
+  matched: boolean;
+  match: { id: string; crossProfession?: boolean } | null;
 }
 
 export interface MatchesResponse {
@@ -116,6 +209,9 @@ export interface AuthContextValue {
   isLoading: boolean;
   signUp: (payload: AuthPayload) => Promise<User>;
   signIn: (payload: AuthPayload) => Promise<User>;
+  requestOtp: (phone: string) => Promise<OtpRequestResponse>;
+  verifyOtp: (phone: string, code: string) => Promise<User>;
+  devBypass: () => Promise<User>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateLocalUser: (nextUser: User | null) => Promise<void>;
@@ -137,6 +233,7 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Discover: undefined;
+  Likes: undefined;
   Matches: undefined;
   Profile: undefined;
 };
@@ -149,4 +246,9 @@ export type RootStackParamList = {
     matchId: string;
     matchName: string;
   };
+  Paywall:
+    | {
+        focus?: 'pro' | 'credits';
+      }
+    | undefined;
 };

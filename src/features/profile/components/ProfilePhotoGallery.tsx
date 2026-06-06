@@ -1,12 +1,14 @@
 // @ts-nocheck
 import React, { useMemo, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { Alert, Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { uploadPhoto } from '../../../services/apiService';
 import { colors } from '../../../theme/colors';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
 const MAX_PHOTOS = 6;
+const MIN_PHOTOS = 2;
 
 function getPhotoScore(asset) {
   const width = asset?.width || 0;
@@ -19,7 +21,7 @@ function getPhotoScore(asset) {
   return area + portraitBonus - ratioPenalty;
 }
 
-function PhotoTile({ photo, index, selected, isHero, onPress, onLongPress }) {
+function PhotoTile({ photo, index, selected, isHero, uploading, onPress, onLongPress, onRemove }) {
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
@@ -47,12 +49,18 @@ function PhotoTile({ photo, index, selected, isHero, onPress, onLongPress }) {
         onLongPress={onLongPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        disabled={uploading}
         style={[
           isHero ? styles.heroTile : styles.tile,
           selected ? styles.tileSelected : null
         ]}
       >
-        {photo ? (
+        {uploading ? (
+          <View style={styles.uploadingOverlay}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={styles.uploadingText}>Uploading…</Text>
+          </View>
+        ) : photo ? (
           <>
             <Image source={{ uri: photo }} style={styles.image} resizeMode="cover" />
             {isHero && (
@@ -75,11 +83,18 @@ function PhotoTile({ photo, index, selected, isHero, onPress, onLongPress }) {
           </View>
         )}
       </Pressable>
+
+      {/* Remove (×) badge — only on filled tiles, not while uploading. */}
+      {photo && !uploading ? (
+        <Pressable style={styles.removeBadge} onPress={onRemove} hitSlop={8}>
+          <Text style={styles.removeBadgeText}>×</Text>
+        </Pressable>
+      ) : null}
     </Animated.View>
   );
 }
 
-export function ProfilePhotoGallery({ photos = [], onChange }) {
+export function ProfilePhotoGallery({ photos = [], onChange, token }) {
   const normalized = useMemo(() => {
     const copy = [...photos];
     while (copy.length < MAX_PHOTOS) {
@@ -90,6 +105,7 @@ export function ProfilePhotoGallery({ photos = [], onChange }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
   const [photoScores, setPhotoScores] = useState({});
+  const [uploadingIndex, setUploadingIndex] = useState(-1);
 
   async function pickPhoto(index) {
     try {
@@ -117,25 +133,61 @@ export function ProfilePhotoGallery({ photos = [], onChange }) {
         return;
       }
 
+      // Upload to the backend and store the hosted URL (not the local file:// URI,
+      // which is device-only and won't be visible to other users).
+      let storedUri = selected.uri;
+      if (token) {
+        try {
+          setUploadingIndex(index);
+          const { url } = await uploadPhoto(selected.uri, token);
+          storedUri = url;
+        } catch (uploadError) {
+          Alert.alert('Upload failed', uploadError?.message || 'Could not upload image. Please try again.');
+          return;
+        } finally {
+          setUploadingIndex(-1);
+        }
+      }
+
       const next = [...normalized];
-      next[index] = selected.uri;
+      next[index] = storedUri;
       const cleaned = next.filter(Boolean);
       const score = getPhotoScore(selected);
-      const nextScores = { ...photoScores, [selected.uri]: score };
+      const nextScores = { ...photoScores, [storedUri]: score };
       setPhotoScores(nextScores);
       const ranked = [...cleaned].sort((a, b) => (nextScores[b] || 0) - (nextScores[a] || 0));
       onChange(ranked);
 
       setSelectedIndex(0);
     } catch (error) {
+      setUploadingIndex(-1);
       Alert.alert('Upload failed', error?.message || 'Unable to open gallery right now.');
     }
   }
 
-  function clearPhoto() {
-    const next = [...normalized];
-    next[selectedIndex] = '';
-    onChange(next.filter(Boolean));
+  function removePhoto(index) {
+    const filledCount = normalized.filter(Boolean).length;
+    if (filledCount <= MIN_PHOTOS) {
+      Alert.alert(
+        'Keep at least 2 photos',
+        `A profile needs a minimum of ${MIN_PHOTOS} photos. Add another before removing this one.`
+      );
+      return;
+    }
+
+    Alert.alert('Remove photo?', 'This photo will be removed from your profile.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          const next = [...normalized];
+          next[index] = '';
+          onChange(next.filter(Boolean));
+          setSelectedIndex(0);
+        }
+      }
+    ]);
   }
 
   function moveSelected(direction) {
@@ -161,6 +213,7 @@ export function ProfilePhotoGallery({ photos = [], onChange }) {
 
   const heroPhoto = normalized[0];
   const restPhotos = normalized.slice(1);
+  const filledCount = normalized.filter(Boolean).length;
 
   return (
     <View>
@@ -169,8 +222,10 @@ export function ProfilePhotoGallery({ photos = [], onChange }) {
         index={0}
         selected={selectedIndex === 0}
         isHero
+        uploading={uploadingIndex === 0}
         onPress={() => handleTilePress(0)}
         onLongPress={() => { if (heroPhoto) setPreviewUrl(heroPhoto); }}
+        onRemove={() => removePhoto(0)}
       />
 
       <View style={styles.grid}>
@@ -183,14 +238,24 @@ export function ProfilePhotoGallery({ photos = [], onChange }) {
               index={realIndex}
               selected={realIndex === selectedIndex}
               isHero={false}
+              uploading={uploadingIndex === realIndex}
               onPress={() => handleTilePress(realIndex)}
               onLongPress={() => { if (photo) setPreviewUrl(photo); }}
+              onRemove={() => removePhoto(realIndex)}
             />
           );
         })}
       </View>
 
-      <Text style={styles.helperText}>Tap to select, tap again to replace. Long-press to preview.</Text>
+      <View style={styles.countRow}>
+        <Text style={styles.helperText}>Tap to select · long-press to preview · tap × to remove</Text>
+        <View style={[styles.countPill, filledCount >= MIN_PHOTOS ? styles.countPillOk : styles.countPillWarn]}>
+          <Text style={[styles.countText, filledCount >= MIN_PHOTOS ? styles.countTextOk : styles.countTextWarn]}>
+            {filledCount >= MIN_PHOTOS ? '✓ ' : ''}
+            {filledCount}/{MAX_PHOTOS} · min {MIN_PHOTOS}
+          </Text>
+        </View>
+      </View>
 
       <View style={styles.actionsRow}>
         <Pressable
@@ -212,12 +277,6 @@ export function ProfilePhotoGallery({ photos = [], onChange }) {
           <Text style={styles.actionText}>Move Right</Text>
         </Pressable>
       </View>
-
-      {normalized[selectedIndex] ? (
-        <Pressable onPress={clearPhoto}>
-          <Text style={styles.clear}>Remove Photo {selectedIndex + 1}</Text>
-        </Pressable>
-      ) : null}
 
       <Modal visible={Boolean(previewUrl)} animationType="fade" transparent onRequestClose={() => setPreviewUrl('')}>
         <View style={styles.modalBackdrop}>
@@ -282,7 +341,7 @@ const styles = StyleSheet.create({
   selectedOverlay: {
     position: 'absolute',
     top: spacing.xs,
-    right: spacing.xs
+    left: spacing.xs
   },
   selectedDot: {
     width: 14,
@@ -296,6 +355,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  uploadingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6
+  },
+  uploadingText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontSize: 11
   },
   plusCircle: {
     width: 36,
@@ -329,10 +399,45 @@ const styles = StyleSheet.create({
   helperText: {
     ...typography.caption,
     color: colors.textMuted,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: spacing.xs,
+    fontSize: 11,
+    flex: 1
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
     marginBottom: spacing.sm
+  },
+  countPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1
+  },
+  countPillOk: { backgroundColor: 'rgba(42,157,143,0.12)', borderColor: colors.secondary },
+  countPillWarn: { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' },
+  countText: { fontSize: 11, fontWeight: '800' },
+  countTextOk: { color: colors.secondary },
+  countTextWarn: { color: '#B45309' },
+  removeBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(8,12,24,0.72)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  removeBadgeText: {
+    color: colors.white,
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 19,
+    marginTop: -1
   },
   actionsRow: {
     flexDirection: 'row',

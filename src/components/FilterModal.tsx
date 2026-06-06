@@ -12,25 +12,23 @@ import {
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
-import { PROFESSIONS } from '../constants/professions';
 
 const AGE_MIN = 18;
 const AGE_MAX = 60;
 const DISTANCE_OPTIONS = ['5 km', '10 km', '25 km', '50 km', '100 km', 'Unlimited'];
 const LOOKING_FOR_OPTIONS = ['Long-term relationship', 'Short-term dating', 'Life partner', 'Still figuring it out'];
-const GENDER_OPTIONS = ['Men', 'Women', 'Everyone'];
+// Match the actual identity values stored on profiles so the filter works.
+const GENDER_OPTIONS = ['Man', 'Woman', 'Non-binary', 'Transgender', 'Genderfluid', 'Other'];
 const ACTIVITY_OPTIONS = ['Active today', 'Active this week', 'Everyone'];
 const VERIFIED_OPTIONS = ['Verified only', 'Everyone'];
 
 const DEFAULT_FILTERS = {
   ageRange: [22, 35],
   distance: '25 km',
-  professions: [],
   lookingFor: [],
-  gender: 'Everyone',
+  gender: [], // multi-select; empty = everyone
   activity: 'Everyone',
-  verified: 'Everyone',
-  showProfessionOnly: true
+  verified: 'Everyone'
 };
 
 export { DEFAULT_FILTERS };
@@ -195,32 +193,17 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Profession Match Toggle */}
-          <ToggleRow
-            label="Same profession only"
-            description="Only see people in your profession"
-            value={filters.showProfessionOnly}
-            onToggle={() => update('showProfessionOnly', !filters.showProfessionOnly)}
-          />
+          {/* Profession is the app's USP — chosen via the deck selector on
+              Discover (with weekly limits / Pro), not a free multi-select here. */}
+          <View style={styles.uspNote}>
+            <Text style={styles.uspNoteIcon}>✦</Text>
+            <Text style={styles.uspNoteText}>
+              You're matching within your profession. Explore other professions from the deck
+              selector on Discover.
+            </Text>
+          </View>
 
           <View style={styles.divider} />
-
-          {/* Professions Filter */}
-          {!filters.showProfessionOnly ? (
-            <>
-              <SectionHeader
-                title="Professions"
-                subtitle="Select professions you want to match with"
-              />
-              <ChipRow
-                options={PROFESSIONS}
-                selected={filters.professions}
-                onToggle={(opt) => toggleMulti('professions', opt)}
-                multi
-              />
-              <View style={styles.divider} />
-            </>
-          ) : null}
 
           {/* Age Range */}
           <SectionHeader title="Age range" />
@@ -242,11 +225,12 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
           <View style={styles.divider} />
 
           {/* I'm interested in */}
-          <SectionHeader title="I'm interested in" />
+          <SectionHeader title="I'm interested in" subtitle="Leave empty to see everyone" />
           <ChipRow
             options={GENDER_OPTIONS}
             selected={filters.gender}
-            onToggle={(opt) => update('gender', opt)}
+            onToggle={(opt) => toggleMulti('gender', opt)}
+            multi
           />
 
           <View style={styles.divider} />
@@ -347,6 +331,26 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textMuted,
     marginTop: 2
+  },
+  uspNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: '#FDEEE8',
+    borderRadius: 14,
+    padding: spacing.md
+  },
+  uspNoteIcon: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '900',
+    marginTop: 1
+  },
+  uspNoteText: {
+    ...typography.caption,
+    color: colors.text,
+    flex: 1,
+    lineHeight: 18
   },
   chipRow: {
     flexDirection: 'row',

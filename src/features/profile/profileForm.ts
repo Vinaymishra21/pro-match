@@ -6,6 +6,8 @@ export function buildProfileForm(user: User | null | undefined): ProfileForm {
     age: user?.age ? String(user.age) : '',
     bio: user?.bio || '',
     location: user?.location || '',
+    gender: user?.gender || '',
+    genderPreference: Array.isArray(user?.genderPreference) ? user.genderPreference : [],
     lookingFor: user?.lookingFor || '',
     education: user?.education || '',
     company: user?.company || '',

@@ -1,9 +1,8 @@
-const { readDb, writeDb } = require('../utils/db');
+const { User } = require('../models');
 const { sanitizeUser } = require('../utils/auth');
 
-function getMe(req, res) {
-  const db = readDb();
-  const user = db.users.find((u) => u.id === req.auth.id);
+async function getMe(req, res) {
+  const user = await User.findById(req.auth.id);
 
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
@@ -12,33 +11,53 @@ function getMe(req, res) {
   return res.json({ user: sanitizeUser(user) });
 }
 
-function updateProfession(req, res) {
+async function updatePushToken(req, res) {
+  const { pushToken } = req.body;
+
+  if (typeof pushToken !== 'string') {
+    return res.status(400).json({ message: 'pushToken is required' });
+  }
+
+  const user = await User.findById(req.auth.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  user.pushToken = pushToken.trim();
+  await user.save();
+
+  return res.json({ ok: true });
+}
+
+async function updateProfession(req, res) {
   const { profession } = req.body;
 
   if (!profession || typeof profession !== 'string') {
     return res.status(400).json({ message: 'profession is required' });
   }
 
-  const db = readDb();
-  const user = db.users.find((u) => u.id === req.auth.id);
+  const user = await User.findById(req.auth.id);
 
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
   }
 
   user.profession = profession.trim();
-  writeDb(db);
+  await user.save();
 
   return res.json({ user: sanitizeUser(user) });
 }
 
-function updateProfile(req, res) {
+async function updateProfile(req, res) {
   const {
     bio,
     age,
     name,
     location,
+    gender,
+    genderPreference,
     lookingFor,
+    maxDistance,
     education,
     company,
     jobTitle,
@@ -55,8 +74,7 @@ function updateProfile(req, res) {
     weekendVibe
   } = req.body;
 
-  const db = readDb();
-  const user = db.users.find((u) => u.id === req.auth.id);
+  const user = await User.findById(req.auth.id);
 
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
@@ -80,7 +98,9 @@ function updateProfile(req, res) {
 
   const stringUpdates = {
     location,
+    gender,
     lookingFor,
+    maxDistance,
     education,
     company,
     jobTitle,
@@ -101,6 +121,13 @@ function updateProfile(req, res) {
     }
   });
 
+  if (Array.isArray(genderPreference)) {
+    user.genderPreference = genderPreference
+      .filter((item) => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
   if (Array.isArray(interests)) {
     user.interests = interests
       .filter((item) => typeof item === 'string')
@@ -117,12 +144,13 @@ function updateProfile(req, res) {
       .slice(0, 6);
   }
 
-  writeDb(db);
+  await user.save();
   return res.json({ user: sanitizeUser(user) });
 }
 
 module.exports = {
   getMe,
+  updatePushToken,
   updateProfession,
   updateProfile
 };

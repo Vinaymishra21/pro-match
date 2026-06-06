@@ -9,27 +9,31 @@ import type { AuthStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'OtpVerification'>;
 
-const SKIP_AUTH_FOR_TESTING = true;
-
 export function OtpVerificationScreen({ navigation, route }: Props) {
-  const { updateLocalUser } = useAuth();
+  const { verifyOtp } = useAuth();
   const { countryCode, phoneNumber } = route.params;
+  const fullPhone = `${countryCode}${phoneNumber}`;
   const [otp, setOtp] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canContinue = useMemo(() => otp.trim().length >= 4, [otp]);
+  const canContinue = useMemo(() => otp.trim().length >= 4 && !isSubmitting, [otp, isSubmitting]);
 
   async function handleNext() {
     if (!canContinue) {
       return;
     }
 
-    if (SKIP_AUTH_FOR_TESTING) {
-      await updateLocalUser({
-        name: 'Test User',
-        phone: `${countryCode} ${phoneNumber}`,
-        profession: 'Not set'
-      });
-      return;
+    try {
+      setIsSubmitting(true);
+      setError('');
+      // On success the AuthProvider state updates and RootNavigator swaps to the
+      // main app (or profession setup for new users) automatically.
+      await verifyOtp(fullPhone, otp.trim());
+    } catch (verifyError) {
+      setError((verifyError as Error).message);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -56,6 +60,8 @@ export function OtpVerificationScreen({ navigation, route }: Props) {
             style={styles.otpInput}
             autoFocus
           />
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
 
         <View style={styles.footer}>
@@ -133,6 +139,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     letterSpacing: 6,
     color: colors.text
+  },
+  error: {
+    color: '#FCA5A5',
+    marginTop: spacing.md,
+    fontSize: 14
   },
   footer: {
     gap: spacing.lg

@@ -10,6 +10,11 @@ function createToken(user) {
 }
 
 function sanitizeUser(user) {
+  if (!user) return user;
+  // Mongoose docs strip passwordHash via the schema toJSON transform.
+  if (typeof user.toJSON === 'function') {
+    return user.toJSON();
+  }
   const { passwordHash, ...safeUser } = user;
   return safeUser;
 }

@@ -1,236 +1,470 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { AppButton } from '../../components/AppButton';
-import { AppHeader } from '../../components/AppHeader';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { LinearGradient } from 'expo-linear-gradient';
+import { PrismBackground } from '../../components/PrismBackground';
+import { ProfessionBadge } from '../../components/ProfessionBadge';
+import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, FilterModal } from '../../components/FilterModal';
-import { ScreenContainer } from '../../components/ScreenContainer';
+import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
 import { getDiscoverProfiles, swipeProfile } from '../../services/apiService';
+import { ApiError } from '../../services/apiClient';
+import type { FilterState } from '../../types';
+import { professionTheme } from '../../theme/professionTheme';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import type { DiscoverProfile, FilterState, SwipeAction } from '../../types';
+import type { DiscoverProfile, MainTabParamList, RootStackParamList, UnlockState } from '../../types';
 
-export function DiscoverScreen() {
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, 'Discover'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
+
+export function DiscoverScreen({ navigation }: Props) {
   const { token, user } = useAuth();
+  const myProfession = user?.profession || '';
+
+  const [activeProfession, setActiveProfession] = useState(myProfession);
   const [profiles, setProfiles] = useState<DiscoverProfile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [unlock, setUnlock] = useState<UnlockState | null>(null);
+  const [isPro, setIsPro] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [locked, setLocked] = useState(false); // genuinely profession-locked (needs Pro)
+  const [error, setError] = useState(''); // generic/network error
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS as FilterState);
 
   const current = profiles[0] || null;
+  const viewingTheme = professionTheme(activeProfession);
 
-  const loadProfiles = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError('');
-      const response = await getDiscoverProfiles(token);
-      setProfiles(response.profiles || []);
-    } catch (loadError) {
-      setError(loadError.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token]);
+  // Count non-default filters for the badge on the filter button.
+  const activeFilterCount =
+    (filters.gender.length > 0 ? 1 : 0) +
+    (filters.lookingFor.length > 0 ? 1 : 0) +
+    (filters.ageRange[0] !== 22 || filters.ageRange[1] !== 35 ? 1 : 0);
+
+  const load = useCallback(
+    async (profession: string, activeFilters: FilterState) => {
+      try {
+        setLoading(true);
+        setLocked(false);
+        setError('');
+        const res = await getDiscoverProfiles(token, profession || undefined, {
+          minAge: activeFilters.ageRange[0],
+          maxAge: activeFilters.ageRange[1],
+          genders: activeFilters.gender,
+          lookingFor: activeFilters.lookingFor
+        });
+        setProfiles(res.profiles || []);
+        if (res.unlock) setUnlock(res.unlock);
+        if (typeof res.isPro === 'boolean') setIsPro(res.isPro);
+      } catch (loadError) {
+        setProfiles([]);
+        const err = loadError as ApiError;
+        // Only show the "deck locked → Go Pro" state for a real lock response.
+        // Everything else (network down, auth, server) is a generic error.
+        if (err.code === 'PROFESSION_LOCKED' || err.status === 403) {
+          setLocked(true);
+        } else {
+          setError(err.message || 'Could not load profiles');
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [token]
+  );
 
   useEffect(() => {
-    loadProfiles();
-  }, [loadProfiles]);
+    load(activeProfession, filters);
+  }, [activeProfession, filters, load]);
 
-  async function handleSwipe(action: SwipeAction) {
-    if (!current) {
+  function selectProfession(profession: string) {
+    if (profession === activeProfession) return;
+
+    const isOwn = profession === myProfession;
+    const alreadyUnlocked = unlock?.professions.includes(profession);
+    const noSlots = !isPro && !isOwn && !alreadyUnlocked && (unlock?.remaining ?? 0) <= 0;
+
+    if (noSlots) {
+      Alert.alert(
+        'Weekly explores used up',
+        `You've opened your ${unlock?.limit ?? 2} free professions this week. Go Pro to explore unlimited professions.`,
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) }
+        ]
+      );
       return;
     }
 
+    if (!isPro && !isOwn && !alreadyUnlocked) {
+      Alert.alert(
+        `Explore ${profession}?`,
+        `This uses 1 of your ${unlock?.remaining ?? 0} free profession explores this week.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Explore', onPress: () => setActiveProfession(profession) }
+        ]
+      );
+      return;
+    }
+
+    setActiveProfession(profession);
+  }
+
+  async function handleSwipe(action: 'like' | 'pass') {
+    if (!current) return;
     try {
-      setIsSubmitting(true);
-      await swipeProfile({ toUserId: current.id, action }, token);
+      setSubmitting(true);
+      const res = await swipeProfile({ toUserId: current.id, action }, token);
       setProfiles((prev) => prev.slice(1));
+      if (action === 'like' && res.matched) {
+        Alert.alert("It's a match! 🎉", `You and ${current.name} liked each other.`);
+      }
     } catch (swipeError) {
-      setError(swipeError.message);
+      Alert.alert('Could not swipe', (swipeError as Error).message);
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   }
 
-  function handleApplyFilters(next: FilterState) {
-    setFilters(next);
-  }
-
-  const activeFilterCount = countActiveFilters(filters);
-
-  if (isLoading) {
-    return (
-      <ScreenContainer>
-        <AppHeader onSettingsPress={() => setShowFilters(true)} />
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.secondary} />
-        </View>
-      </ScreenContainer>
-    );
-  }
+  const isOwnDeck = activeProfession === myProfession;
 
   return (
-    <ScreenContainer>
-      <AppHeader
-        onSettingsPress={() => setShowFilters(true)}
-        trailing={
-          activeFilterCount > 0 ? (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-            </View>
-          ) : null
-        }
-      />
-
-      <Text style={styles.professionTag}>{user?.profession || 'All Professions'}</Text>
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      {!current ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No more profiles right now</Text>
-          <Text style={styles.emptyText}>Check again later for new matches in your profession.</Text>
-          <View style={styles.reloadButton}>
-            <AppButton title="Refresh" onPress={loadProfiles} />
+    <PrismBackground tint={viewingTheme.gradient} bottomInset={false}>
+      <View style={styles.container}>
+        {/* Top bar */}
+        <View style={styles.topBar}>
+          <View>
+            <Text style={styles.brand}>Discover</Text>
+            <Text style={styles.subtitle}>
+              {isOwnDeck ? 'Your profession · always free' : `Exploring ${activeProfession}`}
+            </Text>
+          </View>
+          <View style={styles.topRight}>
+            {isPro ? (
+              <View style={styles.proBadge}>
+                <Text style={styles.proBadgeText}>⭐ PRO</Text>
+              </View>
+            ) : unlock ? (
+              <Pressable
+                style={styles.exploreCounter}
+                onPress={() => navigation.navigate('Paywall', { focus: 'pro' })}
+              >
+                <Text style={styles.exploreCounterText}>🔓 {unlock.remaining} left</Text>
+              </Pressable>
+            ) : null}
+            <Pressable style={styles.filterBtn} onPress={() => setShowFilters(true)}>
+              <Text style={styles.filterIcon}>⚙︎</Text>
+              {activeFilterCount > 0 ? (
+                <View style={styles.filterBadge}>
+                  <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+                </View>
+              ) : null}
+            </Pressable>
           </View>
         </View>
-      ) : (
-        <View style={styles.card}>
-          <Text style={styles.name}>{current.name}{current.age ? `, ${current.age}` : ''}</Text>
-          <Text style={styles.profession}>{current.profession}</Text>
-          <Text style={styles.bio}>{current.bio || 'No bio yet.'}</Text>
 
+        {/* Profession spectrum selector */}
+        <View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {[myProfession, ...PROFESSIONS.filter((p) => p !== myProfession)].map((profession) => {
+              if (!profession) return null;
+              const theme = professionTheme(profession);
+              const active = profession === activeProfession;
+              const isOwn = profession === myProfession;
+              const unlocked = isPro || isOwn || unlock?.professions.includes(profession);
+
+              return (
+                <Pressable key={profession} onPress={() => selectProfession(profession)}>
+                  {active ? (
+                    <LinearGradient
+                      colors={theme.gradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[styles.chip, styles.chipActive]}
+                    >
+                      <Text style={styles.chipEmoji}>{theme.emoji}</Text>
+                      <Text style={styles.chipTextActive}>{profession}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.chip}>
+                      <Text style={styles.chipEmoji}>{theme.emoji}</Text>
+                      <Text style={styles.chipText}>{profession}</Text>
+                      {!unlocked ? <Text style={styles.chipLock}>🔒</Text> : null}
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Card area */}
+        <View style={styles.cardArea}>
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator color={viewingTheme.accent} />
+            </View>
+          ) : locked ? (
+            <View style={styles.stateCard}>
+              <Text style={styles.stateEmoji}>🔒</Text>
+              <Text style={styles.stateTitle}>{activeProfession} is locked</Text>
+              <Text style={styles.stateText}>
+                You've used your free profession explores this week. Go Pro to explore unlimited
+                professions.
+              </Text>
+              <GradientButton
+                title="Go Pro ⭐"
+                onPress={() => navigation.navigate('Paywall', { focus: 'pro' })}
+                style={{ marginTop: spacing.md }}
+              />
+            </View>
+          ) : error ? (
+            <View style={styles.stateCard}>
+              <Text style={styles.stateEmoji}>📡</Text>
+              <Text style={styles.stateTitle}>Couldn't load profiles</Text>
+              <Text style={styles.stateText}>{error}</Text>
+              <Pressable style={styles.refreshLink} onPress={() => load(activeProfession, filters)}>
+                <Text style={styles.refreshLinkText}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : !current ? (
+            <View style={styles.stateCard}>
+              <Text style={styles.stateEmoji}>{viewingTheme.emoji}</Text>
+              <Text style={styles.stateTitle}>You're all caught up</Text>
+              <Text style={styles.stateText}>
+                No more {isOwnDeck ? 'people in your profession' : activeProfession} right now. Check back soon!
+              </Text>
+              <Pressable style={styles.refreshLink} onPress={() => load(activeProfession, filters)}>
+                <Text style={styles.refreshLinkText}>Refresh</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <ProfileCard profile={current} />
+          )}
+        </View>
+
+        {/* Action buttons */}
+        {current && !error && !locked ? (
           <View style={styles.actions}>
-            <View style={styles.actionButton}>
-              <AppButton title={isSubmitting ? '...' : 'Pass'} onPress={() => handleSwipe('pass')} disabled={isSubmitting} />
-            </View>
-            <View style={styles.actionButton}>
-              <AppButton title={isSubmitting ? '...' : 'Like'} onPress={() => handleSwipe('like')} disabled={isSubmitting} />
-            </View>
+            <Pressable
+              style={[styles.actionBtn, styles.passBtn]}
+              onPress={() => handleSwipe('pass')}
+              disabled={submitting}
+            >
+              <Text style={styles.passIcon}>✕</Text>
+            </Pressable>
+            <Pressable onPress={() => handleSwipe('like')} disabled={submitting}>
+              <LinearGradient
+                colors={viewingTheme.gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.actionBtn, styles.likeBtn]}
+              >
+                <Text style={styles.likeIcon}>♥</Text>
+              </LinearGradient>
+            </Pressable>
           </View>
-        </View>
-      )}
+        ) : null}
+      </View>
 
       <FilterModal
         visible={showFilters}
         onClose={() => setShowFilters(false)}
         filters={filters}
-        onApply={handleApplyFilters}
+        onApply={setFilters}
       />
-    </ScreenContainer>
+    </PrismBackground>
   );
 }
 
-function countActiveFilters(filters: FilterState) {
-  const defaults = DEFAULT_FILTERS as FilterState;
-  let count = 0;
-  if (filters.ageRange[0] !== defaults.ageRange[0] || filters.ageRange[1] !== defaults.ageRange[1]) count++;
-  if (filters.distance !== defaults.distance) count++;
-  if (filters.gender !== defaults.gender) count++;
-  if (filters.activity !== defaults.activity) count++;
-  if (filters.verified !== defaults.verified) count++;
-  if (filters.lookingFor.length > 0) count++;
-  if (!filters.showProfessionOnly && filters.professions.length > 0) count++;
-  if (filters.showProfessionOnly !== defaults.showProfessionOnly) count++;
-  return count;
+function ProfileCard({ profile }: { profile: DiscoverProfile }) {
+  const theme = professionTheme(profile.profession);
+  const photo = profile.photos && profile.photos.length > 0 ? profile.photos[0] : null;
+
+  return (
+    <View style={styles.card}>
+      {photo ? (
+        <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : (
+        <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <View style={styles.cardEmojiWrap}>
+            <Text style={styles.cardBigEmoji}>{theme.emoji}</Text>
+          </View>
+        </LinearGradient>
+      )}
+
+      <LinearGradient colors={['transparent', 'rgba(8,12,24,0.92)']} style={styles.cardOverlay}>
+        <ProfessionBadge profession={profile.profession} />
+        <Text style={styles.cardName}>
+          {profile.name}
+          {profile.age ? `, ${profile.age}` : ''}
+        </Text>
+        {profile.headline ? <Text style={styles.cardHeadline}>{profile.headline}</Text> : null}
+        {profile.bio ? (
+          <Text style={styles.cardBio} numberOfLines={3}>
+            {profile.bio}
+          </Text>
+        ) : null}
+        {profile.location ? <Text style={styles.cardLocation}>📍 {profile.location}</Text> : null}
+      </LinearGradient>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  professionTag: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-    backgroundColor: '#FDEEE8',
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginBottom: spacing.md
-  },
-  filterBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
+  container: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    position: 'absolute',
-    top: -6,
-    right: -6
-  },
-  filterBadgeText: {
-    color: colors.white,
-    fontSize: 11,
-    fontWeight: '800'
-  },
-  error: {
-    color: '#FCA5A5',
     marginBottom: spacing.md
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
+  brand: { fontSize: 28, fontWeight: '900', color: colors.text, letterSpacing: -0.6 },
+  subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
+  proBadge: {
+    backgroundColor: '#FFF7E6',
+    borderWidth: 1,
+    borderColor: '#F5C56B',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  proBadgeText: { fontWeight: '900', color: '#B45309', fontSize: 12 },
+  exploreCounter: {
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  exploreCounterText: { fontWeight: '800', color: colors.text, fontSize: 12 },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  filterBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  filterIcon: { fontSize: 18, color: colors.text },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4
+  },
+  filterBadgeText: { color: colors.white, fontSize: 10, fontWeight: '900' },
+  chipRow: { gap: spacing.xs, paddingVertical: spacing.xs, paddingRight: spacing.lg },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9
+  },
+  chipActive: { borderWidth: 0 },
+  chipEmoji: { fontSize: 14, marginRight: 6 },
+  chipText: { fontWeight: '700', color: colors.textMuted, fontSize: 13 },
+  chipTextActive: { fontWeight: '800', color: colors.white, fontSize: 13 },
+  chipLock: { fontSize: 11, marginLeft: 6 },
+  cardArea: { flex: 1, marginTop: spacing.md, marginBottom: spacing.md },
+  card: {
+    flex: 1,
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: colors.card,
+    shadowColor: '#16324F',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 22,
+    elevation: 8
+  },
+  cardEmojiWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  cardBigEmoji: { fontSize: 120, opacity: 0.55 },
+  cardOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     padding: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 1
+    paddingTop: spacing.xxl,
+    gap: 6
   },
-  name: {
-    ...typography.subtitle,
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.xs
+  cardName: { color: colors.white, fontSize: 28, fontWeight: '900', letterSpacing: -0.5, marginTop: 6 },
+  cardHeadline: { color: 'rgba(255,255,255,0.95)', fontSize: 15, fontWeight: '700' },
+  cardBio: { color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 20, marginTop: 2 },
+  cardLocation: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  stateCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl
   },
-  profession: {
-    ...typography.body,
-    color: colors.secondary,
-    fontWeight: '600',
-    marginBottom: spacing.sm
-  },
-  bio: {
-    ...typography.caption,
-    color: colors.textMuted,
-    lineHeight: 20,
-    marginBottom: spacing.lg
-  },
+  stateEmoji: { fontSize: 64, marginBottom: spacing.md },
+  stateTitle: { ...typography.subtitle, fontWeight: '900', color: colors.text, marginBottom: spacing.xs },
+  stateText: { ...typography.caption, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  refreshLink: { marginTop: spacing.md },
+  refreshLinkText: { color: colors.primary, fontWeight: '800' },
   actions: {
     flexDirection: 'row',
-    gap: spacing.sm
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.xl,
+    paddingBottom: spacing.md
   },
-  actionButton: {
-    flex: 1
+  actionBtn: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#16324F',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6
   },
-  empty: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    padding: spacing.lg
-  },
-  emptyTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.xs
-  },
-  emptyText: {
-    ...typography.caption,
-    color: colors.textMuted
-  },
-  reloadButton: {
-    marginTop: spacing.md
-  }
+  passBtn: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  passIcon: { fontSize: 28, color: colors.textMuted, fontWeight: '700' },
+  likeBtn: {},
+  likeIcon: { fontSize: 30, color: colors.white }
 });

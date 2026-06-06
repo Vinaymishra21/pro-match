@@ -1,13 +1,27 @@
-import React, { type ReactNode } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { type ReactNode } from 'react';
+import { Platform, StatusBar, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
-export function ScreenContainer({ children }: { children: ReactNode }) {
+// Note: we use safe-area-context insets (not RN's SafeAreaView, which is a
+// no-op on Android) plus an Android status-bar-height fallback, so content
+// never slides under the clock/notch on either platform.
+export function ScreenContainer({
+  children,
+  bottomInset = true
+}: {
+  children: ReactNode;
+  // Tab screens set this false — the tab bar already reserves the bottom area.
+  bottomInset?: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  const topPad = Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: topPad, paddingBottom: bottomInset ? insets.bottom : 0 }]}>
       <View style={styles.content}>{children}</View>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -6,16 +6,16 @@ import { useAuth } from '../hooks/useAuth';
 import { MainTabNavigator } from './MainTabNavigator';
 import { AuthNavigator } from './AuthNavigator';
 import { ChatScreen } from '../screens/chat/ChatScreen';
+import { PaywallScreen } from '../screens/billing/PaywallScreen';
 import { colors } from '../theme/colors';
 import type { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const SKIP_AUTH_FOR_TESTING = true;
 
 export function RootNavigator() {
   const { user, isLoading } = useAuth();
   const hasAccess = Boolean(user);
-  const needsProfessionSetup = !SKIP_AUTH_FOR_TESTING && Boolean(user) && !user.profession;
+  const needsProfessionSetup = Boolean(user) && !user.profession;
 
   if (isLoading) {
     return <SplashScreen onComplete={() => {}} />;
@@ -44,6 +44,11 @@ export function RootNavigator() {
               headerTintColor: colors.text,
               title: 'Chat'
             }}
+          />
+          <Stack.Screen
+            name="Paywall"
+            component={PaywallScreen}
+            options={{ presentation: 'modal' }}
           />
         </>
       )}

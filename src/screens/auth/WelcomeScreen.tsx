@@ -1,6 +1,9 @@
 import React from 'react';
-import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useAuth } from '../../hooks/useAuth';
+import { DEV_BYPASS_AUTH } from '../../constants/config';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import type { AuthStackParamList } from '../../types';
@@ -11,8 +14,19 @@ const HERO_IMAGE =
   'https://storage.googleapis.com/banani-generated-images/generated-images/3d16cfdd-18b6-4b1a-a8e2-4a608184d399.jpg';
 
 export function WelcomeScreen({ navigation }: Props) {
+  const { devBypass } = useAuth();
+
+  async function handleDevSkip() {
+    try {
+      await devBypass();
+    } catch (error) {
+      Alert.alert('Dev login failed', `${(error as Error).message}\n\nIs the backend running?`);
+    }
+  }
+
   return (
     <ImageBackground source={{ uri: HERO_IMAGE }} style={styles.screen} imageStyle={styles.backgroundImage}>
+      <StatusBar style="light" />
       <View style={styles.overlay} />
 
       <View style={styles.content}>
@@ -42,6 +56,12 @@ export function WelcomeScreen({ navigation }: Props) {
           >
             <Text style={styles.secondaryLabel}>I have an account</Text>
           </Pressable>
+
+          {DEV_BYPASS_AUTH ? (
+            <Pressable style={styles.devButton} onPress={handleDevSkip}>
+              <Text style={styles.devLabel}>Skip login (dev)</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </ImageBackground>
@@ -147,5 +167,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: 0.1
+  },
+  devButton: {
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderStyle: 'dashed'
+  },
+  devLabel: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 13,
+    fontWeight: '600'
   }
 });

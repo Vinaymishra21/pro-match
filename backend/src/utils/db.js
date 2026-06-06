@@ -1,31 +1,31 @@
-const fs = require('fs');
-const path = require('path');
+const mongoose = require('mongoose');
 
-const DB_PATH = path.join(__dirname, '..', '..', 'data', 'db.json');
+let isConnected = false;
 
-function ensureDbFile() {
-  if (!fs.existsSync(DB_PATH)) {
-    const initialDb = {
-      users: [],
-      swipes: [],
-      matches: [],
-      messages: []
-    };
-    fs.writeFileSync(DB_PATH, JSON.stringify(initialDb, null, 2), 'utf-8');
+async function connectDb() {
+  if (isConnected) {
+    return mongoose.connection;
   }
-}
 
-function readDb() {
-  ensureDbFile();
-  const raw = fs.readFileSync(DB_PATH, 'utf-8');
-  return JSON.parse(raw);
-}
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error(
+      'MONGODB_URI is not set. Add it to backend/.env (e.g. a free MongoDB Atlas cluster or mongodb://127.0.0.1:27017/promatch).'
+    );
+  }
 
-function writeDb(nextDb) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(nextDb, null, 2), 'utf-8');
+  mongoose.set('strictQuery', true);
+  await mongoose.connect(uri);
+  isConnected = true;
+
+  mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err.message);
+  });
+
+  console.log('Connected to MongoDB');
+  return mongoose.connection;
 }
 
 module.exports = {
-  readDb,
-  writeDb
+  connectDb
 };

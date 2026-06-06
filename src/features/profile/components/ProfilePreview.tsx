@@ -91,6 +91,7 @@ export function ProfilePreview({ form, profession }) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Quick facts</Text>
         <Row label="Location" value={form.location} icon={'\uD83D\uDCCD'} />
+        <Row label="Gender" value={form.gender} icon={'\uD83E\uDDD1'} />
         <Row label="Looking for" value={form.lookingFor} icon={'\u2764\uFE0F'} />
         <Row label="Job" value={form.jobTitle} icon={'\uD83D\uDCBC'} />
         <Row label="Company" value={form.company} icon={'\uD83C\uDFE2'} />

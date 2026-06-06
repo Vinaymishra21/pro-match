@@ -10,17 +10,14 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { AuthMethod, AuthMode, AuthStackParamList } from '../../types';
 
-const SKIP_AUTH_FOR_TESTING = true;
-
 type Props = NativeStackScreenProps<AuthStackParamList, 'Auth'>;
 
-export function AuthScreen({ route }: Props) {
-  const { signIn, signUp, updateLocalUser } = useAuth();
+export function AuthScreen({ route, navigation }: Props) {
+  const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<AuthMode>(route.params?.initialMode ?? 'login');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('email');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,26 +25,19 @@ export function AuthScreen({ route }: Props) {
   const isRegister = mode === 'register';
   const isPhone = authMethod === 'phone';
 
-  const isDisabled = !SKIP_AUTH_FOR_TESTING && (
-    isSubmitting ||
-    (isPhone ? !phone : (!email || !password)) ||
-    (isRegister && !name)
-  );
+  const isDisabled =
+    isSubmitting || (isPhone ? false : !email || !password || (isRegister && !name));
 
   async function handleSubmit() {
+    // Phone sign-in uses the dedicated OTP flow.
+    if (isPhone) {
+      navigation.navigate('PhoneEntry');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setError('');
-
-      if (SKIP_AUTH_FOR_TESTING) {
-        await updateLocalUser({
-          name: name || 'Test User',
-          email: isPhone ? '' : (email || 'test@promatch.app'),
-          phone: isPhone ? (phone || '+91 9999999999') : '',
-          profession: 'Not set'
-        });
-        return;
-      }
 
       if (isRegister) {
         await signUp({ name, email, password });
@@ -55,7 +45,7 @@ export function AuthScreen({ route }: Props) {
         await signIn({ email, password });
       }
     } catch (submitError) {
-      setError(submitError.message);
+      setError((submitError as Error).message);
     } finally {
       setIsSubmitting(false);
     }
@@ -84,12 +74,9 @@ export function AuthScreen({ route }: Props) {
       {isRegister ? <AppInput value={name} onChangeText={setName} placeholder="Full name" /> : null}
 
       {isPhone ? (
-        <AppInput
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Phone number"
-          keyboardType="phone-pad"
-        />
+        <Text style={styles.phoneHint}>
+          We&apos;ll verify your number with a one-time code on the next screen.
+        </Text>
       ) : (
         <>
           <AppInput
@@ -111,7 +98,15 @@ export function AuthScreen({ route }: Props) {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <AppButton
-        title={isSubmitting ? 'Please wait...' : isRegister ? 'Register' : 'Login'}
+        title={
+          isSubmitting
+            ? 'Please wait...'
+            : isPhone
+            ? 'Continue'
+            : isRegister
+            ? 'Register'
+            : 'Login'
+        }
         onPress={handleSubmit}
         disabled={isDisabled}
       />
@@ -166,6 +161,11 @@ const styles = StyleSheet.create({
   },
   methodLabelActive: {
     color: colors.white
+  },
+  phoneHint: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginBottom: spacing.md
   },
   error: {
     color: '#FCA5A5',

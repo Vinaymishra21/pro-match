@@ -1,7 +1,15 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getMe, login, register } from '../services/apiService';
-import type { AuthContextValue, AuthPayload, AuthResponse, User } from '../types';
+import {
+  getMe,
+  login,
+  register,
+  requestOtp as requestOtpApi,
+  verifyOtp as verifyOtpApi
+} from '../services/apiService';
+import { DEV_BYPASS_PHONE, DEV_OFFLINE_USER } from '../constants/config';
+import { registerForPushNotifications } from '../services/push';
+import type { AuthContextValue, AuthPayload, AuthResponse, OtpRequestResponse, User } from '../types';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -28,6 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const fresh = await getMe(storedToken);
           setUser(fresh.user);
           await AsyncStorage.setItem(USER_KEY, JSON.stringify(fresh.user));
+          // Refresh push registration for the restored session.
+          registerForPushNotifications(storedToken);
         }
       } catch (error) {
         await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
@@ -44,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(payload.user);
     await AsyncStorage.setItem(TOKEN_KEY, payload.token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+    // Register this device for push notifications (non-blocking).
+    registerForPushNotifications(payload.token);
   }, []);
 
   const signUp = useCallback(
@@ -63,6 +75,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [onAuthSuccess]
   );
+
+  const requestOtp = useCallback(
+    (phone: string): Promise<OtpRequestResponse> => requestOtpApi(phone),
+    []
+  );
+
+  const verifyOtp = useCallback(
+    async (phone: string, code: string) => {
+      const response = await verifyOtpApi(phone, code);
+      await onAuthSuccess(response);
+      return response.user;
+    },
+    [onAuthSuccess]
+  );
+
+  // Dev-only shortcut: runs the real OTP flow against the backend dev code so
+  // we end up with a valid token and a real user record.
+  const devBypass = useCallback(async () => {
+    // Try the real backend dev-OTP flow first (gives a valid token + live data).
+    try {
+      await requestOtpApi(DEV_BYPASS_PHONE);
+      const response = await verifyOtpApi(DEV_BYPASS_PHONE, '123456');
+      await onAuthSuccess(response);
+      return response.user;
+    } catch {
+      // Backend/MongoDB not running — fall back to a fully-offline fake user so
+      // the design can be reviewed in Expo with no setup. No token is set, so
+      // API-backed screens will simply show their empty/error states.
+      await updateLocalUser(DEV_OFFLINE_USER);
+      return DEV_OFFLINE_USER;
+    }
+  }, [onAuthSuccess]);
 
   const refreshUser = useCallback(async () => {
     if (!token) {
@@ -97,11 +141,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       signUp,
       signIn,
+      requestOtp,
+      verifyOtp,
+      devBypass,
       signOut,
       refreshUser,
       updateLocalUser
     }),
-    [token, user, isLoading, signUp, signIn, signOut, refreshUser, updateLocalUser]
+    [
+      token,
+      user,
+      isLoading,
+      signUp,
+      signIn,
+      requestOtp,
+      verifyOtp,
+      devBypass,
+      signOut,
+      refreshUser,
+      updateLocalUser
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

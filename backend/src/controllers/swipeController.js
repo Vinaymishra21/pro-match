@@ -1,7 +1,8 @@
-const { v4: uuidv4 } = require('uuid');
-const { readDb, writeDb } = require('../utils/db');
+const { User, Swipe, Match } = require('../models');
+const { sendPush } = require('../utils/push');
+const { isProActive, getWeeklyUnlockState } = require('../utils/entitlements');
 
-function upsertSwipe(req, res) {
+async function upsertSwipe(req, res) {
   const { toUserId, action } = req.body;
   const fromUserId = req.auth.id;
 
@@ -9,87 +10,108 @@ function upsertSwipe(req, res) {
     return res.status(400).json({ message: 'toUserId and valid action are required' });
   }
 
-  const db = readDb();
-  const me = db.users.find((u) => u.id === fromUserId);
-  const target = db.users.find((u) => u.id === toUserId);
+  const [me, target] = await Promise.all([
+    User.findById(fromUserId),
+    User.findById(toUserId)
+  ]);
 
   if (!me || !target) {
     return res.status(404).json({ message: 'User not found' });
   }
 
-  if (!me.profession || me.profession !== target.profession) {
-    return res.status(400).json({ message: 'You can only swipe users with the same profession' });
+  if (!me.profession) {
+    return res.status(400).json({ message: 'Set your profession before swiping' });
   }
 
-  const existing = db.swipes.find(
-    (s) => s.fromUserId === fromUserId && s.toUserId === toUserId
+  // Same-profession is always allowed. Cross-profession swiping is allowed only
+  // for the decks the user can access (Pro, or unlocked this week) — this stops
+  // a client from liking outside professions it never paid to explore.
+  const crossProfession = target.profession !== me.profession;
+  if (crossProfession) {
+    const hasAccess =
+      isProActive(me) || getWeeklyUnlockState(me).professions.includes(target.profession);
+    if (!hasAccess) {
+      return res.status(403).json({
+        message: 'Unlock this profession to like people in it.',
+        code: 'PROFESSION_LOCKED'
+      });
+    }
+  }
+
+  await Swipe.findOneAndUpdate(
+    { fromUserId, toUserId },
+    { fromUserId, toUserId, action, crossProfession },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
   );
-
-  if (existing) {
-    existing.action = action;
-    existing.updatedAt = new Date().toISOString();
-  } else {
-    db.swipes.push({
-      id: uuidv4(),
-      fromUserId,
-      toUserId,
-      action,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-  }
 
   let match = null;
 
   if (action === 'like') {
-    const reciprocalLike = db.swipes.find(
-      (s) => s.fromUserId === toUserId && s.toUserId === fromUserId && s.action === 'like'
-    );
+    const reciprocalLike = await Swipe.findOne({
+      fromUserId: toUserId,
+      toUserId: fromUserId,
+      action: 'like'
+    });
 
     if (reciprocalLike) {
-      const alreadyMatched = db.matches.find(
-        (m) =>
-          (m.userA === fromUserId && m.userB === toUserId) ||
-          (m.userA === toUserId && m.userB === fromUserId)
-      );
+      match = await Match.findOne({
+        $or: [
+          { userA: fromUserId, userB: toUserId },
+          { userA: toUserId, userB: fromUserId }
+        ]
+      });
 
-      if (!alreadyMatched) {
-        match = {
-          id: uuidv4(),
-          userA: fromUserId,
-          userB: toUserId,
-          createdAt: new Date().toISOString()
-        };
-        db.matches.push(match);
-      } else {
-        match = alreadyMatched;
+      if (!match) {
+        match = await Match.create({ userA: fromUserId, userB: toUserId, crossProfession });
+
+        // It's a brand-new mutual match — notify both people.
+        if (me.pushToken) {
+          sendPush(me.pushToken, {
+            title: "It's a match! 🎉",
+            body: `You and ${target.name} both liked each other.`,
+            data: { type: 'match', matchId: String(match.id) }
+          }).catch((err) => console.warn('match push failed:', err.message));
+        }
+        if (target.pushToken) {
+          sendPush(target.pushToken, {
+            title: "It's a match! 🎉",
+            body: `You and ${me.name} both liked each other.`,
+            data: { type: 'match', matchId: String(match.id) }
+          }).catch((err) => console.warn('match push failed:', err.message));
+        }
       }
     }
   }
 
-  writeDb(db);
-  return res.json({ matched: Boolean(match), match });
+  return res.json({ matched: Boolean(match), match: match ? match.toJSON() : null });
 }
 
-function getMatches(req, res) {
-  const db = readDb();
+async function getMatches(req, res) {
   const userId = req.auth.id;
 
-  const userMatches = db.matches
-    .filter((m) => m.userA === userId || m.userB === userId)
+  const matches = await Match.find({
+    $or: [{ userA: userId }, { userB: userId }]
+  })
+    .populate('userA', 'name profession bio photos')
+    .populate('userB', 'name profession bio photos')
+    .sort({ createdAt: -1 });
+
+  const userMatches = matches
     .map((m) => {
-      const otherId = m.userA === userId ? m.userB : m.userA;
-      const otherUser = db.users.find((u) => u.id === otherId);
+      const other =
+        String(m.userA._id) === String(userId) ? m.userB : m.userA;
 
       return {
         id: m.id,
         createdAt: m.createdAt,
-        user: otherUser
+        crossProfession: Boolean(m.crossProfession),
+        user: other
           ? {
-              id: otherUser.id,
-              name: otherUser.name,
-              profession: otherUser.profession,
-              bio: otherUser.bio
+              id: other.id,
+              name: other.name,
+              profession: other.profession,
+              bio: other.bio,
+              photos: other.photos || []
             }
           : null
       };

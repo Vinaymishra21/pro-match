@@ -5,6 +5,17 @@ export const lookingForOptions = [
   'Still figuring it out'
 ];
 
+// Inclusive identity options used for the profile gender dropdown and the
+// "interested in" match preference.
+export const genderOptions = [
+  'Man',
+  'Woman',
+  'Non-binary',
+  'Transgender',
+  'Genderfluid',
+  'Other'
+];
+
 export const professionLoveOptions = ['It pays the bills', 'I like it', 'I love it', "It's my calling"];
 
 export const drinkingOptions = ['Never', 'Sometimes', 'Socially', 'Often'];

@@ -1,30 +1,36 @@
 import React from 'react';
-import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../hooks/useAuth';
+import { DEV_BYPASS_AUTH } from '../../constants/config';
 import { colors } from '../../theme/colors';
 import type { AuthStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SignUpMethod'>;
 
-const SKIP_AUTH_FOR_TESTING = true;
 const HERO_IMAGE =
   'https://storage.googleapis.com/banani-generated-images/generated-images/3d16cfdd-18b6-4b1a-a8e2-4a608184d399.jpg';
 
 export function SignUpMethodScreen({ navigation }: Props) {
-  const { updateLocalUser } = useAuth();
+  const { devBypass } = useAuth();
 
-  async function handleTestLogin() {
-    if (SKIP_AUTH_FOR_TESTING) {
-      await updateLocalUser({
-        name: 'Test User',
-        email: 'test@promatch.app',
-        profession: 'Not set'
-      });
+  // In dev, social buttons fast-track login via the backend dev OTP.
+  // In production they'll be wired to real OAuth (not yet implemented).
+  async function handleSocial() {
+    if (DEV_BYPASS_AUTH) {
+      try {
+        await devBypass();
+      } catch (error) {
+        Alert.alert('Dev login failed', (error as Error).message);
+      }
+      return;
     }
+    Alert.alert('Coming soon', 'Social sign up is not available yet. Please use your phone number.');
   }
   return (
     <ImageBackground source={{ uri: HERO_IMAGE }} style={styles.screen} imageStyle={styles.backgroundImage}>
+      <StatusBar style="light" />
       <View style={styles.overlay} />
 
       <View style={styles.content}>
@@ -54,7 +60,7 @@ export function SignUpMethodScreen({ navigation }: Props) {
 
           <Pressable
             style={({ pressed }) => [styles.methodButton, styles.googleButton, pressed && styles.buttonPressed]}
-            onPress={handleTestLogin}
+            onPress={handleSocial}
           >
             <View style={[styles.methodIcon, styles.googleIcon]}>
               <Text style={styles.methodIconText}>G</Text>
@@ -68,7 +74,7 @@ export function SignUpMethodScreen({ navigation }: Props) {
 
           <Pressable
             style={({ pressed }) => [styles.methodButton, styles.facebookButton, pressed && styles.buttonPressed]}
-            onPress={handleTestLogin}
+            onPress={handleSocial}
           >
             <View style={[styles.methodIcon, styles.facebookIcon]}>
               <Text style={styles.methodIconText}>f</Text>

@@ -18,6 +18,7 @@ const fieldChecks = [
   { key: 'bio', label: 'Write your bio', value: (form) => form.bio, priority: 2 },
   { key: 'professionWhy', label: 'Answer profession why', value: (form) => form.professionWhy, priority: 1 },
   { key: 'professionLoveLevel', label: 'Set profession love level', value: (form) => form.professionLoveLevel, priority: 2 },
+  { key: 'gender', label: 'Add your gender', value: (form) => form.gender, priority: 2 },
   { key: 'lookingFor', label: 'Choose dating goal', value: (form) => form.lookingFor, priority: 2 },
   { key: 'interests', label: 'Add interests', value: (form) => (form.interests || []).length > 0, priority: 2 },
   { key: 'location', label: 'Add location', value: (form) => form.location, priority: 3 }
@@ -29,6 +30,7 @@ export function getProfileCompletion(form: ProfileForm): ProfileCompletion {
     form.age,
     form.bio,
     form.location,
+    form.gender,
     form.lookingFor,
     form.jobTitle,
     form.company,

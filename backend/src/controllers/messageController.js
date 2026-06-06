@@ -1,29 +1,56 @@
-const { v4: uuidv4 } = require('uuid');
-const { readDb, writeDb } = require('../utils/db');
+const { Match, Message, User } = require('../models');
+const { emitNewMessage } = require('../realtime/io');
+const { sendPush } = require('../utils/push');
+const { isProActive } = require('../utils/entitlements');
 
-function getMessages(req, res) {
+function isParticipant(match, userId) {
+  return (
+    String(match.userA) === String(userId) || String(match.userB) === String(userId)
+  );
+}
+
+// Cross-profession matches require Pro to open the conversation. Returns the
+// requesting user document (loaded once) when allowed, or sends a 403 and
+// returns null when blocked.
+async function ensureChatAllowed(match, userId, res) {
+  if (!match.crossProfession) {
+    return true;
+  }
+  const user = await User.findById(userId);
+  if (!isProActive(user)) {
+    res.status(403).json({
+      message: 'Upgrade to Pro to chat with matches from other professions.',
+      code: 'PRO_REQUIRED'
+    });
+    return false;
+  }
+  return true;
+}
+
+async function getMessages(req, res) {
   const { matchId } = req.params;
   const userId = req.auth.id;
 
-  const db = readDb();
-  const match = db.matches.find((m) => m.id === matchId);
+  const match = await Match.findById(matchId);
 
   if (!match) {
     return res.status(404).json({ message: 'Match not found' });
   }
 
-  if (match.userA !== userId && match.userB !== userId) {
+  if (!isParticipant(match, userId)) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
-  const messages = db.messages
-    .filter((msg) => msg.matchId === matchId)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  if (!(await ensureChatAllowed(match, userId, res))) {
+    return undefined;
+  }
 
-  return res.json({ messages });
+  const messages = await Message.find({ matchId }).sort({ createdAt: 1 });
+
+  return res.json({ messages: messages.map((m) => m.toJSON()) });
 }
 
-function sendMessage(req, res) {
+async function sendMessage(req, res) {
   const { matchId } = req.params;
   const { text } = req.body;
   const userId = req.auth.id;
@@ -32,29 +59,48 @@ function sendMessage(req, res) {
     return res.status(400).json({ message: 'Message text is required' });
   }
 
-  const db = readDb();
-  const match = db.matches.find((m) => m.id === matchId);
+  const match = await Match.findById(matchId);
 
   if (!match) {
     return res.status(404).json({ message: 'Match not found' });
   }
 
-  if (match.userA !== userId && match.userB !== userId) {
+  if (!isParticipant(match, userId)) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
-  const message = {
-    id: uuidv4(),
+  if (!(await ensureChatAllowed(match, userId, res))) {
+    return undefined;
+  }
+
+  const message = await Message.create({
     matchId,
     senderId: userId,
-    text: text.trim(),
-    createdAt: new Date().toISOString()
-  };
+    text: text.trim()
+  });
 
-  db.messages.push(message);
-  writeDb(db);
+  match.lastMessageAt = message.createdAt;
+  await match.save();
 
-  return res.status(201).json({ message });
+  const payload = message.toJSON();
+  // Broadcast to the match room so the other participant gets it in real time.
+  emitNewMessage(matchId, payload);
+
+  // Push-notify the recipient (fire-and-forget; never blocks the response).
+  const recipientId = String(match.userA) === String(userId) ? match.userB : match.userA;
+  Promise.all([User.findById(recipientId), User.findById(userId)])
+    .then(([recipient, sender]) => {
+      if (recipient?.pushToken) {
+        return sendPush(recipient.pushToken, {
+          title: sender?.name || 'New message',
+          body: text.trim().slice(0, 120),
+          data: { type: 'message', matchId: String(matchId) }
+        });
+      }
+    })
+    .catch((err) => console.warn('message push failed:', err.message));
+
+  return res.status(201).json({ message: payload });
 }
 
 module.exports = {
