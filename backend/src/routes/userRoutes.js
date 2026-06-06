@@ -5,7 +5,10 @@ const {
   updatePushToken,
   updateProfession,
   verifyProfession,
-  updateProfile
+  updateProfile,
+  deactivateAccount,
+  reactivateAccount,
+  deleteAccount
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -15,5 +18,8 @@ router.patch('/push-token', authGuard, updatePushToken);
 router.patch('/profession', authGuard, updateProfession);
 router.post('/verify-profession', authGuard, verifyProfession);
 router.patch('/me', authGuard, updateProfile);
+router.post('/deactivate', authGuard, deactivateAccount);
+router.post('/reactivate', authGuard, reactivateAccount);
+router.delete('/me', authGuard, deleteAccount);
 
 module.exports = router;

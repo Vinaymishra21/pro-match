@@ -7,6 +7,7 @@ import { MainTabNavigator } from './MainTabNavigator';
 import { AuthNavigator } from './AuthNavigator';
 import { ChatScreen } from '../screens/chat/ChatScreen';
 import { PaywallScreen } from '../screens/billing/PaywallScreen';
+import { SettingsScreen } from '../screens/main/SettingsScreen';
 import { colors } from '../theme/colors';
 import type { RootStackParamList } from '../types';
 
@@ -50,6 +51,7 @@ export function RootNavigator() {
             component={PaywallScreen}
             options={{ presentation: 'modal' }}
           />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
         </>
       )}
     </Stack.Navigator>

@@ -232,6 +232,8 @@ export interface AuthContextValue {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateLocalUser: (nextUser: User | null) => Promise<void>;
+  deactivateAccount: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 export type AuthStackParamList = {
@@ -269,4 +271,5 @@ export type RootStackParamList = {
         focus?: 'pro' | 'credits';
       }
     | undefined;
+  Settings: undefined;
 };

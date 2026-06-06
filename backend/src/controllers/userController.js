@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, Swipe, Match, Message, Reveal, Report } = require('../models');
 const { sanitizeUser } = require('../utils/auth');
 
 async function getMe(req, res) {
@@ -195,10 +195,64 @@ async function updateProfile(req, res) {
   return res.json({ user: sanitizeUser(user) });
 }
 
+// POST /users/deactivate — hide the account everywhere; reversible on next login.
+async function deactivateAccount(req, res) {
+  const user = await User.findById(req.auth.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  user.isDeactivated = true;
+  user.deactivatedAt = new Date();
+  await user.save();
+
+  return res.json({ ok: true });
+}
+
+// POST /users/reactivate — un-hide. Called automatically on login (see auth),
+// but also exposed for an explicit "welcome back" action.
+async function reactivateAccount(req, res) {
+  const user = await User.findById(req.auth.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  user.isDeactivated = false;
+  user.deactivatedAt = null;
+  await user.save();
+
+  return res.json({ user: sanitizeUser(user) });
+}
+
+// DELETE /users/me — permanent deletion. Cascades all of the user's data so
+// nothing dangles (GDPR + app-store requirement).
+async function deleteAccount(req, res) {
+  const meId = req.auth.id;
+
+  const myMatches = await Match.find({ $or: [{ userA: meId }, { userB: meId }] }).select('_id');
+  const myMatchIds = myMatches.map((m) => m._id);
+
+  await Promise.all([
+    User.deleteOne({ _id: meId }),
+    Swipe.deleteMany({ $or: [{ fromUserId: meId }, { toUserId: meId }] }),
+    Match.deleteMany({ $or: [{ userA: meId }, { userB: meId }] }),
+    Message.deleteMany({ $or: [{ matchId: { $in: myMatchIds } }, { senderId: meId }] }),
+    Reveal.deleteMany({ $or: [{ userId: meId }, { likerId: meId }] }),
+    Report.deleteMany({ reporter: meId }),
+    // Remove me from anyone else's block lists so I don't linger as a dead ref.
+    User.updateMany({ blockedUsers: meId }, { $pull: { blockedUsers: meId } })
+  ]);
+
+  return res.json({ ok: true });
+}
+
 module.exports = {
   getMe,
   updatePushToken,
   updateProfession,
   verifyProfession,
-  updateProfile
+  updateProfile,
+  deactivateAccount,
+  reactivateAccount,
+  deleteAccount
 };

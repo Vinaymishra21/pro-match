@@ -57,7 +57,9 @@ async function getDiscover(req, res) {
   // --- Build the query: profession (core USP) + optional filters ---------
   const query = {
     _id: { $ne: me.id, $nin: excludeIds },
-    profession: requested
+    profession: requested,
+    // Never surface deactivated accounts.
+    isDeactivated: { $ne: true }
   };
 
   // Age range filter.

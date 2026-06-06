@@ -5,7 +5,9 @@ import {
   login,
   register,
   requestOtp as requestOtpApi,
-  verifyOtp as verifyOtpApi
+  verifyOtp as verifyOtpApi,
+  deactivateAccount as deactivateAccountApi,
+  deleteAccount as deleteAccountApi
 } from '../services/apiService';
 import { DEV_BYPASS_PHONE, DEV_OFFLINE_USER } from '../constants/config';
 import { registerForPushNotifications } from '../services/push';
@@ -134,6 +136,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
   }, []);
 
+  // Deactivate (reversible): hide the account, then sign out locally. Logging
+  // back in reactivates it server-side.
+  const deactivateAccount = useCallback(async () => {
+    if (token) {
+      await deactivateAccountApi(token);
+    }
+    await signOut();
+  }, [token, signOut]);
+
+  // Delete (permanent): wipe the account server-side, then sign out locally.
+  const deleteAccount = useCallback(async () => {
+    if (token) {
+      await deleteAccountApi(token);
+    }
+    await signOut();
+  }, [token, signOut]);
+
   const value = useMemo(
     () => ({
       token,
@@ -146,7 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       devBypass,
       signOut,
       refreshUser,
-      updateLocalUser
+      updateLocalUser,
+      deactivateAccount,
+      deleteAccount
     }),
     [
       token,
@@ -159,7 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       devBypass,
       signOut,
       refreshUser,
-      updateLocalUser
+      updateLocalUser,
+      deactivateAccount,
+      deleteAccount
     ]
   );
 

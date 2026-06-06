@@ -71,6 +71,11 @@ const userSchema = new Schema(
     // intent but hides BOTH ways (neither sees the other in discovery/matches).
     blockedUsers: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
 
+    // Account state: deactivated accounts are hidden everywhere but recoverable
+    // (logging back in reactivates). Deletion is a separate, permanent action.
+    isDeactivated: { type: Boolean, default: false, index: true },
+    deactivatedAt: { type: Date, default: null },
+
     // Profession verification (Phase 1.2/2)
     professionVerified: { type: Boolean, default: false },
 

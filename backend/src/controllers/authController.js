@@ -125,6 +125,11 @@ async function verifyOtp(req, res) {
   if (!user) {
     isNewUser = true;
     user = await User.create({ name: 'New User', phone });
+  } else if (user.isDeactivated) {
+    // Logging back in reactivates a deactivated account ("welcome back").
+    user.isDeactivated = false;
+    user.deactivatedAt = null;
+    await user.save();
   }
 
   const token = createToken(user);

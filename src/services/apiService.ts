@@ -97,6 +97,14 @@ export function verifyProfession(token: string) {
   return apiRequest<{ user: User }>('/users/verify-profession', { method: 'POST' }, token);
 }
 
+export function deactivateAccount(token: string) {
+  return apiRequest<{ ok: boolean }>('/users/deactivate', { method: 'POST' }, token);
+}
+
+export function deleteAccount(token: string) {
+  return apiRequest<{ ok: boolean }>('/users/me', { method: 'DELETE' }, token);
+}
+
 // --- Safety ---------------------------------------------------------------
 
 export function blockUser(userId: string, token: string) {

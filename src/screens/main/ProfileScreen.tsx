@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { AppButton } from '../../components/AppButton';
 import { AppInput } from '../../components/AppInput';
 import { Dropdown } from '../../components/Dropdown';
@@ -114,6 +115,7 @@ const ageStyles = StyleSheet.create({
 });
 
 export function ProfileScreen() {
+  const navigation = useNavigation<any>();
   const { user, token, updateLocalUser, signOut } = useAuth();
   const [form, setForm] = useState(buildProfileForm(user));
   const [interestInput, setInterestInput] = useState((form.interests || []).join(', '));
@@ -215,6 +217,13 @@ export function ProfileScreen() {
             <Text style={styles.professionLabel}>{user?.profession || 'Profession not set'}</Text>
           </View>
         </View>
+        <Pressable
+          style={styles.settingsBtn}
+          onPress={() => navigation.navigate('Settings')}
+          hitSlop={10}
+        >
+          <Text style={styles.settingsIcon}>⚙︎</Text>
+        </Pressable>
       </View>
 
       <ScrollView
@@ -439,8 +448,8 @@ export function ProfileScreen() {
           </>
         )}
 
-        <Text style={styles.logout} onPress={signOut}>
-          Log Out
+        <Text style={styles.logout} onPress={() => navigation.navigate('Settings')}>
+          Settings & Account
         </Text>
       </ScrollView>
 
@@ -458,6 +467,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md
   },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.inputBg,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  settingsIcon: { fontSize: 18, color: colors.text },
   heading: {
     ...typography.title,
     color: colors.text,
