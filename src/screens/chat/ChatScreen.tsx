@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppButton } from '../../components/AppButton';
 import { AppInput } from '../../components/AppInput';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { useAuth } from '../../hooks/useAuth';
-import { getMessages, sendMessage } from '../../services/apiService';
+import { blockUser, getMessages, sendMessage, unmatch } from '../../services/apiService';
 import { getSocket } from '../../services/socket';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
@@ -21,9 +21,9 @@ function formatTime(iso?: string) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-export function ChatScreen({ route }: Props) {
+export function ChatScreen({ route, navigation }: Props) {
   const { token, user } = useAuth();
-  const { matchId, matchName } = route.params;
+  const { matchId, matchName, matchUserId } = route.params;
   const [messages, setMessages] = useState<MessageRecord[]>([]);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
@@ -73,6 +73,57 @@ export function ChatScreen({ route }: Props) {
     };
   }, [matchId, token, appendMessage]);
 
+  function openActions() {
+    Alert.alert(matchName, 'Manage this match', [
+      {
+        text: 'Unmatch',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Unmatch?', `You'll no longer see ${matchName} or this conversation.`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Unmatch',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await unmatch(matchId, token);
+                  navigation.goBack();
+                } catch (e) {
+                  Alert.alert('Could not unmatch', (e as Error).message);
+                }
+              }
+            }
+          ])
+      },
+      {
+        text: 'Block',
+        style: 'destructive',
+        onPress: () => {
+          if (!matchUserId) {
+            Alert.alert('Unavailable', 'Reopen this chat from Matches to block.');
+            return;
+          }
+          Alert.alert('Block?', `${matchName} won't be able to see or contact you.`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Block',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await blockUser(matchUserId, token);
+                  navigation.goBack();
+                } catch (e) {
+                  Alert.alert('Could not block', (e as Error).message);
+                }
+              }
+            }
+          ]);
+        }
+      },
+      { text: 'Cancel', style: 'cancel' }
+    ]);
+  }
+
   async function handleSend() {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -94,7 +145,12 @@ export function ChatScreen({ route }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
-        <Text style={styles.heading}>{matchName}</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.heading}>{matchName}</Text>
+          <Pressable onPress={openActions} hitSlop={12} style={styles.menuBtn}>
+            <Text style={styles.menuDots}>⋯</Text>
+          </Pressable>
+        </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <FlatList
@@ -132,10 +188,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md
+  },
   heading: {
     ...typography.subtitle,
+    color: colors.text
+  },
+  menuBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.inputBg
+  },
+  menuDots: {
+    fontSize: 22,
     color: colors.text,
-    marginBottom: spacing.md
+    fontWeight: '800',
+    marginTop: -4
   },
   messageList: {
     paddingBottom: spacing.lg,

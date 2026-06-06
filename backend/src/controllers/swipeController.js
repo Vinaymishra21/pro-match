@@ -90,6 +90,7 @@ async function getMatches(req, res) {
   const userId = req.auth.id;
 
   const matches = await Match.find({
+    status: 'active',
     $or: [{ userA: userId }, { userB: userId }]
   })
     .populate('userA', 'name profession bio photos')

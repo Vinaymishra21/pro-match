@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
@@ -7,7 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PrismBackground } from '../../components/PrismBackground';
 import { useAuth } from '../../hooks/useAuth';
-import { getMatches } from '../../services/apiService';
+import { blockUser, getMatches, unmatch } from '../../services/apiService';
 import { isProUser } from '../../utils/entitlements';
 import { professionTheme } from '../../theme/professionTheme';
 import { colors } from '../../theme/colors';
@@ -52,7 +52,57 @@ export function MatchesScreen({ navigation }: Props) {
       navigation.navigate('Paywall', { focus: 'pro' });
       return;
     }
-    navigation.navigate('Chat', { matchId: item.id, matchName: item.user.name || 'Chat' });
+    navigation.navigate('Chat', {
+      matchId: item.id,
+      matchName: item.user.name || 'Chat',
+      matchUserId: item.user.id
+    });
+  }
+
+  // Long-press a match → safety actions.
+  function openMatchActions(item: MatchRecord) {
+    const name = item.user.name || 'this person';
+    Alert.alert(name, 'Manage this match', [
+      {
+        text: 'Unmatch',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Unmatch?', `You'll no longer see ${name} or your conversation.`, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Unmatch', style: 'destructive', onPress: () => doUnmatch(item) }
+          ])
+      },
+      {
+        text: 'Block',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Block?', `${name} won't be able to see or contact you, and you won't see them.`, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Block', style: 'destructive', onPress: () => doBlock(item) }
+          ])
+      },
+      { text: 'Cancel', style: 'cancel' }
+    ]);
+  }
+
+  async function doUnmatch(item: MatchRecord) {
+    setMatches((prev) => prev.filter((m) => m.id !== item.id)); // optimistic
+    try {
+      await unmatch(item.id, token);
+    } catch (err) {
+      Alert.alert('Could not unmatch', (err as Error).message);
+      load();
+    }
+  }
+
+  async function doBlock(item: MatchRecord) {
+    setMatches((prev) => prev.filter((m) => m.id !== item.id)); // optimistic
+    try {
+      await blockUser(item.user.id, token);
+    } catch (err) {
+      Alert.alert('Could not block', (err as Error).message);
+      load();
+    }
   }
 
   return (
@@ -69,7 +119,9 @@ export function MatchesScreen({ navigation }: Props) {
           <View style={styles.header}>
             <Text style={styles.title}>Matches 💞</Text>
             <Text style={styles.subtitle}>
-              {matches.length ? `${matches.length} connection${matches.length > 1 ? 's' : ''}` : 'Your connections live here'}
+              {matches.length
+                ? `${matches.length} connection${matches.length > 1 ? 's' : ''} · long-press to block or unmatch`
+                : 'Your connections live here'}
             </Text>
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
@@ -90,6 +142,8 @@ export function MatchesScreen({ navigation }: Props) {
             <Pressable
               style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
               onPress={() => openMatch(item)}
+              onLongPress={() => openMatchActions(item)}
+              delayLongPress={300}
             >
               {photo ? (
                 <Image source={{ uri: photo }} style={styles.avatar} />

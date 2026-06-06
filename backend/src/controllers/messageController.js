@@ -13,6 +13,11 @@ function isParticipant(match, userId) {
 // requesting user document (loaded once) when allowed, or sends a 403 and
 // returns null when blocked.
 async function ensureChatAllowed(match, userId, res) {
+  // A match that's been unmatched or blocked is no longer a conversation.
+  if (match.status && match.status !== 'active') {
+    res.status(403).json({ message: 'This conversation is no longer available.', code: 'MATCH_ENDED' });
+    return false;
+  }
   if (!match.crossProfession) {
     return true;
   }

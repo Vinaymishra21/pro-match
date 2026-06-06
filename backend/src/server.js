@@ -17,6 +17,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const likesRoutes = require('./routes/likesRoutes');
 const billingRoutes = require('./routes/billingRoutes');
+const safetyRoutes = require('./routes/safetyRoutes');
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -41,6 +42,7 @@ app.use('/messages', messageRoutes);
 app.use('/uploads', uploadRoutes);
 app.use('/likes', likesRoutes);
 app.use('/billing', billingRoutes);
+app.use('/safety', safetyRoutes);
 
 app.use((err, req, res, next) => {
   // Multer / validation errors are user-facing 400s; everything else is 500.

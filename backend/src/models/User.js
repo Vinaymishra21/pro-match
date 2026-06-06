@@ -67,6 +67,10 @@ const userSchema = new Schema(
     // Expo push token (Phase 1.5)
     pushToken: { type: String, default: '' },
 
+    // Safety: users this person has blocked. Blocking is one-directional in
+    // intent but hides BOTH ways (neither sees the other in discovery/matches).
+    blockedUsers: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
+
     // Profession verification (Phase 1.2/2)
     professionVerified: { type: Boolean, default: false },
 

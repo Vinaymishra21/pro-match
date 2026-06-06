@@ -262,6 +262,7 @@ export type RootStackParamList = {
   Chat: {
     matchId: string;
     matchName: string;
+    matchUserId?: string;
   };
   Paywall:
     | {

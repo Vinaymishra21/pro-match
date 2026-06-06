@@ -48,9 +48,15 @@ async function getDiscover(req, res) {
   const swipes = await Swipe.find({ fromUserId: me.id }).select('toUserId');
   const swipedIds = swipes.map((s) => s.toUserId);
 
+  // Exclude people I blocked, and people who blocked me (mutual invisibility).
+  const blockedByMe = (me.blockedUsers || []).map(String);
+  const blockedMe = await User.find({ blockedUsers: me.id }).select('_id');
+  const blockedMeIds = blockedMe.map((u) => String(u._id));
+  const excludeIds = [...new Set([...swipedIds.map(String), ...blockedByMe, ...blockedMeIds])];
+
   // --- Build the query: profession (core USP) + optional filters ---------
   const query = {
-    _id: { $ne: me.id, $nin: swipedIds },
+    _id: { $ne: me.id, $nin: excludeIds },
     profession: requested
   };
 

@@ -19,7 +19,12 @@ const matchSchema = new Schema(
     // cross-profession match requires Pro (the weekly limit gates discovery;
     // this gates the conversation).
     crossProfession: { type: Boolean, default: false },
-    lastMessageAt: { type: Date, default: null }
+    lastMessageAt: { type: Date, default: null },
+    // 'active' | 'unmatched' | 'blocked'. Soft state so history is kept for
+    // moderation; anything other than 'active' is hidden from both users.
+    status: { type: String, enum: ['active', 'unmatched', 'blocked'], default: 'active', index: true },
+    // Who ended it (for audit / "unmatched by them" UX later).
+    endedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null }
   },
   { timestamps: true, toJSON, toObject: toJSON }
 );

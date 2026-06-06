@@ -97,6 +97,40 @@ export function verifyProfession(token: string) {
   return apiRequest<{ user: User }>('/users/verify-profession', { method: 'POST' }, token);
 }
 
+// --- Safety ---------------------------------------------------------------
+
+export function blockUser(userId: string, token: string) {
+  return apiRequest<{ ok: boolean }>(
+    '/safety/block',
+    { method: 'POST', body: JSON.stringify({ userId }) },
+    token
+  );
+}
+
+export function unblockUser(userId: string, token: string) {
+  return apiRequest<{ ok: boolean }>(
+    '/safety/unblock',
+    { method: 'POST', body: JSON.stringify({ userId }) },
+    token
+  );
+}
+
+export function getBlockedUsers(token: string) {
+  return apiRequest<{ blocked: { id: string; name: string; profession: string; photo: string }[] }>(
+    '/safety/blocked',
+    { method: 'GET' },
+    token
+  );
+}
+
+export function unmatch(matchId: string, token: string) {
+  return apiRequest<{ ok: boolean }>(
+    '/safety/unmatch',
+    { method: 'POST', body: JSON.stringify({ matchId }) },
+    token
+  );
+}
+
 export function updateProfile(payload: Partial<ProfileForm>, token: string) {
   return apiRequest<{ user: User }>(
     '/users/me',
