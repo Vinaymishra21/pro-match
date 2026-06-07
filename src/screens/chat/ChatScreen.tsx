@@ -75,29 +75,28 @@ export function ChatScreen({ route, navigation }: Props) {
     };
   }, [matchId, token, appendMessage]);
 
-  function openActions() {
-    Alert.alert(matchName, 'Manage this match', [
-      { text: 'Report', onPress: () => setReportOpen(true) },
+  function confirmUnmatch() {
+    Alert.alert('Unmatch?', `You'll no longer see ${matchName} or this conversation.`, [
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Unmatch',
         style: 'destructive',
-        onPress: () =>
-          Alert.alert('Unmatch?', `You'll no longer see ${matchName} or this conversation.`, [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Unmatch',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await unmatch(matchId, token);
-                  navigation.goBack();
-                } catch (e) {
-                  Alert.alert('Could not unmatch', (e as Error).message);
-                }
-              }
-            }
-          ])
-      },
+        onPress: async () => {
+          try {
+            await unmatch(matchId, token);
+            navigation.goBack();
+          } catch (e) {
+            Alert.alert('Could not unmatch', (e as Error).message);
+          }
+        }
+      }
+    ]);
+  }
+
+  function openActions() {
+    Alert.alert(matchName, 'Manage this match', [
+      { text: 'Report', onPress: () => setReportOpen(true) },
+      { text: 'Unmatch', style: 'destructive', onPress: confirmUnmatch },
       {
         text: 'Block',
         style: 'destructive',
@@ -150,9 +149,14 @@ export function ChatScreen({ route, navigation }: Props) {
       >
         <View style={styles.headerRow}>
           <Text style={styles.heading}>{matchName}</Text>
-          <Pressable onPress={openActions} hitSlop={12} style={styles.menuBtn}>
-            <Text style={styles.menuDots}>⋯</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable onPress={confirmUnmatch} hitSlop={8} style={styles.unmatchBtn}>
+              <Text style={styles.unmatchText}>Unmatch</Text>
+            </Pressable>
+            <Pressable onPress={openActions} hitSlop={12} style={styles.menuBtn}>
+              <Text style={styles.menuDots}>⋯</Text>
+            </Pressable>
+          </View>
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -211,6 +215,16 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
     color: colors.text
   },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  unmatchBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FEF2F2'
+  },
+  unmatchText: { color: '#DC2626', fontWeight: '800', fontSize: 12.5 },
   menuBtn: {
     width: 36,
     height: 36,
