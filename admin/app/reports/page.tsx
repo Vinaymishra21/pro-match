@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Shell } from '../../components/Shell';
 import { AdminReport, api } from '../../lib/api';
-import { Avatar, EmptyState, ProfChip, Spinner, timeAgo } from '../../lib/ui';
+import { Avatar, EmptyState, ProfChip, Spinner, downloadCSV, timeAgo } from '../../lib/ui';
 
 const TABS = [
   { key: 'open', label: 'Open' },
@@ -71,6 +71,28 @@ export default function ReportsPage() {
             </button>
           ))}
         </div>
+        <div style={{ flex: 1 }} />
+        <button
+          className="btn sm"
+          disabled={!data || data.reports.length === 0}
+          onClick={() =>
+            data &&
+            downloadCSV(
+              'promatch-reports.csv',
+              data.reports.map((r) => ({
+                reported: r.reportedUser?.name || '',
+                profession: r.reportedUser?.profession || '',
+                reason: r.reason,
+                note: r.note,
+                status: r.status,
+                reporter: r.reporter?.name || '',
+                createdAt: r.createdAt
+              }))
+            )
+          }
+        >
+          ⬇ Export CSV
+        </button>
       </div>
 
       {loading ? (

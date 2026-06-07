@@ -1,25 +1,40 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api, clearToken, getToken } from '../lib/api';
-import { Spinner } from '../lib/ui';
+import { AdminUser, api, clearToken, getToken } from '../lib/api';
+import { Avatar, ProfChip, Spinner } from '../lib/ui';
 
 const NAV = [
-  { href: '/', label: 'Overview', ic: '◈' },
+  { href: '/', label: 'Overview', ic: '◇' },
   { href: '/users', label: 'Users', ic: '👥' },
   { href: '/reports', label: 'Reports', ic: '🚩', badgeKey: 'reportsOpen' },
   { href: '/matches', label: 'Matches', ic: '💞' }
 ];
 
-// Wraps every authenticated page: guards the token, renders sidebar + main.
-export function Shell({ children, title, subtitle }: { children: React.ReactNode; title: string; subtitle?: string }) {
+export function Shell({
+  children,
+  title,
+  subtitle,
+  actions
+}: {
+  children: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  actions?: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(0);
   const [admin, setAdmin] = useState<{ name: string; email: string } | null>(null);
+
+  // Global search
+  const [q, setQ] = useState('');
+  const [results, setResults] = useState<AdminUser[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!getToken()) {
@@ -27,11 +42,7 @@ export function Shell({ children, title, subtitle }: { children: React.ReactNode
       return;
     }
     setReady(true);
-    // Load the open-reports badge + cached admin identity.
-    api
-      .stats()
-      .then((s) => setReportsOpen(s.stats.reportsOpen))
-      .catch(() => {});
+    api.stats().then((s) => setReportsOpen(s.stats.reportsOpen)).catch(() => {});
     try {
       const raw = localStorage.getItem('promatch_admin_who');
       if (raw) setAdmin(JSON.parse(raw));
@@ -40,6 +51,27 @@ export function Shell({ children, title, subtitle }: { children: React.ReactNode
     }
   }, [router]);
 
+  // Debounced global user search.
+  useEffect(() => {
+    if (!q.trim()) {
+      setResults(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      api.users({ search: q, page: 1 }).then((r) => setResults(r.users.slice(0, 6))).catch(() => setResults([]));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // Close dropdown on outside click.
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
   function logout() {
     clearToken();
     localStorage.removeItem('promatch_admin_who');
@@ -47,8 +79,6 @@ export function Shell({ children, title, subtitle }: { children: React.ReactNode
   }
 
   if (!ready) return <Spinner />;
-
-  const badges: Record<string, number> = { reportsOpen };
 
   return (
     <div className="app-shell">
@@ -64,7 +94,7 @@ export function Shell({ children, title, subtitle }: { children: React.ReactNode
         <nav className="nav">
           {NAV.map((n) => {
             const active = n.href === '/' ? pathname === '/' : pathname.startsWith(n.href);
-            const badge = n.badgeKey ? badges[n.badgeKey] : 0;
+            const badge = n.badgeKey === 'reportsOpen' ? reportsOpen : 0;
             return (
               <Link key={n.href} href={n.href} className={`nav-item ${active ? 'active' : ''}`}>
                 <span className="ic">{n.ic}</span>
@@ -83,18 +113,64 @@ export function Shell({ children, title, subtitle }: { children: React.ReactNode
               <div className="admin-role">Administrator</div>
             </div>
           </div>
-          <button className="logout-btn" onClick={logout}>
-            Log out
-          </button>
+          <button className="logout-btn" onClick={logout}>Log out</button>
         </div>
       </aside>
 
       <main className="main">
-        <div className="page-head fade-in">
-          <h1 className="page-title">{title}</h1>
-          {subtitle ? <p className="page-sub">{subtitle}</p> : null}
+        <div className="topbar">
+          <div>
+            <div className="topbar-title">{title}</div>
+            {subtitle ? <div className="topbar-sub">{subtitle}</div> : null}
+          </div>
+          <div className="topbar-spacer" />
+
+          {/* Global search */}
+          <div className="global-search" ref={boxRef}>
+            <span className="gs-ic">🔍</span>
+            <input
+              placeholder="Search users…"
+              value={q}
+              onFocus={() => setOpen(true)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setOpen(true);
+              }}
+            />
+            {open && q.trim() ? (
+              <div className="gs-results">
+                {results === null ? (
+                  <div className="gs-empty">Searching…</div>
+                ) : results.length === 0 ? (
+                  <div className="gs-empty">No users found</div>
+                ) : (
+                  results.map((u) => (
+                    <Link
+                      key={u.id}
+                      href={`/users?focus=${u.id}`}
+                      className="gs-item"
+                      onClick={() => {
+                        setOpen(false);
+                        setQ('');
+                      }}
+                    >
+                      <Avatar photo={u.photo} name={u.name} />
+                      <div style={{ flex: 1 }}>
+                        <div className="u-name">{u.name}</div>
+                        <div className="u-meta">{u.email || u.phone}</div>
+                      </div>
+                      <ProfChip profession={u.profession} />
+                    </Link>
+                  ))
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          {actions}
         </div>
-        {children}
+
+        <div className="content fade-in">{children}</div>
       </main>
     </div>
   );

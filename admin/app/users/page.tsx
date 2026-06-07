@@ -1,17 +1,53 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Shell } from '../../components/Shell';
 import { AdminUser, api } from '../../lib/api';
-import { Avatar, EmptyState, ProfChip, Spinner, fmtDate } from '../../lib/ui';
+import { Avatar, EmptyState, ProfChip, Spinner, downloadCSV, fmtDate } from '../../lib/ui';
 import { UserModal } from '../../components/UserModal';
 
 export default function UsersPage() {
+  // useSearchParams must be inside a Suspense boundary for static export.
+  return (
+    <Suspense fallback={<Shell title="Users"><Spinner /></Shell>}>
+      <UsersInner />
+    </Suspense>
+  );
+}
+
+function UsersInner() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<{ total: number; pages: number; users: AdminUser[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
+
+  // Deep-link from global search (?focus=<userId>) opens that user.
+  useEffect(() => {
+    const focus = searchParams.get('focus');
+    if (focus) setSelected(focus);
+  }, [searchParams]);
+
+  function exportCsv() {
+    if (!data) return;
+    downloadCSV(
+      `promatch-users-page${page}.csv`,
+      data.users.map((u) => ({
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        profession: u.profession,
+        gender: u.gender,
+        age: u.age ?? '',
+        tier: u.tier,
+        verified: u.professionVerified,
+        deactivated: u.isDeactivated,
+        joined: u.createdAt
+      }))
+    );
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,6 +82,10 @@ export default function UsersPage() {
             }}
           />
         </div>
+        <div style={{ flex: 1 }} />
+        <button className="btn sm" onClick={exportCsv} disabled={!data || data.users.length === 0}>
+          ⬇ Export CSV
+        </button>
       </div>
 
       <div className="card">

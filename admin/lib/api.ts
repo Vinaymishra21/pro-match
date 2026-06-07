@@ -53,6 +53,7 @@ export const api = {
       body: JSON.stringify({ email, password })
     }),
   stats: () => request<StatsResponse>('/admin/stats'),
+  analytics: (days = 14) => request<AnalyticsResponse>(`/admin/analytics?days=${days}`),
   users: (params: { search?: string; page?: number }) => {
     const q = new URLSearchParams();
     if (params.search) q.set('search', params.search);
@@ -91,6 +92,18 @@ export type StatsResponse = {
     reportsOpen: number;
   };
   byProfession: { profession: string; count: number }[];
+};
+
+export type SeriesPoint = { day: string; count: number };
+export type AnalyticsResponse = {
+  days: number;
+  signups: SeriesPoint[];
+  matches: SeriesPoint[];
+  messages: SeriesPoint[];
+  byGender: { gender: string; count: number }[];
+  verified: { verified: number; unverified: number };
+  revenue: { proInr: number; creditsInr: number; totalInr: number; estimated: boolean };
+  packs: { id: string; priceInr: number; credits: number }[];
 };
 
 export type AdminUser = {
