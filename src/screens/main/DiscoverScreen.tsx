@@ -20,6 +20,7 @@ import { PrismBackground } from '../../components/PrismBackground';
 import { ProfessionBadge } from '../../components/ProfessionBadge';
 import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, FilterModal } from '../../components/FilterModal';
+import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
 import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
 import { getDiscoverProfiles, swipeProfile, undoSwipe } from '../../services/apiService';
@@ -50,6 +51,8 @@ export function DiscoverScreen({ navigation }: Props) {
   const [error, setError] = useState(''); // generic/network error
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS as FilterState);
+  // Match celebration overlay (set when a like creates a match).
+  const [celebration, setCelebration] = useState<(MatchInfo & { matchId: string }) | null>(null);
 
   const current = profiles[0] || null;
   const viewingTheme = professionTheme(activeProfession);
@@ -160,8 +163,14 @@ export function DiscoverScreen({ navigation }: Props) {
         const res = await swipeProfile({ toUserId: target.id, action }, token);
         setProfiles((prev) => prev.filter((p) => p.id !== target.id));
         pan.setValue({ x: 0, y: 0 });
-        if (action === 'like' && res.matched) {
-          Alert.alert("It's a match! 🎉", `You and ${target.name} liked each other.`);
+        if (action === 'like' && res.matched && res.match) {
+          setCelebration({
+            matchId: res.match.id,
+            name: target.name,
+            profession: target.profession,
+            photo: target.photos?.[0],
+            myPhoto: user?.photos?.[0]
+          });
         }
       } catch (swipeError) {
         Alert.alert('Could not swipe', (swipeError as Error).message);
@@ -433,6 +442,18 @@ export function DiscoverScreen({ navigation }: Props) {
         filters={filters}
         onApply={setFilters}
       />
+
+      {celebration ? (
+        <MatchCelebration
+          match={celebration}
+          onKeepSwiping={() => setCelebration(null)}
+          onSendMessage={() => {
+            const c = celebration;
+            setCelebration(null);
+            navigation.navigate('Chat', { matchId: c.matchId, matchName: c.name || 'Chat' });
+          }}
+        />
+      ) : null}
     </PrismBackground>
   );
 }
