@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User, Match, Message, Report, Swipe } = require('../models');
+const { User, Match, Message, Report, Swipe, Reveal } = require('../models');
+const { CREDIT_PACKS, PRO_PRICE_INR, REVEAL_COST_CREDITS, CREDIT_VALUE_INR } = require('../config/monetization');
 
 function adminToken(user) {
   return jwt.sign({ id: user.id, admin: true }, process.env.JWT_SECRET, { expiresIn: '1d' });
@@ -50,6 +51,80 @@ async function getStats(_req, res) {
   return res.json({
     stats: { users, active, deactivated, verified, pro, matches, messages, reportsOpen },
     byProfession: byProfession.map((p) => ({ profession: p._id, count: p.count }))
+  });
+}
+
+// GET /admin/analytics?days=14 — time series + breakdowns + revenue estimate.
+async function getAnalytics(req, res) {
+  const days = Math.min(90, Math.max(7, parseInt(req.query.days, 10) || 14));
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (days - 1));
+
+  // Build an empty day-bucket map (YYYY-MM-DD → 0) to fill from aggregations.
+  const buckets = [];
+  for (let i = 0; i < days; i += 1) {
+    const d = new Date(since);
+    d.setDate(since.getDate() + i);
+    buckets.push(d.toISOString().slice(0, 10));
+  }
+  const emptySeries = () => Object.fromEntries(buckets.map((b) => [b, 0]));
+
+  const groupByDay = (createdField = 'createdAt') => [
+    { $match: { [createdField]: { $gte: since } } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: `$${createdField}` } },
+        count: { $sum: 1 }
+      }
+    }
+  ];
+
+  const [signupAgg, matchAgg, messageAgg, genderAgg, verifiedAgg, revealCount] = await Promise.all([
+    User.aggregate(groupByDay()),
+    Match.aggregate(groupByDay()),
+    Message.aggregate(groupByDay()),
+    User.aggregate([
+      { $match: { gender: { $ne: '' } } },
+      { $group: { _id: '$gender', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]),
+    Promise.all([
+      User.countDocuments({ professionVerified: true }),
+      User.countDocuments({ professionVerified: { $ne: true } })
+    ]),
+    Reveal.countDocuments({})
+  ]);
+
+  const fill = (agg) => {
+    const map = emptySeries();
+    agg.forEach((row) => {
+      if (row._id in map) map[row._id] = row.count;
+    });
+    return buckets.map((day) => ({ day, count: map[day] }));
+  };
+
+  // Revenue estimate (no payment records yet). Pro = subscribers × price;
+  // credits ≈ reveals × reveal cost × credit value. Clearly an estimate.
+  const proCount = await User.countDocuments({ tier: 'pro' });
+  const revenue = {
+    proInr: proCount * PRO_PRICE_INR,
+    creditsInr: revealCount * REVEAL_COST_CREDITS * CREDIT_VALUE_INR,
+    get totalInr() {
+      return this.proInr + this.creditsInr;
+    },
+    estimated: true
+  };
+
+  return res.json({
+    days,
+    signups: fill(signupAgg),
+    matches: fill(matchAgg),
+    messages: fill(messageAgg),
+    byGender: genderAgg.map((g) => ({ gender: g._id, count: g.count })),
+    verified: { verified: verifiedAgg[0], unverified: verifiedAgg[1] },
+    revenue: { proInr: revenue.proInr, creditsInr: revenue.creditsInr, totalInr: revenue.totalInr, estimated: true },
+    packs: CREDIT_PACKS
   });
 }
 
@@ -253,6 +328,7 @@ async function getConversation(req, res) {
 module.exports = {
   login,
   getStats,
+  getAnalytics,
   listUsers,
   getUser,
   userAction,
