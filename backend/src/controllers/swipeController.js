@@ -1,4 +1,5 @@
 const { User, Swipe, Match } = require('../models');
+const { sanitizeUser } = require('../utils/auth');
 const { sendPush } = require('../utils/push');
 const { isProActive, getWeeklyUnlockState } = require('../utils/entitlements');
 
@@ -122,7 +123,33 @@ async function getMatches(req, res) {
   return res.json({ matches: userMatches });
 }
 
+// POST /swipes/undo — rewind your most recent swipe so that person reappears.
+// Removes the swipe and any match it created (so an accidental like is fully
+// reversed). Returns the restored profile for the client to re-insert.
+async function undoSwipe(req, res) {
+  const fromUserId = req.auth.id;
+
+  const last = await Swipe.findOne({ fromUserId }).sort({ createdAt: -1 });
+  if (!last) {
+    return res.status(404).json({ message: 'Nothing to undo', code: 'NOTHING_TO_UNDO' });
+  }
+
+  // If that like formed a match, undo the match too.
+  await Match.deleteOne({
+    $or: [
+      { userA: fromUserId, userB: last.toUserId },
+      { userA: last.toUserId, userB: fromUserId }
+    ]
+  });
+
+  const profile = await User.findById(last.toUserId);
+  await Swipe.deleteOne({ _id: last._id });
+
+  return res.json({ ok: true, profile: profile ? sanitizeUser(profile) : null });
+}
+
 module.exports = {
   upsertSwipe,
-  getMatches
+  getMatches,
+  undoSwipe
 };

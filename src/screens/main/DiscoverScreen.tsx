@@ -22,7 +22,7 @@ import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, FilterModal } from '../../components/FilterModal';
 import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
-import { getDiscoverProfiles, swipeProfile } from '../../services/apiService';
+import { getDiscoverProfiles, swipeProfile, undoSwipe } from '../../services/apiService';
 import { ApiError } from '../../services/apiClient';
 import type { FilterState } from '../../types';
 import { professionTheme } from '../../theme/professionTheme';
@@ -193,6 +193,27 @@ export function DiscoverScreen({ navigation }: Props) {
   // Button handler — same outcome as a fling.
   function handleSwipe(action: 'like' | 'pass') {
     flingOff(action);
+  }
+
+  // Rewind the last swipe: restores that person to the top of the deck.
+  async function handleUndo() {
+    if (submitting) return;
+    try {
+      setSubmitting(true);
+      const res = await undoSwipe(token);
+      if (res.profile) {
+        const restored = res.profile;
+        setProfiles((prev) =>
+          prev.some((p) => p.id === restored.id) ? prev : [restored, ...prev]
+        );
+        pan.setValue({ x: 0, y: 0 });
+      }
+    } catch (undoError) {
+      const err = undoError as ApiError;
+      Alert.alert('Nothing to undo', err.code === 'NOTHING_TO_UNDO' ? 'You haven’t swiped anyone yet.' : err.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   // Keep the PanResponder (created once) calling the latest flingOff.
@@ -378,6 +399,13 @@ export function DiscoverScreen({ navigation }: Props) {
         {/* Action buttons */}
         {current && !error && !locked ? (
           <View style={styles.actions}>
+            <Pressable
+              style={[styles.actionBtn, styles.undoBtn]}
+              onPress={handleUndo}
+              disabled={submitting}
+            >
+              <Text style={styles.undoIcon}>↩</Text>
+            </Pressable>
             <Pressable
               style={[styles.actionBtn, styles.passBtn]}
               onPress={() => handleSwipe('pass')}
@@ -573,9 +601,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.xl,
+    gap: spacing.lg,
     paddingBottom: spacing.md
   },
+  undoBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.white, borderWidth: 1, borderColor: '#F5C56B' },
+  undoIcon: { fontSize: 22, color: '#D4700A', fontWeight: '800' },
   actionBtn: {
     width: 66,
     height: 66,

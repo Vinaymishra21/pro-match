@@ -5,6 +5,7 @@ import type {
   BillingCatalog,
   CreateOrderResponse,
   DiscoverAccessResponse,
+  DiscoverProfile,
   DiscoverResponse,
   GrantResponse,
   IncomingLikesResponse,
@@ -260,6 +261,14 @@ export function swipeProfile(payload: { toUserId: string; action: SwipeAction },
       method: 'POST',
       body: JSON.stringify(payload)
     },
+    token
+  );
+}
+
+export function undoSwipe(token: string) {
+  return apiRequest<{ ok: boolean; profile: DiscoverProfile | null }>(
+    '/swipes/undo',
+    { method: 'POST' },
     token
   );
 }
