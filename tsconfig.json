@@ -11,6 +11,8 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "backend"
+    "backend",
+    "admin",
+    "node_modules"
   ]
 }

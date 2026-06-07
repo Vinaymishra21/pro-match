@@ -1,8 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
   Image,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -50,6 +53,15 @@ export function DiscoverScreen({ navigation }: Props) {
 
   const current = profiles[0] || null;
   const viewingTheme = professionTheme(activeProfession);
+
+  // --- Swipe-gesture animation state ---
+  const SCREEN_W = Dimensions.get('window').width;
+  const SWIPE_THRESHOLD = SCREEN_W * 0.28;
+  const pan = useRef(new Animated.ValueXY()).current;
+  // Reset the card position whenever the top card changes.
+  useEffect(() => {
+    pan.setValue({ x: 0, y: 0 });
+  }, [current?.id, pan]);
 
   // Count non-default filters for the badge on the filter button.
   const activeFilterCount =
@@ -140,21 +152,68 @@ export function DiscoverScreen({ navigation }: Props) {
     setActiveProfession(profession);
   }
 
-  async function handleSwipe(action: 'like' | 'pass') {
-    if (!current) return;
-    try {
-      setSubmitting(true);
-      const res = await swipeProfile({ toUserId: current.id, action }, token);
-      setProfiles((prev) => prev.slice(1));
-      if (action === 'like' && res.matched) {
-        Alert.alert("It's a match! 🎉", `You and ${current.name} liked each other.`);
+  // Records the swipe against the backend + advances the deck. Called after the
+  // card has animated off (gesture) or immediately (button + manual fling).
+  const commitSwipe = useCallback(
+    async (target: DiscoverProfile, action: 'like' | 'pass') => {
+      try {
+        const res = await swipeProfile({ toUserId: target.id, action }, token);
+        setProfiles((prev) => prev.filter((p) => p.id !== target.id));
+        pan.setValue({ x: 0, y: 0 });
+        if (action === 'like' && res.matched) {
+          Alert.alert("It's a match! 🎉", `You and ${target.name} liked each other.`);
+        }
+      } catch (swipeError) {
+        Alert.alert('Could not swipe', (swipeError as Error).message);
+        // Snap the card back if the request failed.
+        Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
       }
-    } catch (swipeError) {
-      Alert.alert('Could not swipe', (swipeError as Error).message);
-    } finally {
-      setSubmitting(false);
-    }
+    },
+    [token, pan]
+  );
+
+  // Fling the top card off-screen in a direction, then commit the swipe.
+  const flingOff = useCallback(
+    (action: 'like' | 'pass') => {
+      if (!current || submitting) return;
+      setSubmitting(true);
+      const toX = action === 'like' ? SCREEN_W * 1.4 : -SCREEN_W * 1.4;
+      Animated.timing(pan, {
+        toValue: { x: toX, y: 0 },
+        duration: 250,
+        useNativeDriver: false
+      }).start(async () => {
+        await commitSwipe(current, action);
+        setSubmitting(false);
+      });
+    },
+    [current, submitting, pan, SCREEN_W, commitSwipe]
+  );
+
+  // Button handler — same outcome as a fling.
+  function handleSwipe(action: 'like' | 'pass') {
+    flingOff(action);
   }
+
+  // Keep the PanResponder (created once) calling the latest flingOff.
+  const flingRef = useRef(flingOff);
+  flingRef.current = flingOff;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 6 || Math.abs(g.dy) > 6,
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
+      onPanResponderRelease: (_e, g) => {
+        if (g.dx > SWIPE_THRESHOLD) {
+          flingRef.current('like');
+        } else if (g.dx < -SWIPE_THRESHOLD) {
+          flingRef.current('pass');
+        } else {
+          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 6, useNativeDriver: false }).start();
+        }
+      }
+    })
+  ).current;
 
   const isOwnDeck = activeProfession === myProfession;
 
@@ -273,7 +332,46 @@ export function DiscoverScreen({ navigation }: Props) {
               </Pressable>
             </View>
           ) : (
-            <ProfileCard profile={current} />
+            <Animated.View
+              style={[
+                styles.swipeWrap,
+                {
+                  transform: [
+                    { translateX: pan.x },
+                    { translateY: pan.y },
+                    {
+                      rotate: pan.x.interpolate({
+                        inputRange: [-SCREEN_W, 0, SCREEN_W],
+                        outputRange: ['-12deg', '0deg', '12deg']
+                      })
+                    }
+                  ]
+                }
+              ]}
+              {...panResponder.panHandlers}
+            >
+              {/* LIKE / NOPE stamps that fade in as you drag */}
+              <Animated.View
+                style={[
+                  styles.stamp,
+                  styles.stampLike,
+                  { opacity: pan.x.interpolate({ inputRange: [0, SWIPE_THRESHOLD], outputRange: [0, 1], extrapolate: 'clamp' }) }
+                ]}
+              >
+                <Text style={[styles.stampText, { color: colors.secondary }]}>LIKE</Text>
+              </Animated.View>
+              <Animated.View
+                style={[
+                  styles.stamp,
+                  styles.stampNope,
+                  { opacity: pan.x.interpolate({ inputRange: [-SWIPE_THRESHOLD, 0], outputRange: [1, 0], extrapolate: 'clamp' }) }
+                ]}
+              >
+                <Text style={[styles.stampText, { color: '#EF4444' }]}>NOPE</Text>
+              </Animated.View>
+
+              <ProfileCard profile={current} />
+            </Animated.View>
           )}
         </View>
 
@@ -415,6 +513,20 @@ const styles = StyleSheet.create({
   chipTextActive: { fontWeight: '800', color: colors.white, fontSize: 13 },
   chipLock: { fontSize: 11, marginLeft: 6 },
   cardArea: { flex: 1, marginTop: spacing.md, marginBottom: spacing.md },
+  swipeWrap: { flex: 1 },
+  stamp: {
+    position: 'absolute',
+    top: 28,
+    zIndex: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 4,
+    backgroundColor: 'rgba(255,255,255,0.85)'
+  },
+  stampLike: { right: 24, transform: [{ rotate: '14deg' }], borderColor: colors.secondary },
+  stampNope: { left: 24, transform: [{ rotate: '-14deg' }], borderColor: '#EF4444' },
+  stampText: { fontSize: 26, fontWeight: '900', letterSpacing: 1 },
   card: {
     flex: 1,
     borderRadius: 28,
