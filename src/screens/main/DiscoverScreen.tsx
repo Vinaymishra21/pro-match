@@ -219,7 +219,21 @@ export function DiscoverScreen({ navigation }: Props) {
       }
     } catch (undoError) {
       const err = undoError as ApiError;
-      Alert.alert('Nothing to undo', err.code === 'NOTHING_TO_UNDO' ? 'You haven’t swiped anyone yet.' : err.message);
+      if (err.code === 'UNDO_LIMIT') {
+        // Free user out of rewinds → prompt Pro.
+        Alert.alert(
+          'Out of rewinds ↩',
+          'You’ve used your free rewind. Go Pro for unlimited rewinds and more.',
+          [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) }
+          ]
+        );
+      } else if (err.code === 'NOTHING_TO_UNDO') {
+        Alert.alert('Nothing to undo', 'You haven’t swiped anyone yet.');
+      } else {
+        Alert.alert('Could not undo', err.message);
+      }
     } finally {
       setSubmitting(false);
     }

@@ -126,8 +126,24 @@ async function getMatches(req, res) {
 // POST /swipes/undo — rewind your most recent swipe so that person reappears.
 // Removes the swipe and any match it created (so an accidental like is fully
 // reversed). Returns the restored profile for the client to re-insert.
+const FREE_UNDO_LIMIT = 1; // free users get 1 rewind, ever; Pro is unlimited.
+
 async function undoSwipe(req, res) {
   const fromUserId = req.auth.id;
+
+  const me = await User.findById(fromUserId);
+  if (!me) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  // Gate: free users may undo only FREE_UNDO_LIMIT times total.
+  const pro = isProActive(me);
+  if (!pro && (me.undosUsed || 0) >= FREE_UNDO_LIMIT) {
+    return res.status(403).json({
+      message: 'You’ve used your free rewind. Go Pro for unlimited rewinds.',
+      code: 'UNDO_LIMIT'
+    });
+  }
 
   const last = await Swipe.findOne({ fromUserId }).sort({ createdAt: -1 });
   if (!last) {
@@ -145,7 +161,14 @@ async function undoSwipe(req, res) {
   const profile = await User.findById(last.toUserId);
   await Swipe.deleteOne({ _id: last._id });
 
-  return res.json({ ok: true, profile: profile ? sanitizeUser(profile) : null });
+  // Count the undo for free users (Pro is unlimited, no need to track).
+  if (!pro) {
+    me.undosUsed = (me.undosUsed || 0) + 1;
+    await me.save();
+  }
+
+  const undosLeft = pro ? null : Math.max(0, FREE_UNDO_LIMIT - me.undosUsed);
+  return res.json({ ok: true, profile: profile ? sanitizeUser(profile) : null, isPro: pro, undosLeft });
 }
 
 module.exports = {

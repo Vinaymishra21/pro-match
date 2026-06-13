@@ -86,6 +86,8 @@ const userSchema = new Schema(
     tier: { type: String, enum: ['free', 'pro'], default: 'free' },
     proExpiresAt: { type: Date, default: null },
     credits: { type: Number, default: 0, min: 0 },
+    // Lifetime count of swipe-undos used. Free users get 1 total; Pro unlimited.
+    undosUsed: { type: Number, default: 0, min: 0 },
 
     // Weekly cross-profession discovery tracker. `weekStart` is the Monday of the
     // week these unlocks belong to; it auto-resets when a new week begins.
