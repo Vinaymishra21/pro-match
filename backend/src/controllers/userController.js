@@ -184,11 +184,16 @@ async function updateProfile(req, res) {
   }
 
   if (Array.isArray(photos)) {
-    user.photos = photos
+    const cleaned = photos
       .filter((item) => typeof item === 'string')
       .map((item) => item.trim())
       .filter(Boolean)
       .slice(0, 6);
+    // Enforce the 2-photo minimum (can't be bypassed from a custom client).
+    if (cleaned.length === 1) {
+      return res.status(400).json({ message: 'A profile needs at least 2 photos.', code: 'MIN_PHOTOS' });
+    }
+    user.photos = cleaned;
   }
 
   await user.save();

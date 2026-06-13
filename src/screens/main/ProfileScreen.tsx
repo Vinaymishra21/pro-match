@@ -155,6 +155,16 @@ export function ProfileScreen() {
         return;
       }
 
+      // Require at least 2 photos (mirrors the gallery's minimum).
+      const photoCount = (form.photos || []).filter(Boolean).length;
+      if (photoCount < 2) {
+        Alert.alert(
+          'Add at least 2 photos',
+          `Profiles need a minimum of 2 photos. You have ${photoCount}. Add ${2 - photoCount} more to save.`
+        );
+        return;
+      }
+
       setIsSaving(true);
       const payload = {
         name: form.name,
