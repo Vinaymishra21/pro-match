@@ -10,6 +10,7 @@ import {
   View
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { ProfessionBadge } from './ProfessionBadge';
 import { professionTheme } from '../theme/professionTheme';
 import { colors } from '../theme/colors';
@@ -17,10 +18,11 @@ import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import type { DiscoverProfile } from '../types';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const SHEET_HEIGHT = height * 0.88;
 
-// Full-screen scrollable profile detail. Opened by tapping a Discover card.
-// Has its own Like / Pass at the bottom so a decision can be made from here.
+// A premium bottom-sheet profile detail. Opened by tapping a Discover card.
+// Leaves the Discover screen visible (dimmed) above it; tap the backdrop to close.
 export function ProfileDetailModal({
   profile,
   visible,
@@ -62,19 +64,37 @@ export function ProfileDetailModal({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
-      <View style={styles.root}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-          {/* Hero photo */}
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      {/* Dimmed backdrop — tap to close. The Discover screen shows through at top. */}
+      <Pressable style={styles.backdrop} onPress={onClose} />
+
+      <View style={styles.sheet}>
+        {/* Grab handle */}
+        <View style={styles.handle} />
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+          style={styles.sheetInner}
+        >
+          {/* Hero */}
           <View style={styles.hero}>
             {photos[0] ? (
               <Image source={{ uri: photos[0] }} style={styles.heroImg} resizeMode="cover" />
             ) : (
-              <LinearGradient colors={theme.gradient} style={styles.heroImg}>
+              <LinearGradient colors={theme.gradient} style={styles.heroImg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                 <Text style={styles.heroEmoji}>{theme.emoji}</Text>
               </LinearGradient>
             )}
-            <LinearGradient colors={['transparent', 'rgba(8,12,24,0.9)']} style={styles.heroOverlay}>
+
+            {/* photo count pill */}
+            {photos.length > 1 ? (
+              <BlurView intensity={40} tint="dark" style={styles.countPill}>
+                <Text style={styles.countText}>📷 {photos.length}</Text>
+              </BlurView>
+            ) : null}
+
+            <LinearGradient colors={['transparent', 'rgba(8,12,24,0.92)']} style={styles.heroOverlay}>
               <ProfessionBadge profession={profile.profession} verified={profile.professionVerified} />
               <Text style={styles.name}>
                 {profile.name}
@@ -83,23 +103,22 @@ export function ProfileDetailModal({
               {profile.headline ? <Text style={styles.headline}>{profile.headline}</Text> : null}
               {profile.location ? <Text style={styles.location}>📍 {profile.location}</Text> : null}
             </LinearGradient>
-
-            <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={10}>
-              <Text style={styles.closeIcon}>✕</Text>
-            </Pressable>
           </View>
 
           <View style={styles.body}>
             {/* About */}
             {profile.bio ? (
-              <Section title="About">
+              <Section title="About" accent={theme.accent}>
                 <Text style={styles.bodyText}>{profile.bio}</Text>
               </Section>
             ) : null}
 
+            {/* First prompt floated up high — it's the personality hook */}
+            {prompts[0] ? <PromptCard prompt={prompts[0]} accent={theme.accent} /> : null}
+
             {/* Work & education */}
-            {(profile.jobTitle || profile.company || profile.education) ? (
-              <Section title="Work & Education">
+            {profile.jobTitle || profile.company || profile.education ? (
+              <Section title="Work & Education" accent={theme.accent}>
                 {profile.jobTitle ? <Row icon="💼" label="Role" value={profile.jobTitle} /> : null}
                 {profile.company ? <Row icon="🏢" label="Company" value={profile.company} /> : null}
                 {profile.education ? <Row icon="🎓" label="Education" value={profile.education} /> : null}
@@ -108,7 +127,7 @@ export function ProfileDetailModal({
 
             {/* Vitals */}
             {vitals.length ? (
-              <Section title="Details">
+              <Section title="Details" accent={theme.accent}>
                 {vitals.map((v) => (
                   <Row key={v.label} icon={v.icon} label={v.label} value={v.value} />
                 ))}
@@ -117,11 +136,11 @@ export function ProfileDetailModal({
 
             {/* Interests */}
             {interests.length ? (
-              <Section title="Interests">
+              <Section title="Interests" accent={theme.accent}>
                 <View style={styles.chipWrap}>
                   {interests.map((it) => (
-                    <View key={it} style={styles.chip}>
-                      <Text style={styles.chipText}>{it}</Text>
+                    <View key={it} style={[styles.chip, { borderColor: theme.accent + '55' }]}>
+                      <Text style={[styles.chipText, { color: theme.accent }]}>{it}</Text>
                     </View>
                   ))}
                 </View>
@@ -130,31 +149,28 @@ export function ProfileDetailModal({
 
             {/* Lifestyle */}
             {lifestyle.length ? (
-              <Section title="Lifestyle">
+              <Section title="Lifestyle" accent={theme.accent}>
                 {lifestyle.map((l) => (
                   <Row key={l.label} icon={l.icon} label={l.label} value={l.value} />
                 ))}
               </Section>
             ) : null}
 
-            {/* Prompts */}
-            {prompts.map((p, i) => (
-              <View key={`${p.prompt}-${i}`} style={styles.promptCard}>
-                <Text style={styles.promptQ}>{p.prompt}</Text>
-                <Text style={styles.promptA}>“{p.answer}”</Text>
-              </View>
+            {/* Remaining prompts */}
+            {prompts.slice(1).map((p, i) => (
+              <PromptCard key={`${p.prompt}-${i}`} prompt={p} accent={theme.accent} />
             ))}
 
             {/* Extra photos */}
             {photos.length > 1 ? (
-              <Section title="More photos">
+              <Section title="More photos" accent={theme.accent}>
                 {photos.slice(1).map((ph, i) => (
                   <Image key={i} source={{ uri: ph }} style={styles.galleryImg} resizeMode="cover" />
                 ))}
               </Section>
             ) : null}
 
-            <View style={{ height: 110 }} />
+            <View style={{ height: 120 }} />
           </View>
         </ScrollView>
 
@@ -163,8 +179,16 @@ export function ProfileDetailModal({
           <Pressable style={[styles.actionBtn, styles.passBtn]} onPress={() => act(onPass)}>
             <Text style={styles.passIcon}>✕</Text>
           </Pressable>
+          <Pressable style={styles.closeMid} onPress={onClose}>
+            <Text style={styles.closeMidText}>Close</Text>
+          </Pressable>
           <Pressable onPress={() => act(onLike)}>
-            <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.actionBtn, styles.likeBtn]}>
+            <LinearGradient
+              colors={theme.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.actionBtn, styles.likeBtn]}
+            >
               <Text style={styles.likeIcon}>♥</Text>
             </LinearGradient>
           </Pressable>
@@ -174,10 +198,13 @@ export function ProfileDetailModal({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, accent, children }: { title: string; accent: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionHeader}>
+        <View style={[styles.sectionTick, { backgroundColor: accent }]} />
+        <Text style={[styles.sectionTitle, { color: accent }]}>{title}</Text>
+      </View>
       {children}
     </View>
   );
@@ -188,57 +215,174 @@ function Row({ icon, label, value }: { icon: string; label: string; value: strin
     <View style={styles.row}>
       <Text style={styles.rowIcon}>{icon}</Text>
       <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue} numberOfLines={2}>{value}</Text>
+      <Text style={styles.rowValue} numberOfLines={2}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function PromptCard({ prompt, accent }: { prompt: { prompt: string; answer: string }; accent: string }) {
+  return (
+    <View style={styles.promptCard}>
+      <View style={[styles.promptBar, { backgroundColor: accent }]} />
+      <View style={styles.promptInner}>
+        <Text style={styles.promptQ}>{prompt.prompt}</Text>
+        <Text style={styles.promptA}>“{prompt.answer}”</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: SHEET_HEIGHT,
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 16
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    marginTop: spacing.sm,
+    position: 'absolute',
+    top: 0,
+    zIndex: 10
+  },
+  sheetInner: { flex: 1 },
   scroll: { paddingBottom: spacing.lg },
-  hero: { width, height: width * 1.15, backgroundColor: colors.card },
+  hero: {
+    width,
+    height: width * 1.08,
+    backgroundColor: colors.card,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden'
+  },
   heroImg: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
   heroEmoji: { fontSize: 120, opacity: 0.5 },
-  heroOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, paddingTop: spacing.xxl, gap: 6 },
-  name: { color: colors.white, fontSize: 30, fontWeight: '900', letterSpacing: -0.5, marginTop: 6 },
+  countPill: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    borderRadius: 999,
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  countText: { color: colors.white, fontSize: 12, fontWeight: '800' },
+  heroOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: spacing.lg,
+    paddingTop: spacing.xxl,
+    gap: 6
+  },
+  name: { color: colors.white, fontSize: 30, fontWeight: '900', letterSpacing: -0.5, marginTop: 8 },
   headline: { color: 'rgba(255,255,255,0.95)', fontSize: 15, fontWeight: '700' },
-  location: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600', marginTop: 2 },
-  closeBtn: {
-    position: 'absolute', top: spacing.xl, right: spacing.lg,
-    width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center', justifyContent: 'center'
+  location: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '600', marginTop: 2 },
+  body: { padding: spacing.lg, paddingTop: spacing.xl },
+  section: { marginBottom: spacing.xl },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm },
+  sectionTick: { width: 14, height: 4, borderRadius: 2 },
+  sectionTitle: {
+    ...typography.caption,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontSize: 12
   },
-  closeIcon: { color: colors.white, fontSize: 18, fontWeight: '800' },
-  body: { padding: spacing.lg },
-  section: { marginBottom: spacing.lg },
-  sectionTitle: { ...typography.caption, color: colors.textMuted, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: spacing.sm },
-  bodyText: { ...typography.body, color: colors.text, lineHeight: 22 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7 },
-  rowIcon: { fontSize: 16, width: 26 },
+  bodyText: { ...typography.body, color: colors.text, lineHeight: 23 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  rowIcon: { fontSize: 16, width: 28 },
   rowLabel: { ...typography.caption, color: colors.textMuted, fontWeight: '700', width: 100 },
-  rowValue: { ...typography.body, color: colors.text, fontWeight: '600', flex: 1 },
+  rowValue: { ...typography.body, color: colors.text, fontWeight: '700', flex: 1 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  chipText: { ...typography.caption, color: colors.text, fontWeight: '700' },
-  promptCard: {
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 18, padding: spacing.md, marginBottom: spacing.md
+  chip: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8
   },
-  promptQ: { ...typography.caption, color: colors.textMuted, fontWeight: '700', marginBottom: 6 },
+  chipText: { ...typography.caption, fontWeight: '800' },
+  promptCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+    shadowColor: '#16324F',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3
+  },
+  promptBar: { width: 5 },
+  promptInner: { flex: 1, padding: spacing.md },
+  promptQ: { ...typography.caption, color: colors.textMuted, fontWeight: '800', marginBottom: 6 },
   promptA: { ...typography.subtitle, color: colors.text, fontWeight: '700', lineHeight: 26 },
-  galleryImg: { width: '100%', height: width * 1.1, borderRadius: 18, marginBottom: spacing.sm, backgroundColor: colors.card },
+  galleryImg: {
+    width: '100%',
+    height: width * 1.05,
+    borderRadius: 22,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.card
+  },
   actions: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.xl,
-    paddingVertical: spacing.md, paddingBottom: spacing.xl,
-    backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingBottom: spacing.xl,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border
   },
   actionBtn: {
-    width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#16324F', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#16324F',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6
   },
   passBtn: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
-  passIcon: { fontSize: 26, color: colors.textMuted, fontWeight: '700' },
+  passIcon: { fontSize: 24, color: colors.textMuted, fontWeight: '700' },
   likeBtn: {},
-  likeIcon: { fontSize: 28, color: colors.white }
+  likeIcon: { fontSize: 28, color: colors.white },
+  closeMid: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: colors.inputBg,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  closeMidText: { ...typography.caption, color: colors.textMuted, fontWeight: '800' }
 });
