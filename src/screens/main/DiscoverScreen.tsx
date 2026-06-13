@@ -21,6 +21,7 @@ import { ProfessionBadge } from '../../components/ProfessionBadge';
 import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, FilterModal } from '../../components/FilterModal';
 import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
+import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
 import { getDiscoverProfiles, swipeProfile, undoSwipe } from '../../services/apiService';
@@ -53,6 +54,8 @@ export function DiscoverScreen({ navigation }: Props) {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS as FilterState);
   // Match celebration overlay (set when a like creates a match).
   const [celebration, setCelebration] = useState<(MatchInfo & { matchId: string }) | null>(null);
+  // Full-screen profile detail (opened by tapping the card).
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const current = profiles[0] || null;
   const viewingTheme = professionTheme(activeProfession);
@@ -414,7 +417,12 @@ export function DiscoverScreen({ navigation }: Props) {
                 <Text style={[styles.stampText, { color: '#EF4444' }]}>NOPE</Text>
               </Animated.View>
 
-              <ProfileCard profile={current} />
+              <Pressable style={styles.swipeWrap} onPress={() => setDetailOpen(true)}>
+                <ProfileCard profile={current} />
+                <View style={styles.tapHint}>
+                  <Text style={styles.tapHintText}>tap for details</Text>
+                </View>
+              </Pressable>
             </Animated.View>
           )}
         </View>
@@ -455,6 +463,14 @@ export function DiscoverScreen({ navigation }: Props) {
         onClose={() => setShowFilters(false)}
         filters={filters}
         onApply={setFilters}
+      />
+
+      <ProfileDetailModal
+        profile={current}
+        visible={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        onLike={() => flingOff('like')}
+        onPass={() => flingOff('pass')}
       />
 
       {celebration ? (
@@ -577,6 +593,16 @@ const styles = StyleSheet.create({
   chipLock: { fontSize: 11, marginLeft: 6 },
   cardArea: { flex: 1, marginTop: spacing.md, marginBottom: spacing.md },
   swipeWrap: { flex: 1 },
+  tapHint: {
+    position: 'absolute',
+    top: spacing.md,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5
+  },
+  tapHintText: { color: 'rgba(255,255,255,0.95)', fontSize: 11, fontWeight: '700' },
   stamp: {
     position: 'absolute',
     top: 28,
