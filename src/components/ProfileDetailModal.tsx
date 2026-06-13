@@ -13,16 +13,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ProfessionBadge } from './ProfessionBadge';
 import { professionTheme } from '../theme/professionTheme';
-import { colors } from '../theme/colors';
+import { darkColors, darkRadius } from '../theme/darkColors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import type { DiscoverProfile } from '../types';
 
 const { width, height } = Dimensions.get('window');
-const SHEET_HEIGHT = height * 0.88;
+const SHEET_HEIGHT = height * 0.9;
 
-// A premium bottom-sheet profile detail. Opened by tapping a Discover card.
-// Leaves the Discover screen visible (dimmed) above it; tap the backdrop to close.
+// Premium DARK bottom-sheet profile detail. Opened by tapping a Discover card.
+// Dark base + the tapped person's PRISM profession gradient as the accent.
 export function ProfileDetailModal({
   profile,
   visible,
@@ -38,6 +38,7 @@ export function ProfileDetailModal({
 }) {
   if (!profile) return null;
   const theme = professionTheme(profile.profession);
+  const accent = theme.accent;
   const photos = (profile.photos || []).filter(Boolean);
   const interests = profile.interests || [];
   const languages = profile.languages || [];
@@ -65,18 +66,17 @@ export function ProfileDetailModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      {/* Dimmed backdrop — tap to close. The Discover screen shows through at top. */}
+      {/* Dimmed backdrop — tap to close; Discover shows through at the top. */}
       <Pressable style={styles.backdrop} onPress={onClose} />
 
       <View style={styles.sheet}>
-        {/* Grab handle */}
+        {/* dark gradient base + profession-tinted glow */}
+        <LinearGradient colors={darkColors.bgGradient} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+
+        {/* Grab handle (contrasting pill) */}
         <View style={styles.handle} />
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scroll}
-          style={styles.sheetInner}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} style={styles.sheetInner}>
           {/* Hero */}
           <View style={styles.hero}>
             {photos[0] ? (
@@ -87,14 +87,16 @@ export function ProfileDetailModal({
               </LinearGradient>
             )}
 
-            {/* photo count pill */}
             {photos.length > 1 ? (
-              <BlurView intensity={40} tint="dark" style={styles.countPill}>
+              <BlurView intensity={30} tint="dark" style={styles.countPill}>
                 <Text style={styles.countText}>📷 {photos.length}</Text>
               </BlurView>
             ) : null}
 
-            <LinearGradient colors={['transparent', 'rgba(8,12,24,0.92)']} style={styles.heroOverlay}>
+            <LinearGradient
+              colors={['transparent', 'rgba(14,11,20,0.5)', 'rgba(14,11,20,0.98)']}
+              style={styles.heroOverlay}
+            >
               <ProfessionBadge profession={profile.profession} verified={profile.professionVerified} />
               <Text style={styles.name}>
                 {profile.name}
@@ -108,39 +110,43 @@ export function ProfileDetailModal({
           <View style={styles.body}>
             {/* About */}
             {profile.bio ? (
-              <Section title="About" accent={theme.accent}>
+              <Section title="About" accent={accent}>
                 <Text style={styles.bodyText}>{profile.bio}</Text>
               </Section>
             ) : null}
 
-            {/* First prompt floated up high — it's the personality hook */}
-            {prompts[0] ? <PromptCard prompt={prompts[0]} accent={theme.accent} /> : null}
+            {/* Lead prompt — personality hook */}
+            {prompts[0] ? <PromptCard prompt={prompts[0]} accent={accent} /> : null}
 
             {/* Work & education */}
             {profile.jobTitle || profile.company || profile.education ? (
-              <Section title="Work & Education" accent={theme.accent}>
-                {profile.jobTitle ? <Row icon="💼" label="Role" value={profile.jobTitle} /> : null}
-                {profile.company ? <Row icon="🏢" label="Company" value={profile.company} /> : null}
-                {profile.education ? <Row icon="🎓" label="Education" value={profile.education} /> : null}
+              <Section title="Work & Education" accent={accent}>
+                <Card>
+                  {profile.jobTitle ? <Row icon="💼" label="Role" value={profile.jobTitle} /> : null}
+                  {profile.company ? <Row icon="🏢" label="Company" value={profile.company} /> : null}
+                  {profile.education ? <Row icon="🎓" label="Education" value={profile.education} /> : null}
+                </Card>
               </Section>
             ) : null}
 
             {/* Vitals */}
             {vitals.length ? (
-              <Section title="Details" accent={theme.accent}>
-                {vitals.map((v) => (
-                  <Row key={v.label} icon={v.icon} label={v.label} value={v.value} />
-                ))}
+              <Section title="Details" accent={accent}>
+                <Card>
+                  {vitals.map((v) => (
+                    <Row key={v.label} icon={v.icon} label={v.label} value={v.value} />
+                  ))}
+                </Card>
               </Section>
             ) : null}
 
             {/* Interests */}
             {interests.length ? (
-              <Section title="Interests" accent={theme.accent}>
+              <Section title="Interests" accent={accent}>
                 <View style={styles.chipWrap}>
                   {interests.map((it) => (
-                    <View key={it} style={[styles.chip, { borderColor: theme.accent + '55' }]}>
-                      <Text style={[styles.chipText, { color: theme.accent }]}>{it}</Text>
+                    <View key={it} style={[styles.chip, { borderColor: accent + '66', backgroundColor: accent + '1f' }]}>
+                      <Text style={[styles.chipText, { color: '#fff' }]}>{it}</Text>
                     </View>
                   ))}
                 </View>
@@ -149,33 +155,35 @@ export function ProfileDetailModal({
 
             {/* Lifestyle */}
             {lifestyle.length ? (
-              <Section title="Lifestyle" accent={theme.accent}>
-                {lifestyle.map((l) => (
-                  <Row key={l.label} icon={l.icon} label={l.label} value={l.value} />
-                ))}
+              <Section title="Lifestyle" accent={accent}>
+                <Card>
+                  {lifestyle.map((l) => (
+                    <Row key={l.label} icon={l.icon} label={l.label} value={l.value} />
+                  ))}
+                </Card>
               </Section>
             ) : null}
 
             {/* Remaining prompts */}
             {prompts.slice(1).map((p, i) => (
-              <PromptCard key={`${p.prompt}-${i}`} prompt={p} accent={theme.accent} />
+              <PromptCard key={`${p.prompt}-${i}`} prompt={p} accent={accent} />
             ))}
 
             {/* Extra photos */}
             {photos.length > 1 ? (
-              <Section title="More photos" accent={theme.accent}>
+              <Section title="More photos" accent={accent}>
                 {photos.slice(1).map((ph, i) => (
                   <Image key={i} source={{ uri: ph }} style={styles.galleryImg} resizeMode="cover" />
                 ))}
               </Section>
             ) : null}
 
-            <View style={{ height: 120 }} />
+            <View style={{ height: 130 }} />
           </View>
         </ScrollView>
 
         {/* Sticky action bar */}
-        <View style={styles.actions}>
+        <BlurView intensity={30} tint="dark" style={styles.actions}>
           <Pressable style={[styles.actionBtn, styles.passBtn]} onPress={() => act(onPass)}>
             <Text style={styles.passIcon}>✕</Text>
           </Pressable>
@@ -183,16 +191,11 @@ export function ProfileDetailModal({
             <Text style={styles.closeMidText}>Close</Text>
           </Pressable>
           <Pressable onPress={() => act(onLike)}>
-            <LinearGradient
-              colors={theme.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.actionBtn, styles.likeBtn]}
-            >
+            <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.actionBtn, styles.likeBtn]}>
               <Text style={styles.likeIcon}>♥</Text>
             </LinearGradient>
           </Pressable>
-        </View>
+        </BlurView>
       </View>
     </Modal>
   );
@@ -202,12 +205,21 @@ function Section({ title, accent, children }: { title: string; accent: string; c
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <View style={[styles.sectionTick, { backgroundColor: accent }]} />
-        <Text style={[styles.sectionTitle, { color: accent }]}>{title}</Text>
+        <LinearGradient
+          colors={[accent, accent + '55']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.sectionTick}
+        />
+        <Text style={styles.sectionTitle}>{title}</Text>
       </View>
       {children}
     </View>
   );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return <View style={styles.glassCard}>{children}</View>;
 }
 
 function Row({ icon, label, value }: { icon: string; label: string; value: string }) {
@@ -225,7 +237,7 @@ function Row({ icon, label, value }: { icon: string; label: string; value: strin
 function PromptCard({ prompt, accent }: { prompt: { prompt: string; answer: string }; accent: string }) {
   return (
     <View style={styles.promptCard}>
-      <View style={[styles.promptBar, { backgroundColor: accent }]} />
+      <LinearGradient colors={[accent, accent + '44']} style={styles.promptBar} />
       <View style={styles.promptInner}>
         <Text style={styles.promptQ}>{prompt.prompt}</Text>
         <Text style={styles.promptA}>“{prompt.answer}”</Text>
@@ -235,29 +247,29 @@ function PromptCard({ prompt, accent }: { prompt: { prompt: string; answer: stri
 }
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     height: SHEET_HEIGHT,
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     overflow: 'hidden',
+    backgroundColor: darkColors.bg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.4,
     shadowRadius: 24,
-    elevation: 16
+    elevation: 18
   },
   handle: {
     alignSelf: 'center',
     width: 44,
     height: 5,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.35)',
     marginTop: spacing.sm,
     position: 'absolute',
     top: 0,
@@ -267,83 +279,83 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing.lg },
   hero: {
     width,
-    height: width * 1.08,
-    backgroundColor: colors.card,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    height: width * 1.12,
+    backgroundColor: darkColors.card,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     overflow: 'hidden'
   },
   heroImg: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  heroEmoji: { fontSize: 120, opacity: 0.5 },
+  heroEmoji: { fontSize: 130, opacity: 0.6 },
   countPill: {
     position: 'absolute',
     top: spacing.lg,
     right: spacing.lg,
-    borderRadius: 999,
+    borderRadius: darkRadius.pill,
     overflow: 'hidden',
     paddingHorizontal: 12,
     paddingVertical: 6
   },
-  countText: { color: colors.white, fontSize: 12, fontWeight: '800' },
+  countText: { color: darkColors.white, fontSize: 12, fontWeight: '800' },
   heroOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.xxl + spacing.lg,
     gap: 6
   },
-  name: { color: colors.white, fontSize: 30, fontWeight: '900', letterSpacing: -0.5, marginTop: 8 },
-  headline: { color: 'rgba(255,255,255,0.95)', fontSize: 15, fontWeight: '700' },
-  location: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '600', marginTop: 2 },
+  name: { color: darkColors.white, fontSize: 32, fontWeight: '900', letterSpacing: -0.6, marginTop: 8 },
+  headline: { color: 'rgba(255,255,255,0.92)', fontSize: 15, fontWeight: '700' },
+  location: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600', marginTop: 2 },
   body: { padding: spacing.lg, paddingTop: spacing.xl },
   section: { marginBottom: spacing.xl },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm },
-  sectionTick: { width: 14, height: 4, borderRadius: 2 },
+  sectionTick: { width: 18, height: 4, borderRadius: 2 },
   sectionTitle: {
     ...typography.caption,
+    color: darkColors.textMuted,
     fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    fontSize: 12
+    letterSpacing: 1,
+    fontSize: 11
   },
-  bodyText: { ...typography.body, color: colors.text, lineHeight: 23 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  bodyText: { ...typography.body, color: darkColors.textDim, lineHeight: 23, fontWeight: '500' },
+  glassCard: {
+    backgroundColor: darkColors.surface,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    borderRadius: darkRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs
+  },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9 },
   rowIcon: { fontSize: 16, width: 28 },
-  rowLabel: { ...typography.caption, color: colors.textMuted, fontWeight: '700', width: 100 },
-  rowValue: { ...typography.body, color: colors.text, fontWeight: '700', flex: 1 },
+  rowLabel: { ...typography.caption, color: darkColors.textMuted, fontWeight: '700', width: 100, fontSize: 13 },
+  rowValue: { ...typography.body, color: darkColors.text, fontWeight: '700', flex: 1, fontSize: 14 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: {
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8
-  },
-  chipText: { ...typography.caption, fontWeight: '800' },
+  chip: { borderWidth: 1, borderRadius: darkRadius.pill, paddingHorizontal: 14, paddingVertical: 9 },
+  chipText: { ...typography.caption, fontWeight: '700', fontSize: 13 },
   promptCard: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: 20,
+    backgroundColor: darkColors.card,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    borderRadius: darkRadius.xl,
     marginBottom: spacing.md,
-    overflow: 'hidden',
-    shadowColor: '#16324F',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 3
+    overflow: 'hidden'
   },
   promptBar: { width: 5 },
   promptInner: { flex: 1, padding: spacing.md },
-  promptQ: { ...typography.caption, color: colors.textMuted, fontWeight: '800', marginBottom: 6 },
-  promptA: { ...typography.subtitle, color: colors.text, fontWeight: '700', lineHeight: 26 },
+  promptQ: { ...typography.caption, color: darkColors.textMuted, fontWeight: '800', marginBottom: 6, fontSize: 12 },
+  promptA: { ...typography.subtitle, color: darkColors.text, fontWeight: '700', lineHeight: 26 },
   galleryImg: {
     width: '100%',
     height: width * 1.05,
-    borderRadius: 22,
+    borderRadius: darkRadius.xl,
     marginBottom: spacing.sm,
-    backgroundColor: colors.card
+    backgroundColor: darkColors.card
   },
   actions: {
     position: 'absolute',
@@ -356,9 +368,9 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingVertical: spacing.md,
     paddingBottom: spacing.xl,
-    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border
+    borderTopColor: darkColors.border,
+    backgroundColor: 'rgba(14,11,20,0.85)'
   },
   actionBtn: {
     width: 62,
@@ -366,23 +378,23 @@ const styles = StyleSheet.create({
     borderRadius: 31,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#16324F',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 6
   },
-  passBtn: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
-  passIcon: { fontSize: 24, color: colors.textMuted, fontWeight: '700' },
+  passBtn: { backgroundColor: darkColors.surfaceStrong, borderWidth: 1, borderColor: darkColors.borderStrong },
+  passIcon: { fontSize: 24, color: darkColors.textDim, fontWeight: '700' },
   likeBtn: {},
-  likeIcon: { fontSize: 28, color: colors.white },
+  likeIcon: { fontSize: 28, color: darkColors.white },
   closeMid: {
     paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: colors.inputBg,
+    paddingVertical: 11,
+    borderRadius: darkRadius.pill,
+    backgroundColor: darkColors.surface,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: darkColors.border
   },
-  closeMidText: { ...typography.caption, color: colors.textMuted, fontWeight: '800' }
+  closeMidText: { ...typography.caption, color: darkColors.textMuted, fontWeight: '800' }
 });
