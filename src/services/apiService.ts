@@ -216,7 +216,7 @@ export function getBillingCatalog(token: string) {
 
 // Test-only entitlement grant (works while backend BILLING_DEV_MODE=true).
 export function devGrant(
-  payload: { type: 'pro' | 'credits'; packId?: string },
+  payload: { type: 'pro' | 'credits'; packId?: string; planId?: string },
   token: string
 ) {
   return apiRequest<GrantResponse>(

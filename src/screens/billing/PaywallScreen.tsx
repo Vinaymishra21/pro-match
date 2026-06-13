@@ -27,11 +27,15 @@ export function PaywallScreen({ navigation, route }: Props) {
   const [catalog, setCatalog] = useState<BillingCatalog | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
 
   const load = useCallback(async () => {
     try {
       const res = await getBillingCatalog(token);
       setCatalog(res);
+      // Default-select the "popular" plan (monthly), else the first.
+      const def = res.proPlans.find((p) => p.popular) || res.proPlans[0];
+      if (def) setSelectedPlan(def.id);
     } catch (err) {
       Alert.alert('Error', (err as Error).message);
     } finally {
@@ -43,14 +47,14 @@ export function PaywallScreen({ navigation, route }: Props) {
     load();
   }, [load]);
 
-  async function purchase(type: 'pro' | 'credits', packId?: string) {
+  async function purchase(type: 'pro' | 'credits', opts?: { packId?: string; planId?: string }) {
     if (!catalog) return;
-    const key = packId || type;
+    const key = opts?.packId || opts?.planId || type;
     try {
       setBusy(key);
       if (catalog.devMode) {
         // Stub billing: grant immediately so the whole flow is testable.
-        await devGrant({ type, packId }, token);
+        await devGrant({ type, packId: opts?.packId, planId: opts?.planId }, token);
       } else {
         // Live Razorpay checkout is wired here once the native SDK is added.
         Alert.alert('Payments coming soon', 'Real payments will be enabled shortly.');
@@ -68,6 +72,8 @@ export function PaywallScreen({ navigation, route }: Props) {
       setBusy(null);
     }
   }
+
+  const activePlan = catalog?.proPlans.find((p) => p.id === selectedPlan) || null;
 
   return (
     <PrismBackground tint={gradients.gold}>
@@ -96,13 +102,8 @@ export function PaywallScreen({ navigation, route }: Props) {
               end={{ x: 1, y: 1 }}
               style={[styles.proCard, focus === 'pro' ? styles.focused : null]}
             >
-              <View style={styles.proHeaderRow}>
-                <Text style={styles.proName}>Pro</Text>
-                <View style={styles.priceTag}>
-                  <Text style={styles.priceAmount}>₹{catalog.pro.priceInr}</Text>
-                  <Text style={styles.pricePeriod}>/ {catalog.pro.periodDays} days</Text>
-                </View>
-              </View>
+              <Text style={styles.proName}>Pro Match Pro</Text>
+
               <View style={styles.perks}>
                 {PRO_PERKS.map((p) => (
                   <View key={p.text} style={styles.perkRow}>
@@ -110,11 +111,46 @@ export function PaywallScreen({ navigation, route }: Props) {
                     <Text style={styles.perkText}>{p.text}</Text>
                   </View>
                 ))}
+                <View style={styles.perkRow}>
+                  <Text style={styles.perkIcon}>↩</Text>
+                  <Text style={styles.perkText}>Unlimited rewinds (undo swipes)</Text>
+                </View>
               </View>
+
+              {/* Plan selector */}
+              <View style={styles.planRow}>
+                {catalog.proPlans.map((plan) => {
+                  const active = plan.id === selectedPlan;
+                  const perWeek = plan.priceInr / (plan.periodDays / 7);
+                  return (
+                    <Pressable
+                      key={plan.id}
+                      onPress={() => setSelectedPlan(plan.id)}
+                      style={[styles.planCard, active ? styles.planCardActive : null]}
+                    >
+                      {plan.popular ? (
+                        <View style={styles.popularTag}>
+                          <Text style={styles.popularText}>BEST VALUE</Text>
+                        </View>
+                      ) : null}
+                      <Text style={styles.planLabel}>{plan.label}</Text>
+                      <Text style={styles.planPrice}>₹{plan.priceInr}</Text>
+                      <Text style={styles.planPer}>≈ ₹{Math.round(perWeek)}/week</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
               <GradientButton
-                title={busy === 'pro' ? 'Activating…' : `Go Pro · ₹${catalog.pro.priceInr}`}
-                loading={busy === 'pro'}
-                onPress={() => purchase('pro')}
+                title={
+                  busy === selectedPlan
+                    ? 'Activating…'
+                    : activePlan
+                    ? `Go Pro · ₹${activePlan.priceInr} ${activePlan.label.toLowerCase()}`
+                    : 'Go Pro'
+                }
+                loading={busy === selectedPlan}
+                onPress={() => activePlan && purchase('pro', { planId: activePlan.id })}
                 colors={['#1F2937', '#374151']}
                 style={{ marginTop: spacing.md }}
               />
@@ -136,7 +172,7 @@ export function PaywallScreen({ navigation, route }: Props) {
                   <Pressable
                     key={pack.id}
                     style={styles.packCard}
-                    onPress={() => purchase('credits', pack.id)}
+                    onPress={() => purchase('credits', { packId: pack.id })}
                     disabled={busy !== null}
                   >
                     <View style={styles.packLeft}>
@@ -193,11 +229,30 @@ const styles = StyleSheet.create({
   },
   focused: { borderWidth: 2, borderColor: '#FFFFFF' },
   focusedText: {},
-  proHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   proName: { fontSize: 24, fontWeight: '900', color: '#2A1C00' },
-  priceTag: { alignItems: 'flex-end' },
-  priceAmount: { fontSize: 28, fontWeight: '900', color: '#2A1C00' },
-  pricePeriod: { fontSize: 12, fontWeight: '700', color: '#5C4500' },
+  planRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  planCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center'
+  },
+  planCardActive: { backgroundColor: '#FFFFFF', borderColor: '#1F2937' },
+  popularTag: {
+    position: 'absolute',
+    top: -10,
+    backgroundColor: '#1F2937',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2
+  },
+  popularText: { color: '#fff', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
+  planLabel: { fontSize: 13, fontWeight: '800', color: '#5C4500', marginTop: 2 },
+  planPrice: { fontSize: 24, fontWeight: '900', color: '#2A1C00', marginTop: 4 },
+  planPer: { fontSize: 11, fontWeight: '700', color: '#7A6020', marginTop: 2 },
   perks: { marginTop: spacing.md, gap: spacing.sm },
   perkRow: { flexDirection: 'row', alignItems: 'center' },
   perkIcon: { fontSize: 18, marginRight: spacing.sm },

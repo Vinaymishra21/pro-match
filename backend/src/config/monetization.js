@@ -1,7 +1,13 @@
 // Single source of truth for all pricing / limits. Change values here only.
 module.exports = {
-  // Pro subscription
-  PRO_PRICE_INR: 199,
+  // Pro subscription plans. `id` is what the client sends; both unlock full Pro.
+  PRO_PLANS: [
+    { id: 'weekly', label: 'Weekly', priceInr: 99, periodDays: 7 },
+    { id: 'monthly', label: 'Monthly', priceInr: 299, periodDays: 30, popular: true }
+  ],
+
+  // Legacy single-plan constants (kept for any old references; = monthly).
+  PRO_PRICE_INR: 299,
   PRO_PERIOD_DAYS: 30,
 
   // Cross-profession discovery (the USP funnel)

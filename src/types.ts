@@ -176,8 +176,16 @@ export interface CreditPack {
   credits: number;
 }
 
+export interface ProPlan {
+  id: string;
+  label: string;
+  priceInr: number;
+  periodDays: number;
+  popular?: boolean;
+}
+
 export interface BillingCatalog {
-  pro: { priceInr: number; periodDays: number };
+  proPlans: ProPlan[];
   creditPacks: CreditPack[];
   creditValueInr: number;
   devMode: boolean;
