@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useCallback, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     borderColor: colors.primary,
-    backgroundColor: '#FDEEE8',
+    backgroundColor: 'rgba(232,65,90,0.15)',
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,

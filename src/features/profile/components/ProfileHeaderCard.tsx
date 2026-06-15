@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FDEEE8',
+    backgroundColor: 'rgba(232,65,90,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 8,
     borderRadius: 999,
-    backgroundColor: '#E8EFF8',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden'
   },
   progressFill: {
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs
   },
   badge: {
-    backgroundColor: '#FFF3ED',
+    backgroundColor: 'rgba(232,65,90,0.12)',
     borderColor: '#F4A261',
     borderWidth: 1,
     borderRadius: 999,
@@ -207,14 +207,14 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     ...typography.caption,
-    color: '#D4700A',
+    color: '#FBBF24',
     fontWeight: '600',
     fontSize: 12
   },
   doneBadge: {
     marginTop: spacing.md,
     alignSelf: 'flex-start',
-    backgroundColor: '#D6F3EC',
+    backgroundColor: 'rgba(52,211,153,0.18)',
     borderRadius: 999,
     paddingHorizontal: spacing.md,
     paddingVertical: 8

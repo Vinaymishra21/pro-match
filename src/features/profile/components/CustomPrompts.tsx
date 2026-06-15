@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { promptPool } from '../constants/profileOptions';
-import { colors } from '../../../theme/colors';
+import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -89,7 +89,7 @@ export function CustomPrompts({ value = [], onChange }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 16,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderRadius: 14,
     paddingVertical: spacing.md,
-    backgroundColor: '#FDEEE8'
+    backgroundColor: 'rgba(232,65,90,0.15)'
   },
   addPlus: { fontSize: 20, color: colors.primary, fontWeight: '800', marginRight: spacing.xs },
   addLabel: { ...typography.caption, color: colors.primary, fontWeight: '800' },

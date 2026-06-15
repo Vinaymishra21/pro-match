@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, LayoutAnimation, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 

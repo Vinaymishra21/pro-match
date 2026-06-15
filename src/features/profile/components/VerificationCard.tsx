@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../hooks/useAuth';
 import { verifyProfession } from '../../../services/apiService';
-import { colors } from '../../../theme/colors';
+import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFF7E6',
+    backgroundColor: 'rgba(251,191,36,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   title: { ...typography.body, color: colors.text, fontWeight: '800' },
   sub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   cta: {
-    backgroundColor: colors.text,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: spacing.sm + 2,
     alignItems: 'center'

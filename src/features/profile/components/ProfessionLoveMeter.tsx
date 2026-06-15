@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useCallback, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../../theme/colors';
+import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -86,7 +86,7 @@ export function ProfessionLoveMeter({ value, onChange }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.card,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   meterTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E8EFF8',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
     marginBottom: spacing.md
   },

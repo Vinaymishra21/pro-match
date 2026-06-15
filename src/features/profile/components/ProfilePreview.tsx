@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ChipSelector } from './ChipSelector';
-import { colors } from '../../../theme/colors';
+import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     marginTop: spacing.xs,
-    backgroundColor: '#FDEEE8',
+    backgroundColor: 'rgba(232,65,90,0.15)',
     borderRadius: 999,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   loveCard: {
-    backgroundColor: '#FDEEE8',
+    backgroundColor: 'rgba(232,65,90,0.15)',
     borderRadius: 18,
     padding: spacing.lg,
     alignItems: 'center',

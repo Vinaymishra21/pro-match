@@ -1,11 +1,10 @@
 // @ts-nocheck
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { Alert, LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, UIManager, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { AppButton } from '../../components/AppButton';
-import { AppInput } from '../../components/AppInput';
+import { LinearGradient } from 'expo-linear-gradient';
+import { DarkBackground } from '../../components/DarkBackground';
 import { Dropdown } from '../../components/Dropdown';
-import { ScreenContainer } from '../../components/ScreenContainer';
 import { AnimatedProfileSection } from '../../features/profile/components/AnimatedProfileSection';
 import { ChipSelector } from '../../features/profile/components/ChipSelector';
 import { ProfileSection } from '../../features/profile/components/ProfileSection';
@@ -31,10 +30,44 @@ import {
 import { getProfileCompletion } from '../../features/profile/profileCompletion';
 import { buildProfileForm, parseInterestInput } from '../../features/profile/profileForm';
 import { useAuth } from '../../hooks/useAuth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { updateProfile } from '../../services/apiService';
-import { colors } from '../../theme/colors';
+import { colorsDark as colors } from '../../theme/colorsDark';
+import { professionTheme } from '../../theme/professionTheme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+
+// Dark text input matching the new design (used in place of the shared AppInput,
+// which is light-themed and shared with Chat/Auth).
+function DarkInput({ value, onChangeText, placeholder, style, ...rest }) {
+  return (
+    <View style={[inputStyles.wrap, style?.minHeight ? { minHeight: style.minHeight } : null]}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textMuted}
+        style={[inputStyles.input, style]}
+        {...rest}
+      />
+    </View>
+  );
+}
+
+const inputStyles = StyleSheet.create({
+  wrap: { marginBottom: spacing.sm },
+  input: {
+    backgroundColor: colors.inputBg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '600'
+  }
+});
 
 // Compact stepper-based age range picker. value = [] (no preference) or [min,max].
 function AgeRangePicker({ value, onChange }) {
@@ -91,9 +124,9 @@ const ageStyles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: spacing.sm,
     alignItems: 'center',
-    backgroundColor: '#FDEEE8'
+    backgroundColor: 'rgba(232,65,90,0.12)'
   },
-  enableText: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+  enableText: { color: colors.secondary, fontWeight: '700', fontSize: 13 },
   wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
   col: { alignItems: 'center' },
   colLabel: { ...typography.caption, color: colors.textMuted, fontSize: 11, marginBottom: 4 },
@@ -116,6 +149,8 @@ const ageStyles = StyleSheet.create({
 
 export function ProfileScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 24 : 0);
   const { user, token, updateLocalUser, signOut } = useAuth();
   const [form, setForm] = useState(buildProfileForm(user));
   const [interestInput, setInterestInput] = useState((form.interests || []).join(', '));
@@ -218,7 +253,8 @@ export function ProfileScreen() {
   }
 
   return (
-    <ScreenContainer bottomInset={false}>
+    <DarkBackground orbColor={professionTheme(user?.profession).accent + '33'}>
+      <View style={[styles.screen, { paddingTop: topPad + spacing.xs }]}>
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.heading}>My Profile</Text>
@@ -267,8 +303,8 @@ export function ProfileScreen() {
 
             <AnimatedProfileSection index={2}>
               <ProfileSection title="Basics" subtitle="The essentials people see first" icon={'\uD83D\uDC64'} collapsible>
-                <AppInput value={form.name} onChangeText={(value) => updateField('name', value)} placeholder="Full name" />
-                <AppInput
+                <DarkInput value={form.name} onChangeText={(value) => updateField('name', value)} placeholder="Full name" />
+                <DarkInput
                   value={form.age}
                   onChangeText={(value) => updateField('age', value)}
                   placeholder="Age"
@@ -281,7 +317,7 @@ export function ProfileScreen() {
                   placeholder="Select your gender"
                   onChange={(value) => updateField('gender', value)}
                 />
-                <AppInput
+                <DarkInput
                   value={form.location}
                   onChangeText={(value) => updateField('location', value)}
                   placeholder="City, Country"
@@ -307,12 +343,12 @@ export function ProfileScreen() {
                   onChange={(value) => updateField('languages', value)}
                   multi
                 />
-                <AppInput
+                <DarkInput
                   value={form.headline}
                   onChangeText={(value) => updateField('headline', value)}
                   placeholder="One-line headline"
                 />
-                <AppInput
+                <DarkInput
                   value={form.bio}
                   onChangeText={(value) => updateField('bio', value)}
                   placeholder="Short bio"
@@ -359,17 +395,17 @@ export function ProfileScreen() {
 
             <AnimatedProfileSection index={4}>
               <ProfileSection title="Work & Education" subtitle="Show your professional side" icon={'\uD83D\uDCBC'} collapsible>
-                <AppInput
+                <DarkInput
                   value={form.jobTitle}
                   onChangeText={(value) => updateField('jobTitle', value)}
                   placeholder="Job title"
                 />
-                <AppInput
+                <DarkInput
                   value={form.company}
                   onChangeText={(value) => updateField('company', value)}
                   placeholder="Company"
                 />
-                <AppInput
+                <DarkInput
                   value={form.education}
                   onChangeText={(value) => updateField('education', value)}
                   placeholder="Education"
@@ -379,7 +415,7 @@ export function ProfileScreen() {
 
             <AnimatedProfileSection index={5}>
               <ProfileSection title="Interests" subtitle="Tap quick picks or type your own" icon={'\u2B50'} collapsible>
-                <AppInput
+                <DarkInput
                   value={interestInput}
                   onChangeText={setInterestInput}
                   placeholder="Travel, Coffee, Reading, Music..."
@@ -463,14 +499,37 @@ export function ProfileScreen() {
         </Text>
       </ScrollView>
 
-      <View style={styles.stickySaveBar}>
-        <AppButton title={isSaving ? 'Saving...' : 'Save Profile'} onPress={handleSave} disabled={isSaving} />
+      <View style={[styles.stickySaveBar, { bottom: spacing.md + insets.bottom }]}>
+        <Pressable onPress={handleSave} disabled={isSaving}>
+          <LinearGradient
+            colors={['#E8415A', '#C0305F']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.saveBtn, isSaving ? { opacity: 0.6 } : null]}
+          >
+            <Text style={styles.saveBtnText}>{isSaving ? 'Saving…' : '✓  Save Profile'}</Text>
+          </LinearGradient>
+        </Pressable>
       </View>
-    </ScreenContainer>
+      </View>
+    </DarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, paddingHorizontal: spacing.lg },
+  saveBtn: {
+    height: 54,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#E8415A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 8
+  },
+  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -562,16 +621,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.lg,
     right: spacing.lg,
-    bottom: spacing.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    padding: spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5
+    bottom: spacing.md
   }
 });

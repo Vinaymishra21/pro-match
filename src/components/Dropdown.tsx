@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme/colors';
+import { colorsDark as colors } from '../theme/colorsDark';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: 12
   },
-  optionActive: { backgroundColor: '#FDEEE8' },
+  optionActive: { backgroundColor: 'rgba(232,65,90,0.15)' },
   optionText: { ...typography.body, color: colors.text, fontWeight: '600' },
   optionTextActive: { color: colors.primary, fontWeight: '800' },
   check: { color: colors.primary, fontWeight: '900', fontSize: 16 }
