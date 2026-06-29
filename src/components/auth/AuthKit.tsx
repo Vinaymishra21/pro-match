@@ -18,10 +18,23 @@ import { spacing } from '../../theme/spacing';
 // (Welcome, method pickers, phone, OTP, email, profession) feels like one
 // cohesive premium product.
 
-// Full-screen dark auth shell with safe-area padding + glow orbs.
-export function AuthShell({ children }: { children: ReactNode }) {
+// Full-screen dark auth shell with safe-area padding + glow orbs. Pass a `hero`
+// (e.g. <HeroCarousel/>) to render full-bleed imagery behind the content.
+export function AuthShell({ children, hero }: { children: ReactNode; hero?: ReactNode }) {
   const insets = useSafeAreaInsets();
   const topPad = Math.max(insets.top, Platform.OS === 'android' ? 28 : 0);
+
+  if (hero) {
+    return (
+      <View style={shell.heroRoot}>
+        {hero}
+        <View style={[shell.root, { paddingTop: topPad + spacing.xs, paddingBottom: insets.bottom + spacing.md }]}>
+          {children}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <DarkBackground>
       <View style={[shell.root, { paddingTop: topPad + spacing.xs, paddingBottom: insets.bottom + spacing.md }]}>
@@ -135,6 +148,7 @@ export const authText = {
 } as const;
 
 const shell = StyleSheet.create({
+  heroRoot: { flex: 1, backgroundColor: darkColors.bg },
   root: { flex: 1, paddingHorizontal: spacing.lg },
   back: {
     width: 44,

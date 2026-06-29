@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthShell, BackButton, Eyebrow } from '../../components/auth/AuthKit';
+import { HeroCarousel } from '../../components/auth/HeroCarousel';
 import { useAuth } from '../../hooks/useAuth';
 import { DEV_BYPASS_AUTH } from '../../constants/config';
 import { darkColors } from '../../theme/darkColors';
@@ -32,7 +33,7 @@ export function MethodScreenBase({
   }
 
   return (
-    <AuthShell>
+    <AuthShell hero={<HeroCarousel />}>
       <StatusBar style="light" />
       <BackButton onPress={() => navigation.goBack()} />
 
@@ -122,11 +123,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 18,
     padding: 14,
-    backgroundColor: darkColors.surface,
+    backgroundColor: 'rgba(28,21,40,0.72)',
     borderWidth: 1,
-    borderColor: darkColors.border
+    borderColor: 'rgba(255,255,255,0.14)'
   },
-  rowPressed: { backgroundColor: darkColors.surfaceStrong },
+  rowPressed: { backgroundColor: 'rgba(40,30,56,0.85)' },
   rowIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   rowIconText: { fontWeight: '800' },
   rowInfo: { flex: 1 },
@@ -142,10 +143,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: darkColors.borderStrong,
-    backgroundColor: darkColors.surface
+    borderColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(28,21,40,0.55)'
   },
-  emailPressed: { backgroundColor: darkColors.surfaceStrong },
+  emailPressed: { backgroundColor: 'rgba(40,30,56,0.75)' },
   emailLabel: { color: darkColors.text, fontSize: 15, fontWeight: '700' },
   switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm },
   switchText: { color: darkColors.textMuted, fontSize: 14 },

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthShell, GradientButton, OutlineButton } from '../../components/auth/AuthKit';
+import { HeroCarousel } from '../../components/auth/HeroCarousel';
 import { useAuth } from '../../hooks/useAuth';
 import { DEV_BYPASS_AUTH } from '../../constants/config';
 import { darkColors } from '../../theme/darkColors';
@@ -30,7 +31,7 @@ export function WelcomeScreen({ navigation }: Props) {
   }
 
   return (
-    <AuthShell>
+    <AuthShell hero={<HeroCarousel />}>
       <StatusBar style="light" />
       <View style={styles.screen}>
         {/* Hero */}
@@ -108,9 +109,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: darkColors.surface,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: darkColors.border,
+    borderColor: 'rgba(255,255,255,0.14)',
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: spacing.md
