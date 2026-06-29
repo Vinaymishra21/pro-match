@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppButton } from '../../components/AppButton';
-import { AppInput } from '../../components/AppInput';
-import { ScreenContainer } from '../../components/ScreenContainer';
+import { AuthShell, BackButton, Eyebrow, GradientButton, authText } from '../../components/auth/AuthKit';
 import { useAuth } from '../../hooks/useAuth';
-import { colors } from '../../theme/colors';
+import { darkColors } from '../../theme/darkColors';
 import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
 import type { AuthMethod, AuthMode, AuthStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Auth'>;
+
+function DarkField({ value, onChangeText, placeholder, ...rest }: any) {
+  return (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor={darkColors.textFaint}
+      style={styles.input}
+      {...rest}
+    />
+  );
+}
 
 export function AuthScreen({ route, navigation }: Props) {
   const { signIn, signUp } = useAuth();
@@ -24,26 +35,18 @@ export function AuthScreen({ route, navigation }: Props) {
 
   const isRegister = mode === 'register';
   const isPhone = authMethod === 'phone';
-
-  const isDisabled =
-    isSubmitting || (isPhone ? false : !email || !password || (isRegister && !name));
+  const isDisabled = isSubmitting || (isPhone ? false : !email || !password || (isRegister && !name));
 
   async function handleSubmit() {
-    // Phone sign-in uses the dedicated OTP flow.
     if (isPhone) {
       navigation.navigate('PhoneEntry');
       return;
     }
-
     try {
       setIsSubmitting(true);
       setError('');
-
-      if (isRegister) {
-        await signUp({ name, email, password });
-      } else {
-        await signIn({ email, password });
-      }
+      if (isRegister) await signUp({ name, email, password });
+      else await signIn({ email, password });
     } catch (submitError) {
       setError((submitError as Error).message);
     } finally {
@@ -52,138 +55,89 @@ export function AuthScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer>
-      <Text style={styles.heading}>{isRegister ? 'Create Account' : 'Welcome Back'}</Text>
-      <Text style={styles.caption}>Professional matches only.</Text>
+    <AuthShell>
+      <StatusBar style="light" />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+          <BackButton onPress={() => navigation.goBack()} />
 
-      <View style={styles.methodToggle}>
-        <Pressable
-          onPress={() => setAuthMethod('email')}
-          style={[styles.methodTab, !isPhone ? styles.methodTabActive : null]}
-        >
-          <Text style={[styles.methodLabel, !isPhone ? styles.methodLabelActive : null]}>Email</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setAuthMethod('phone')}
-          style={[styles.methodTab, isPhone ? styles.methodTabActive : null]}
-        >
-          <Text style={[styles.methodLabel, isPhone ? styles.methodLabelActive : null]}>Phone</Text>
-        </Pressable>
-      </View>
+          <View style={styles.head}>
+            <Eyebrow>{isRegister ? 'Create account' : 'Welcome back'}</Eyebrow>
+            <Text style={authText.title}>{isRegister ? 'Join Pro Match' : 'Sign in'}</Text>
+            <Text style={authText.desc}>Professionals matching with professionals.</Text>
+          </View>
 
-      {isRegister ? <AppInput value={name} onChangeText={setName} placeholder="Full name" /> : null}
+          {/* Email / Phone toggle */}
+          <View style={styles.toggle}>
+            <Pressable onPress={() => setAuthMethod('email')} style={[styles.tab, !isPhone ? styles.tabActive : null]}>
+              <Text style={[styles.tabLabel, !isPhone ? styles.tabLabelActive : null]}>Email</Text>
+            </Pressable>
+            <Pressable onPress={() => setAuthMethod('phone')} style={[styles.tab, isPhone ? styles.tabActive : null]}>
+              <Text style={[styles.tabLabel, isPhone ? styles.tabLabelActive : null]}>Phone</Text>
+            </Pressable>
+          </View>
 
-      {isPhone ? (
-        <Text style={styles.phoneHint}>
-          We&apos;ll verify your number with a one-time code on the next screen.
-        </Text>
-      ) : (
-        <>
-          <AppInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email"
-            autoCapitalize="none"
-            keyboardType="email-address"
+          {isPhone ? (
+            <Text style={styles.phoneHint}>We’ll verify your number with a one-time code on the next screen.</Text>
+          ) : (
+            <View style={styles.fields}>
+              {isRegister ? <DarkField value={name} onChangeText={setName} placeholder="Full name" /> : null}
+              <DarkField value={email} onChangeText={setEmail} placeholder="Email" autoCapitalize="none" keyboardType="email-address" />
+              <DarkField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
+            </View>
+          )}
+
+          {error ? <Text style={authText.error}>{error}</Text> : null}
+
+          <GradientButton
+            title={isSubmitting ? 'Please wait…' : isPhone ? 'Continue' : isRegister ? 'Create account' : 'Sign in'}
+            onPress={handleSubmit}
+            disabled={isDisabled}
+            loading={isSubmitting}
+            style={{ marginTop: spacing.lg }}
           />
-          <AppInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            secureTextEntry
-          />
-        </>
-      )}
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <AppButton
-        title={
-          isSubmitting
-            ? 'Please wait...'
-            : isPhone
-            ? 'Continue'
-            : isRegister
-            ? 'Register'
-            : 'Login'
-        }
-        onPress={handleSubmit}
-        disabled={isDisabled}
-      />
-
-      {isSubmitting ? <ActivityIndicator color={colors.secondary} style={styles.loader} /> : null}
-
-      <View style={styles.switchWrap}>
-        <Text style={styles.switchText}>
-          {isRegister ? 'Already have an account?' : 'New here?'}
-        </Text>
-        <Text style={styles.switchAction} onPress={() => setMode(isRegister ? 'login' : 'register')}>
-          {isRegister ? ' Login' : ' Register'}
-        </Text>
-      </View>
-    </ScreenContainer>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchText}>{isRegister ? 'Already have an account?' : 'New here?'}</Text>
+            <Text style={styles.switchAction} onPress={() => setMode(isRegister ? 'login' : 'register')}>
+              {isRegister ? ' Sign in' : ' Create one'}
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    ...typography.title,
-    color: colors.text,
-    marginBottom: spacing.xs
-  },
-  caption: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginBottom: spacing.lg
-  },
-  methodToggle: {
+  head: { marginTop: spacing.xl, marginBottom: spacing.lg },
+  toggle: {
     flexDirection: 'row',
-    backgroundColor: colors.inputBg,
+    backgroundColor: darkColors.surface,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: darkColors.border,
     padding: 4,
     marginBottom: spacing.lg
   },
-  methodTab: {
-    flex: 1,
-    borderRadius: 999,
-    paddingVertical: 10,
-    alignItems: 'center'
+  tab: { flex: 1, borderRadius: 999, paddingVertical: 11, alignItems: 'center' },
+  tabActive: { backgroundColor: darkColors.primary },
+  tabLabel: { color: darkColors.textMuted, fontWeight: '700', fontSize: 14 },
+  tabLabelActive: { color: '#fff' },
+  fields: { gap: spacing.sm },
+  input: {
+    backgroundColor: darkColors.surface,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    borderRadius: 14,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 15,
+    color: darkColors.text,
+    fontSize: 15,
+    fontWeight: '600'
   },
-  methodTabActive: {
-    backgroundColor: colors.primary
-  },
-  methodLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '700'
-  },
-  methodLabelActive: {
-    color: colors.white
-  },
-  phoneHint: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginBottom: spacing.md
-  },
-  error: {
-    color: '#FCA5A5',
-    marginBottom: spacing.md
-  },
-  loader: {
-    marginTop: spacing.md
-  },
-  switchWrap: {
-    flexDirection: 'row',
-    marginTop: spacing.lg,
-    justifyContent: 'center'
-  },
-  switchText: {
-    color: colors.textMuted
-  },
-  switchAction: {
-    color: colors.secondary,
-    fontWeight: '700'
-  }
+  phoneHint: { color: darkColors.textMuted, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
+  switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
+  switchText: { color: darkColors.textMuted, fontSize: 14 },
+  switchAction: { color: darkColors.brandText, fontSize: 14, fontWeight: '800' }
 });

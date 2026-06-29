@@ -11,11 +11,12 @@ import {
   TextInput,
   View
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ScreenContainer } from '../../components/ScreenContainer';
+import { AuthShell, BackButton, Eyebrow, FieldLabel, NextFab, authText } from '../../components/auth/AuthKit';
 import { COUNTRY_CODES, type CountryCodeOption } from '../../constants/countryCodes';
 import { useAuth } from '../../hooks/useAuth';
-import { colors } from '../../theme/colors';
+import { darkColors } from '../../theme/darkColors';
 import { spacing } from '../../theme/spacing';
 import type { AuthStackParamList } from '../../types';
 
@@ -23,10 +24,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'PhoneEntry'>;
 
 export function PhoneEntryScreen({ navigation }: Props) {
   const { requestOtp } = useAuth();
-  const [countryCode, setCountryCode] = useState<CountryCodeOption>({
-    code: '+91',
-    country: 'India'
-  });
+  const [countryCode, setCountryCode] = useState<CountryCodeOption>({ code: '+91', country: 'India' });
   const [phoneNumber, setPhoneNumber] = useState('');
   const [query, setQuery] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -37,149 +35,100 @@ export function PhoneEntryScreen({ navigation }: Props) {
   const canContinue = sanitized.length >= 8 && !isSending;
 
   async function handleContinue() {
-    if (!canContinue) {
-      return;
-    }
-
+    if (!canContinue) return;
     const fullPhone = `${countryCode.code}${sanitized}`;
     try {
       setIsSending(true);
       setError('');
       const res = await requestOtp(fullPhone);
-      navigation.navigate('OtpVerification', {
-        countryCode: countryCode.code,
-        phoneNumber: sanitized
-      });
-      // In dev mode the backend returns the code so testers don't need an SMS.
-      if (res.devCode) {
-        console.log(`[DEV] OTP for ${fullPhone}: ${res.devCode}`);
-      }
+      navigation.navigate('OtpVerification', { countryCode: countryCode.code, phoneNumber: sanitized });
+      if (res.devCode) console.log(`[DEV] OTP for ${fullPhone}: ${res.devCode}`);
     } catch (sendError) {
       setError((sendError as Error).message);
     } finally {
       setIsSending(false);
     }
   }
+
   const filteredCountries = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) {
-      return COUNTRY_CODES;
-    }
-
+    if (!term) return COUNTRY_CODES;
     return COUNTRY_CODES.filter(
       (item) => item.country.toLowerCase().includes(term) || item.code.toLowerCase().includes(term)
     );
   }, [query]);
 
   return (
-    <ScreenContainer>
+    <AuthShell>
+      <StatusBar style="light" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 24}
-        style={styles.keyboard}
+        style={styles.kb}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.top}>
-            <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backButton}>
-              <Text style={styles.backLabel}>←</Text>
-            </Pressable>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View>
+            <BackButton onPress={() => navigation.goBack()} />
 
-            <View style={styles.heroCard}>
-              <View style={styles.eyebrowRow}>
-                <View style={styles.eyebrowDot} />
-                <Text style={styles.eyebrow}>Create an account</Text>
-              </View>
+            <View style={styles.head}>
+              <Eyebrow>Verify it’s you</Eyebrow>
+              <Text style={authText.title}>What’s your number?</Text>
+              <Text style={authText.desc}>We use your number to keep Pro Match real — it stays private and never appears on your profile.</Text>
+            </View>
 
-              <Text style={styles.title}>What&apos;s your mobile number?</Text>
-              <Text style={styles.description}>
-                We only use phone numbers to make sure everyone on Bumble is real.
-              </Text>
-
-              <View style={styles.formCard}>
-                <Text style={styles.fieldLabel}>Mobile number</Text>
-
-                <View style={styles.inputRow}>
-                  <Pressable style={styles.countryButton} onPress={() => setIsPickerOpen(true)}>
-                    <Text style={styles.countryCode}>{countryCode.code}</Text>
-                    <Text style={styles.countryName} numberOfLines={1}>
-                      {countryCode.country}
-                    </Text>
-                    <Text style={styles.countryChevron}>▾</Text>
-                  </Pressable>
-
-                  <View style={styles.phoneFieldWrap}>
-                    <TextInput
-                      value={phoneNumber}
-                      onChangeText={(next) => setPhoneNumber(next.replace(/\D/g, ''))}
-                      keyboardType="phone-pad"
-                      placeholder="Phone number"
-                      placeholderTextColor={colors.textMuted}
-                      style={styles.phoneInput}
-                      returnKeyType="done"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.helperStrip}>
-                  <Text style={styles.helperText}>Use a number you can receive a code on right now.</Text>
-                </View>
-
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            <FieldLabel>Mobile number</FieldLabel>
+            <View style={styles.inputRow}>
+              <Pressable style={styles.countryBtn} onPress={() => setIsPickerOpen(true)}>
+                <Text style={styles.countryCode}>{countryCode.code}</Text>
+                <Text style={styles.countryName} numberOfLines={1}>{countryCode.country}</Text>
+                <Text style={styles.countryChevron}>▾</Text>
+              </Pressable>
+              <View style={styles.phoneWrap}>
+                <TextInput
+                  value={phoneNumber}
+                  onChangeText={(next) => setPhoneNumber(next.replace(/\D/g, ''))}
+                  keyboardType="phone-pad"
+                  placeholder="00000 00000"
+                  placeholderTextColor={darkColors.textFaint}
+                  style={styles.phoneInput}
+                  returnKeyType="done"
+                />
               </View>
             </View>
+
+            {error ? <Text style={authText.error}>{error}</Text> : null}
           </View>
 
           <View style={styles.footer}>
             <View style={styles.noteRow}>
-              <View style={styles.noteBadge}>
-                <Text style={styles.noteBadgeText}>→</Text>
-              </View>
-              <Text style={styles.noteText}>
-                We never share this with anyone and it won&apos;t be on your profile.
-              </Text>
+              <Text style={styles.lock}>🔒</Text>
+              <Text style={styles.noteText}>We never share this with anyone, and it won’t be on your profile.</Text>
             </View>
-
-            <Pressable
-              disabled={!canContinue}
-              onPress={handleContinue}
-              style={({ pressed }) => [
-                styles.nextButton,
-                !canContinue ? styles.nextButtonDisabled : null,
-                pressed && canContinue ? styles.nextButtonPressed : null
-              ]}
-            >
-              <Text style={styles.nextArrow}>{isSending ? '…' : '→'}</Text>
-            </Pressable>
+            <NextFab onPress={handleContinue} disabled={!canContinue} loading={isSending} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* Country picker */}
       <Modal visible={isPickerOpen} animationType="slide" transparent onRequestClose={() => setIsPickerOpen(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select country code</Text>
+              <Text style={styles.modalTitle}>Select country</Text>
               <Pressable onPress={() => setIsPickerOpen(false)} hitSlop={12}>
                 <Text style={styles.modalClose}>Close</Text>
               </Pressable>
             </View>
-
-            <View style={styles.searchWrap}>
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search country or code"
-                placeholderTextColor={colors.textMuted}
-                style={styles.searchInput}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search country or code"
+              placeholderTextColor={darkColors.textFaint}
+              style={styles.searchInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
             <FlatList
               data={filteredCountries}
               keyExtractor={(item) => `${item.country}-${item.code}`}
@@ -188,7 +137,7 @@ export function PhoneEntryScreen({ navigation }: Props) {
                 const active = item.code === countryCode.code && item.country === countryCode.country;
                 return (
                   <Pressable
-                    style={[styles.optionRow, active ? styles.optionRowActive : null]}
+                    style={[styles.optRow, active ? styles.optRowActive : null]}
                     onPress={() => {
                       setCountryCode(item);
                       setIsPickerOpen(false);
@@ -196,10 +145,10 @@ export function PhoneEntryScreen({ navigation }: Props) {
                     }}
                   >
                     <View>
-                      <Text style={styles.optionCountry}>{item.country}</Text>
-                      <Text style={styles.optionCode}>{item.code}</Text>
+                      <Text style={styles.optCountry}>{item.country}</Text>
+                      <Text style={styles.optCode}>{item.code}</Text>
                     </View>
-                    {active ? <Text style={styles.optionCheck}>✓</Text> : null}
+                    {active ? <Text style={styles.optCheck}>✓</Text> : null}
                   </Pressable>
                 );
               }}
@@ -207,278 +156,79 @@ export function PhoneEntryScreen({ navigation }: Props) {
           </View>
         </View>
       </Modal>
-    </ScreenContainer>
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboard: {
-    flex: 1
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-    paddingBottom: spacing.lg
-  },
-  top: {
-    paddingTop: spacing.sm
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D8E2EE',
-    marginBottom: spacing.xl,
-    shadowColor: '#11233B',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    elevation: 2
-  },
-  backLabel: {
-    fontSize: 22,
-    color: colors.text
-  },
-  heroCard: {
-    borderRadius: 32,
-    padding: 24,
-    backgroundColor: '#F9FCFF',
-    borderWidth: 1,
-    borderColor: '#DCE8F3'
-  },
-  eyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md
-  },
-  eyebrowDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-    marginRight: spacing.sm
-  },
-  eyebrow: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6
-  },
-  title: {
-    fontSize: 34,
-    lineHeight: 40,
-    fontWeight: '800',
-    color: '#10263E',
-    letterSpacing: -1.2,
-    marginBottom: spacing.sm
-  },
-  description: {
-    fontSize: 16,
-    lineHeight: 25,
-    color: '#51667F',
-    marginBottom: spacing.xl
-  },
-  formCard: {
-    borderRadius: 24,
-    padding: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2EBF4'
-  },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#6B8097',
-    marginBottom: spacing.sm,
-    letterSpacing: 0.3
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch'
-  },
-  countryButton: {
-    width: 122,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: '#F4F8FC',
-    borderWidth: 1,
-    borderColor: '#D8E4F0',
-    marginRight: spacing.sm
-  },
-  countryCode: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#112A43'
-  },
-  countryName: {
-    fontSize: 12,
-    color: '#64778D',
-    marginTop: 3
-  },
-  countryChevron: {
-    position: 'absolute',
-    top: 14,
-    right: 12,
-    fontSize: 14,
-    color: '#64778D'
-  },
-  phoneFieldWrap: {
-    flex: 1
-  },
-  phoneInput: {
-    height: 72,
-    borderRadius: 18,
-    backgroundColor: '#F4F8FC',
-    borderWidth: 1,
-    borderColor: '#D8E4F0',
-    paddingHorizontal: 18,
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#112A43'
-  },
-  helperStrip: {
-    marginTop: spacing.md,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+  kb: { flex: 1 },
+  scroll: { flexGrow: 1, justifyContent: 'space-between', paddingBottom: spacing.lg },
+  head: { marginTop: spacing.xl, marginBottom: spacing.xl },
+  inputRow: { flexDirection: 'row', gap: spacing.sm },
+  countryBtn: {
+    width: 120,
     borderRadius: 16,
-    backgroundColor: '#EFF7F4'
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: darkColors.surface,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    justifyContent: 'center'
   },
-  helperText: {
-    color: '#43665B',
-    fontSize: 13,
-    lineHeight: 19
+  countryCode: { fontSize: 18, fontWeight: '800', color: darkColors.text },
+  countryName: { fontSize: 12, color: darkColors.textMuted, marginTop: 3 },
+  countryChevron: { position: 'absolute', top: 14, right: 12, fontSize: 14, color: darkColors.textMuted },
+  phoneWrap: { flex: 1 },
+  phoneInput: {
+    height: 70,
+    borderRadius: 16,
+    backgroundColor: darkColors.surface,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    paddingHorizontal: 18,
+    fontSize: 22,
+    fontWeight: '700',
+    color: darkColors.text
   },
-  errorText: {
-    color: '#C2410C',
-    fontSize: 13,
-    marginTop: spacing.sm
-  },
-  footer: {
-    paddingTop: spacing.xl,
-    gap: spacing.lg
-  },
-  noteRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start'
-  },
-  noteBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E8F3EF',
-    marginRight: spacing.sm
-  },
-  noteBadgeText: {
-    color: colors.secondary,
-    fontSize: 15,
-    fontWeight: '800'
-  },
-  noteText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#5E738A'
-  },
-  nextButton: {
-    alignSelf: 'flex-end',
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.22,
-    shadowRadius: 20,
-    elevation: 6
-  },
-  nextButtonDisabled: {
-    opacity: 0.38
-  },
-  nextButtonPressed: {
-    transform: [{ scale: 0.98 }]
-  },
-  nextArrow: {
-    color: colors.white,
-    fontSize: 28,
-    fontWeight: '800'
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(8, 16, 28, 0.35)',
-    justifyContent: 'flex-end'
-  },
+  footer: { paddingTop: spacing.xl, gap: spacing.lg },
+  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  lock: { fontSize: 15 },
+  noteText: { flex: 1, fontSize: 13.5, lineHeight: 21, color: darkColors.textMuted },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   modalSheet: {
     height: '78%',
-    backgroundColor: '#FCFEFF',
+    backgroundColor: darkColors.card,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg
+    paddingTop: spacing.sm
   },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#112A43'
-  },
-  modalClose: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary
-  },
-  searchWrap: {
-    marginBottom: spacing.md
-  },
+  modalHandle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: darkColors.border, marginBottom: spacing.md },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: darkColors.text },
+  modalClose: { fontSize: 14, fontWeight: '700', color: darkColors.brandText },
   searchInput: {
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: '#F3F7FB',
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: darkColors.surface,
     borderWidth: 1,
-    borderColor: '#D8E4F0',
+    borderColor: darkColors.border,
     paddingHorizontal: spacing.md,
     fontSize: 16,
-    color: colors.text
+    color: darkColors.text,
+    marginBottom: spacing.md
   },
-  optionRow: {
+  optRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDF2F7'
+    borderBottomColor: darkColors.border
   },
-  optionRowActive: {
-    backgroundColor: '#F7FBFF'
-  },
-  optionCountry: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#112A43'
-  },
-  optionCode: {
-    marginTop: 2,
-    fontSize: 13,
-    color: '#6B8097'
-  },
-  optionCheck: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.primary
-  }
+  optRowActive: { backgroundColor: darkColors.surface },
+  optCountry: { fontSize: 16, fontWeight: '700', color: darkColors.text },
+  optCode: { marginTop: 2, fontSize: 13, color: darkColors.textMuted },
+  optCheck: { fontSize: 18, fontWeight: '800', color: darkColors.primary }
 });

@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
 const ENV_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Default LAN IP detected on the dev machine; change if your network differs.
-const LAN_FALLBACK = 'http://192.168.1.18:4000';
+const LAN_FALLBACK = 'http://192.168.1.22:4000';
 
 export const API_BASE_URL =
   ENV_URL || (Platform.OS === 'android' ? 'http://10.0.2.2:4000' : LAN_FALLBACK);

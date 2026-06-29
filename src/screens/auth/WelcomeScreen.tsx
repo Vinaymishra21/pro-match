@@ -1,17 +1,22 @@
 import React from 'react';
-import { Alert, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AuthShell, GradientButton, OutlineButton } from '../../components/auth/AuthKit';
 import { useAuth } from '../../hooks/useAuth';
 import { DEV_BYPASS_AUTH } from '../../constants/config';
-import { colors } from '../../theme/colors';
+import { darkColors } from '../../theme/darkColors';
 import { spacing } from '../../theme/spacing';
 import type { AuthStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 
-const HERO_IMAGE =
-  'https://storage.googleapis.com/banani-generated-images/generated-images/3d16cfdd-18b6-4b1a-a8e2-4a608184d399.jpg';
+const HIGHLIGHTS = [
+  { icon: '💼', text: 'Match within your profession' },
+  { icon: '🛡️', text: 'Verified, trusted members' },
+  { icon: '✨', text: 'Deeper, ambitious connections' }
+];
 
 export function WelcomeScreen({ navigation }: Props) {
   const { devBypass } = useAuth();
@@ -25,162 +30,105 @@ export function WelcomeScreen({ navigation }: Props) {
   }
 
   return (
-    <ImageBackground source={{ uri: HERO_IMAGE }} style={styles.screen} imageStyle={styles.backgroundImage}>
+    <AuthShell>
       <StatusBar style="light" />
-      <View style={styles.overlay} />
-
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            {/* <View style={styles.logoBadge}>
-              <Text style={styles.logoMark}>♡</Text>
-            </View> */}
-            <Text style={styles.brand}>Pro <View style={styles.logoBadge}>
-              <Text style={styles.logoMark}>♡</Text>
-            </View> Match</Text>
+      <View style={styles.screen}>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={styles.logoGlow}>
+            <LinearGradient
+              colors={darkColors.brandGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.logoBadge}
+            >
+              <Text style={styles.logoHeart}>♥</Text>
+            </LinearGradient>
           </View>
-          <Text style={styles.tagline}>Love stories made in heaven</Text>
+
+          <Text style={styles.brand}>
+            Pro <Text style={styles.brandAccent}>Match</Text>
+          </Text>
+          <Text style={styles.tagline}>Where ambition meets attraction.</Text>
+
+          <View style={styles.highlights}>
+            {HIGHLIGHTS.map((h) => (
+              <View key={h.text} style={styles.hRow}>
+                <Text style={styles.hIcon}>{h.icon}</Text>
+                <Text style={styles.hText}>{h.text}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
+        {/* Actions */}
         <View style={styles.actions}>
-          <Pressable
-            style={({ pressed }) => [styles.primaryButton, pressed ? styles.buttonPressed : null]}
-            onPress={() => navigation.navigate('SignUpMethod')}
-          >
-            <Text style={styles.primaryLabel}>Create an account</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.secondaryButton, pressed ? styles.secondaryPressed : null]}
-            onPress={() => navigation.navigate('LoginMethod')}
-          >
-            <Text style={styles.secondaryLabel}>I have an account</Text>
-          </Pressable>
+          <GradientButton title="Create an account" onPress={() => navigation.navigate('SignUpMethod')} />
+          <OutlineButton title="I already have an account" onPress={() => navigation.navigate('LoginMethod')} />
 
           {DEV_BYPASS_AUTH ? (
             <Pressable style={styles.devButton} onPress={handleDevSkip}>
               <Text style={styles.devLabel}>Skip login (dev)</Text>
             </Pressable>
           ) : null}
+
+          <Text style={styles.legal}>
+            By continuing you agree to our Terms & Privacy Policy.
+          </Text>
         </View>
       </View>
-    </ImageBackground>
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#13090C'
+  screen: { flex: 1, justifyContent: 'space-between', paddingTop: spacing.xxl },
+  hero: { alignItems: 'center', marginTop: spacing.xxl },
+  logoGlow: {
+    shadowColor: darkColors.primary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.6,
+    shadowRadius: 28,
+    elevation: 12,
+    marginBottom: spacing.lg
   },
-  backgroundImage: {
-    resizeMode: 'cover'
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(8, 4, 7, 0.28)'
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingHorizontal: 28,
-    paddingTop: 112,
-    paddingBottom: 42
-  },
-  header: {
-    alignItems: 'center',
-    gap: 18
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  logoBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)'
-  },
-  logoMark: {
-    color: colors.white,
-    fontSize: 28,
-    lineHeight: 28
-  },
-  brand: {
-    color: colors.white,
-    fontSize: 42,
-    fontWeight: '700',
-    letterSpacing: -1.4
-  },
+  logoBadge: { width: 78, height: 78, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  logoHeart: { color: '#fff', fontSize: 40 },
+  brand: { color: darkColors.text, fontSize: 44, fontWeight: '900', letterSpacing: -1.4 },
+  brandAccent: { color: darkColors.primary },
   tagline: {
-    color: 'rgba(255,255,255,0.96)',
-    fontSize: 20,
+    color: darkColors.textDim,
+    fontSize: 17,
     fontWeight: '500',
-    lineHeight: 28,
-    textAlign: 'center',
-    maxWidth: 260
+    marginTop: spacing.sm,
+    textAlign: 'center'
   },
-  actions: {
-    gap: 14
-  },
-  primaryButton: {
-    height: 58,
-    borderRadius: 29,
+  highlights: { marginTop: spacing.xl, gap: spacing.sm, alignSelf: 'stretch', paddingHorizontal: spacing.md },
+  hRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FF6B8A',
-    shadowColor: '#FF6B8A',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 22,
-    elevation: 8
+    gap: spacing.sm,
+    backgroundColor: darkColors.surface,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md
   },
-  secondaryButton: {
-    height: 58,
-    borderRadius: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.82)'
-  },
-  buttonPressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.99 }]
-  },
-  secondaryPressed: {
-    backgroundColor: 'rgba(255,255,255,0.14)'
-  },
-  primaryLabel: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.1
-  },
-  secondaryLabel: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.1
-  },
+  hIcon: { fontSize: 18 },
+  hText: { color: darkColors.textDim, fontSize: 14.5, fontWeight: '600' },
+  actions: { gap: spacing.sm },
   devButton: {
     height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: darkColors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    borderStyle: 'dashed'
+    borderColor: darkColors.border,
+    borderStyle: 'dashed',
+    marginTop: spacing.xs
   },
-  devLabel: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 13,
-    fontWeight: '600'
-  }
+  devLabel: { color: darkColors.textMuted, fontSize: 13, fontWeight: '600' },
+  legal: { color: darkColors.textFaint, fontSize: 12, textAlign: 'center', marginTop: spacing.sm, lineHeight: 18 }
 });
