@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ScreenContainer } from '../../components/ScreenContainer';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DarkBackground } from '../../components/DarkBackground';
 import { useAuth } from '../../hooks/useAuth';
-import { colors } from '../../theme/colors';
+import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { RootStackParamList } from '../../types';
@@ -27,6 +29,7 @@ function Row({ label, sublabel, onPress, danger, last }: any) {
 
 export function SettingsScreen({ navigation }: Props) {
   const { user, signOut, deactivateAccount, deleteAccount } = useAuth();
+  const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState('');
 
   function confirmLogout() {
@@ -94,7 +97,9 @@ export function SettingsScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer>
+    <DarkBackground orbColor="rgba(232,65,90,0.18)">
+      <StatusBar style="light" />
+      <View style={[styles.container, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back}>
           <Text style={styles.backText}>‹</Text>
@@ -138,11 +143,13 @@ export function SettingsScreen({ navigation }: Props) {
           </View>
         ) : null}
       </ScrollView>
-    </ScreenContainer>
+      </View>
+    </DarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   back: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 30, color: colors.text, marginTop: -4 },
@@ -180,7 +187,7 @@ const styles = StyleSheet.create({
   rowLabel: { ...typography.body, color: colors.text, fontWeight: '700' },
   rowSub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   chevron: { fontSize: 22, color: colors.textMuted },
-  danger: { color: '#DC2626' },
+  danger: { color: '#F87171' },
   busy: { alignItems: 'center', marginTop: spacing.xl, gap: spacing.sm },
   busyText: { ...typography.caption, color: colors.textMuted }
 });
