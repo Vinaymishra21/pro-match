@@ -1,6 +1,10 @@
 require('dotenv').config();
 require('express-async-errors');
 
+// Fail fast on missing/insecure security config before anything boots.
+const { validateEnv } = require('./config/env');
+validateEnv();
+
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
@@ -8,6 +12,7 @@ const morgan = require('morgan');
 
 const { connectDb } = require('./utils/db');
 const { initIo } = require('./realtime/io');
+const { globalLimiter } = require('./middleware/rateLimit');
 const { UPLOAD_DIR, PUBLIC_PATH, ensureUploadDir } = require('./utils/storage');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -23,8 +28,12 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const port = process.env.PORT || 4000;
 
+// Behind a reverse proxy / load balancer in production, so req.ip reflects the
+// real client (X-Forwarded-For) — required for correct per-IP rate limiting.
+app.set('trust proxy', 1);
+
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
 
 // Serve uploaded images statically (local-disk storage provider).
@@ -34,6 +43,9 @@ app.use(PUBLIC_PATH, express.static(UPLOAD_DIR));
 app.get('/health', (_, res) => {
   res.json({ status: 'ok', service: 'pro-match-backend' });
 });
+
+// Broad per-IP backstop across the whole API (health check stays exempt above).
+app.use(globalLimiter);
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
