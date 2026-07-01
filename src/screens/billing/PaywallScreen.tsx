@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PrismBackground } from '../../components/PrismBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DarkBackground } from '../../components/DarkBackground';
 import { GradientButton } from '../../components/GradientButton';
 import { useAuth } from '../../hooks/useAuth';
 import { devGrant, getBillingCatalog } from '../../services/apiService';
 import { gradients } from '../../theme/gradients';
-import { colors } from '../../theme/colors';
+import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { BillingCatalog, CreditPack, RootStackParamList } from '../../types';
@@ -23,6 +25,7 @@ const PRO_PERKS = [
 
 export function PaywallScreen({ navigation, route }: Props) {
   const focus = route.params?.focus ?? 'pro';
+  const insets = useSafeAreaInsets();
   const { token, refreshUser } = useAuth();
   const [catalog, setCatalog] = useState<BillingCatalog | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,8 +79,12 @@ export function PaywallScreen({ navigation, route }: Props) {
   const activePlan = catalog?.proPlans.find((p) => p.id === selectedPlan) || null;
 
   return (
-    <PrismBackground tint={gradients.gold}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <DarkBackground orbColor="rgba(251,191,36,0.22)">
+      <StatusBar style="light" />
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.md }]}
+        showsVerticalScrollIndicator={false}
+      >
         <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.close}>
           <Text style={styles.closeText}>✕</Text>
         </Pressable>
@@ -204,14 +211,24 @@ export function PaywallScreen({ navigation, route }: Props) {
           </>
         )}
       </ScrollView>
-    </PrismBackground>
+    </DarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
-  close: { alignSelf: 'flex-end', width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  closeText: { fontSize: 22, color: colors.textMuted, fontWeight: '700' },
+  close: {
+    alignSelf: 'flex-end',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  closeText: { fontSize: 18, color: colors.text, fontWeight: '700' },
   hero: { alignItems: 'center', marginBottom: spacing.xl },
   crown: { fontSize: 52, marginBottom: spacing.sm },
   heroTitle: { fontSize: 30, fontWeight: '900', color: colors.text, letterSpacing: -0.8 },
@@ -274,10 +291,10 @@ const styles = StyleSheet.create({
   packLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   packCredits: { fontSize: 18, fontWeight: '900', color: colors.text },
   packBonus: {
-    color: colors.secondary,
+    color: colors.gold,
     fontWeight: '800',
     fontSize: 12,
-    backgroundColor: 'rgba(42,157,143,0.12)',
+    backgroundColor: 'rgba(251,191,36,0.15)',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 2
