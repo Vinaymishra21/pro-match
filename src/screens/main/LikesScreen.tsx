@@ -204,10 +204,11 @@ function LikeCard({
   onReveal: () => void;
 }) {
   const theme = professionTheme(like.profession);
+  const isSuper = Boolean(like.superLike);
 
   if (like.blurred) {
     return (
-      <Pressable style={styles.card} onPress={onReveal} disabled={revealing}>
+      <Pressable style={[styles.card, isSuper && styles.cardSuper]} onPress={onReveal} disabled={revealing}>
         <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
         {/* Mystery silhouette */}
         <View style={styles.mystery}>
@@ -221,7 +222,7 @@ function LikeCard({
             <>
               <Text style={styles.lockIcon}>🔒</Text>
               <Text style={styles.lockTeaser} numberOfLines={2}>
-                Someone in {like.profession} liked you
+                {like.teaser || `Someone in ${like.profession} liked you`}
               </Text>
               {like.crossProfession ? (
                 <View style={styles.crossTag}>
@@ -234,6 +235,11 @@ function LikeCard({
             </>
           )}
         </BlurView>
+        {isSuper ? (
+          <View style={styles.superRibbon}>
+            <Text style={styles.superRibbonText}>★ SUPER LIKE</Text>
+          </View>
+        ) : null}
       </Pressable>
     );
   }
@@ -241,7 +247,7 @@ function LikeCard({
   // Revealed card
   const photo = like.photos && like.photos.length > 0 ? like.photos[0] : null;
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isSuper && styles.cardSuper]}>
       {photo ? (
         <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       ) : (
@@ -251,6 +257,11 @@ function LikeCard({
           </View>
         </LinearGradient>
       )}
+      {isSuper ? (
+        <View style={styles.superRibbon}>
+          <Text style={styles.superRibbonText}>★ SUPER LIKE</Text>
+        </View>
+      ) : null}
       <LinearGradient colors={['transparent', 'rgba(8,12,24,0.85)']} style={styles.captionFade}>
         <Text style={styles.cardName} numberOfLines={1}>
           {like.name}
@@ -326,12 +337,24 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     overflow: 'hidden',
     backgroundColor: colors.card,
-    shadowColor: '#16324F',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 4
   },
+  cardSuper: { borderWidth: 2, borderColor: colors.gold },
+  superRibbon: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: colors.gold,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    zIndex: 5
+  },
+  superRibbonText: { color: '#1A1206', fontWeight: '900', fontSize: 10, letterSpacing: 0.5 },
   mystery: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   mysteryEmoji: { fontSize: 64, opacity: 0.5 },
   avatarLetter: { fontSize: 56, fontWeight: '900', color: 'rgba(255,255,255,0.85)' },
