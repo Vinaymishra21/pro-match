@@ -1,5 +1,5 @@
 const { User, Swipe } = require('../models');
-const { sanitizeUser } = require('../utils/auth');
+const { publicProfile } = require('../utils/auth');
 const {
   isProActive,
   getWeeklyUnlockState,
@@ -58,8 +58,9 @@ async function getDiscover(req, res) {
   const query = {
     _id: { $ne: me.id, $nin: excludeIds },
     profession: requested,
-    // Never surface deactivated accounts.
-    isDeactivated: { $ne: true }
+    // Never surface deactivated or banned accounts.
+    isDeactivated: { $ne: true },
+    isBanned: { $ne: true }
   };
 
   // Age range filter.
@@ -139,7 +140,7 @@ async function getDiscover(req, res) {
   }
 
   return res.json({
-    profiles: candidates.map((u) => sanitizeUser(u)),
+    profiles: candidates.map((u) => publicProfile(u)),
     profession: requested,
     isOwnProfession: requested === me.profession,
     unlock: getWeeklyUnlockState(me),

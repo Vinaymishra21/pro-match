@@ -1,5 +1,5 @@
 const { User, Swipe, Match } = require('../models');
-const { sanitizeUser } = require('../utils/auth');
+const { publicProfile } = require('../utils/auth');
 const { sendPush } = require('../utils/push');
 const { isProActive, getWeeklyUnlockState } = require('../utils/entitlements');
 
@@ -22,6 +22,15 @@ async function upsertSwipe(req, res) {
 
   if (!me.profession) {
     return res.status(400).json({ message: 'Set your profession before swiping' });
+  }
+
+  // Block enforcement: if either side has blocked the other, no swipe/like/match
+  // can form between them (discovery hides them, but the endpoint is directly
+  // callable, so enforce here too).
+  const iBlocked = (me.blockedUsers || []).some((id) => String(id) === String(toUserId));
+  const blockedMe = (target.blockedUsers || []).some((id) => String(id) === String(fromUserId));
+  if (iBlocked || blockedMe) {
+    return res.status(403).json({ message: 'This person is unavailable.', code: 'BLOCKED' });
   }
 
   // Same-profession is always allowed. Cross-profession swiping is allowed only
@@ -62,9 +71,28 @@ async function upsertSwipe(req, res) {
         ]
       });
 
+      let createdNow = false;
       if (!match) {
-        match = await Match.create({ userA: fromUserId, userB: toUserId, crossProfession });
+        try {
+          match = await Match.create({ userA: fromUserId, userB: toUserId, crossProfession });
+          createdNow = true;
+        } catch (err) {
+          // Both users liked simultaneously — the unique pairKey index rejected
+          // the second insert. Re-fetch the winner's match instead of erroring.
+          if (err.code === 11000) {
+            match = await Match.findOne({
+              $or: [
+                { userA: fromUserId, userB: toUserId },
+                { userA: toUserId, userB: fromUserId }
+              ]
+            });
+          } else {
+            throw err;
+          }
+        }
+      }
 
+      if (createdNow) {
         // It's a brand-new mutual match — notify both people.
         if (me.pushToken) {
           sendPush(me.pushToken, {
@@ -168,7 +196,7 @@ async function undoSwipe(req, res) {
   }
 
   const undosLeft = pro ? null : Math.max(0, FREE_UNDO_LIMIT - me.undosUsed);
-  return res.json({ ok: true, profile: profile ? sanitizeUser(profile) : null, isPro: pro, undosLeft });
+  return res.json({ ok: true, profile: profile ? publicProfile(profile) : null, isPro: pro, undosLeft });
 }
 
 module.exports = {

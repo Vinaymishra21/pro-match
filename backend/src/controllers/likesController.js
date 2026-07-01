@@ -1,5 +1,5 @@
 const { User, Swipe, Reveal } = require('../models');
-const { sanitizeUser } = require('../utils/auth');
+const { publicProfile } = require('../utils/auth');
 const { isProActive } = require('../utils/entitlements');
 const { REVEAL_COST_CREDITS } = require('../config/monetization');
 
@@ -17,7 +17,7 @@ function blurredCard(likerUser, crossProfession) {
 
 function revealedCard(likerUser, crossProfession) {
   return {
-    ...sanitizeUser(likerUser),
+    ...publicProfile(likerUser),
     likerId: likerUser.id,
     blurred: false,
     crossProfession
