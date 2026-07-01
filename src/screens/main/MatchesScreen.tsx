@@ -5,13 +5,14 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PrismBackground } from '../../components/PrismBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DarkBackground } from '../../components/DarkBackground';
 import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMatches, unmatch } from '../../services/apiService';
 import { isProUser } from '../../utils/entitlements';
 import { professionTheme } from '../../theme/professionTheme';
-import { colors } from '../../theme/colors';
+import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { MainTabParamList, MatchRecord, RootStackParamList } from '../../types';
@@ -23,6 +24,7 @@ type Props = CompositeScreenProps<
 
 export function MatchesScreen({ navigation }: Props) {
   const { token, user } = useAuth();
+  const insets = useSafeAreaInsets();
   const pro = isProUser(user);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,11 +111,11 @@ export function MatchesScreen({ navigation }: Props) {
   }
 
   return (
-    <PrismBackground bottomInset={false}>
+    <DarkBackground orbColor="rgba(232,65,90,0.22)">
       <FlatList
         data={matches}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingTop: insets.top + spacing.md }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={load} tintColor={colors.primary} />
@@ -189,7 +191,7 @@ export function MatchesScreen({ navigation }: Props) {
           }
         }}
       />
-    </PrismBackground>
+    </DarkBackground>
   );
 }
 
@@ -208,13 +210,13 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: spacing.sm,
     marginBottom: spacing.sm,
-    shadowColor: '#16324F',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 2
   },
-  rowPressed: { backgroundColor: colors.inputBg },
+  rowPressed: { backgroundColor: colors.surfaceStrong },
   avatar: {
     width: 54,
     height: 54,
@@ -231,14 +233,14 @@ const styles = StyleSheet.create({
   metaEmoji: { fontSize: 12, marginRight: 4 },
   meta: { ...typography.caption, color: colors.textMuted, flex: 1 },
   lockTag: {
-    backgroundColor: '#FFF7E6',
+    backgroundColor: 'rgba(251,191,36,0.15)',
     borderWidth: 1,
-    borderColor: '#F5C56B',
+    borderColor: 'rgba(251,191,36,0.5)',
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5
   },
-  lockTagText: { color: '#B45309', fontWeight: '800', fontSize: 11 },
+  lockTagText: { color: colors.gold, fontWeight: '800', fontSize: 11 },
   chevron: { fontSize: 24, color: colors.textMuted, marginLeft: spacing.xs },
   empty: { alignItems: 'center', paddingVertical: spacing.xxl },
   emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
