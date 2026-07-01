@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -6,7 +7,7 @@ import { DiscoverScreen } from '../screens/main/DiscoverScreen';
 import { LikesScreen } from '../screens/main/LikesScreen';
 import { MatchesScreen } from '../screens/main/MatchesScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
-import { colors } from '../theme/colors';
+import { colorsDark as colors } from '../theme/colorsDark';
 import type { MainTabParamList } from '../types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -30,8 +31,10 @@ export function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.card,
           borderTopColor: colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          elevation: 0,
           height: 56 + bottomPad,
           paddingTop: 6,
           paddingBottom: bottomPad

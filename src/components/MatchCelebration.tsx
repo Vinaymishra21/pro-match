@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { professionTheme } from '../theme/professionTheme';
-import { colors } from '../theme/colors';
+import { colorsDark as colors } from '../theme/colorsDark';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
@@ -39,7 +39,7 @@ export function MatchCelebration({
   return (
     <View style={styles.overlay}>
       <LinearGradient
-        colors={['rgba(8,12,24,0.92)', 'rgba(8,12,24,0.97)']}
+        colors={['rgba(14,11,20,0.94)', 'rgba(14,11,20,0.985)']}
         style={StyleSheet.absoluteFill}
       />
 
