@@ -215,7 +215,7 @@ function LikeCard({
           <Text style={styles.mysteryEmoji}>{theme.emoji}</Text>
         </View>
         {/* Frosted lock overlay */}
-        <BlurView intensity={38} tint="light" style={styles.lockOverlay}>
+        <BlurView intensity={38} tint="dark" style={styles.lockOverlay}>
           {revealing ? (
             <ActivityIndicator color={colors.white} />
           ) : (
@@ -373,15 +373,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm
   },
   crossTag: {
-    backgroundColor: 'rgba(99,102,241,0.18)',
+    backgroundColor: 'rgba(129,140,248,0.28)',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 2,
     marginBottom: spacing.sm
   },
-  crossTagText: { color: '#4F46E5', fontWeight: '800', fontSize: 10, letterSpacing: 0.3 },
+  crossTagText: { color: '#C7D2FE', fontWeight: '800', fontSize: 10, letterSpacing: 0.3 },
   revealBtn: {
-    backgroundColor: colors.text,
+    backgroundColor: colors.primary,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8
