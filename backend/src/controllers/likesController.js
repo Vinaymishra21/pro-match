@@ -4,23 +4,27 @@ const { isProActive } = require('../utils/entitlements');
 const { REVEAL_COST_CREDITS } = require('../config/monetization');
 
 // Builds the blurred teaser shown to free users for an unrevealed liker.
-function blurredCard(likerUser, crossProfession) {
+function blurredCard(likerUser, crossProfession, superLike = false) {
   return {
     likerId: likerUser.id,
     blurred: true,
     profession: likerUser.profession,
     crossProfession,
+    superLike,
     // Coarse hint only — no name, no photos.
-    teaser: `Someone in ${likerUser.profession} liked you`
+    teaser: superLike
+      ? `⭐ Someone in ${likerUser.profession} Super Liked you`
+      : `Someone in ${likerUser.profession} liked you`
   };
 }
 
-function revealedCard(likerUser, crossProfession) {
+function revealedCard(likerUser, crossProfession, superLike = false) {
   return {
     ...publicProfile(likerUser),
     likerId: likerUser.id,
     blurred: false,
-    crossProfession
+    crossProfession,
+    superLike
   };
 }
 
@@ -51,14 +55,18 @@ async function getIncomingLikes(req, res) {
   const likers = await User.find({ _id: { $in: likerIds } });
   const likerMap = new Map(likers.map((u) => [String(u.id), u]));
 
-  const cards = pending
+  // Super Likes float to the top of the list; within each group, newest first
+  // (pending is already newest-first from the query).
+  const ordered = [...pending].sort((a, b) => Number(b.superLike) - Number(a.superLike));
+
+  const cards = ordered
     .map((s) => {
       const liker = likerMap.get(String(s.fromUserId));
       if (!liker) return null;
       const showFull = pro || revealedSet.has(String(liker.id));
       return showFull
-        ? revealedCard(liker, s.crossProfession)
-        : blurredCard(liker, s.crossProfession);
+        ? revealedCard(liker, s.crossProfession, s.superLike)
+        : blurredCard(liker, s.crossProfession, s.superLike);
     })
     .filter(Boolean);
 

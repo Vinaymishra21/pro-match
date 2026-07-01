@@ -2,9 +2,16 @@ const { User, Swipe, Match } = require('../models');
 const { publicProfile } = require('../utils/auth');
 const { sendPush } = require('../utils/push');
 const { isProActive, getWeeklyUnlockState } = require('../utils/entitlements');
+const { spendAllowanceOrCredits } = require('../utils/consumables');
+const {
+  SUPERLIKE_COST_CREDITS,
+  FREE_WEEKLY_SUPERLIKES,
+  PRO_WEEKLY_SUPERLIKES
+} = require('../config/monetization');
 
 async function upsertSwipe(req, res) {
   const { toUserId, action } = req.body;
+  const superLike = req.body.superLike === true && action === 'like';
   const fromUserId = req.auth.id;
 
   if (!toUserId || !['like', 'pass'].includes(action)) {
@@ -48,9 +55,36 @@ async function upsertSwipe(req, res) {
     }
   }
 
+  // Super Like: charge (weekly allowance first, then credits) only when this is
+  // a NEW super like — re-liking an already-super-liked person is free/idempotent.
+  let superSpend = null;
+  let isSuper = false;
+  if (superLike) {
+    const existing = await Swipe.findOne({ fromUserId, toUserId }).select('superLike');
+    if (existing && existing.superLike) {
+      isSuper = true; // already a super like; no re-charge
+    } else {
+      superSpend = await spendAllowanceOrCredits(me, {
+        field: 'superLikeUsage',
+        freeLimit: FREE_WEEKLY_SUPERLIKES,
+        proLimit: PRO_WEEKLY_SUPERLIKES,
+        costCredits: SUPERLIKE_COST_CREDITS
+      });
+      if (!superSpend.ok) {
+        return res.status(402).json({
+          message: 'You’re out of Super Likes this week. Buy credits or go Pro for more.',
+          code: 'INSUFFICIENT_SUPERLIKE',
+          costCredits: SUPERLIKE_COST_CREDITS,
+          credits: superSpend.credits
+        });
+      }
+      isSuper = true;
+    }
+  }
+
   await Swipe.findOneAndUpdate(
     { fromUserId, toUserId },
-    { fromUserId, toUserId, action, crossProfession },
+    { fromUserId, toUserId, action, crossProfession, superLike: isSuper },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
@@ -112,7 +146,14 @@ async function upsertSwipe(req, res) {
     }
   }
 
-  return res.json({ matched: Boolean(match), match: match ? match.toJSON() : null });
+  return res.json({
+    matched: Boolean(match),
+    match: match ? match.toJSON() : null,
+    superLike: isSuper,
+    ...(superSpend
+      ? { superLikeCharged: superSpend.charged, credits: superSpend.user.credits }
+      : {})
+  });
 }
 
 async function getMatches(req, res) {

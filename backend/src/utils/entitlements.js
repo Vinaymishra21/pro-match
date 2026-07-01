@@ -33,6 +33,30 @@ function getWeeklyUnlockState(user) {
   };
 }
 
+// Generic weekly allowance reader for a { weekStart, count } counter field
+// (Super Likes, Boosts). Auto-resets when the stored week is stale. Does NOT
+// persist — the caller writes back the incremented counter when it consumes one.
+function getWeeklyCounterState(user, field, freeLimit, proLimit) {
+  const currentWeek = getWeekStart();
+  const stored = user[field] || { weekStart: null, count: 0 };
+  const sameWeek =
+    stored.weekStart && getWeekStart(stored.weekStart).getTime() === currentWeek.getTime();
+  const used = sameWeek ? stored.count || 0 : 0;
+  const limit = isProActive(user) ? proLimit : freeLimit;
+  return { weekStart: currentWeek, used, limit, remaining: Math.max(0, limit - used) };
+}
+
+// Current Boost/Spotlight window state for a user.
+function getBoostState(user) {
+  const expiresAt = user.boostExpiresAt ? new Date(user.boostExpiresAt) : null;
+  const active = Boolean(expiresAt && expiresAt.getTime() > Date.now());
+  return {
+    active,
+    expiresAt: active ? expiresAt : null,
+    remainingMs: active ? expiresAt.getTime() - Date.now() : 0
+  };
+}
+
 // A user may VIEW a given profession's deck if:
 //  - it's their own profession (always free), or
 //  - they're Pro (unlimited), or
@@ -59,5 +83,7 @@ module.exports = {
   isProActive,
   getWeekStart,
   getWeeklyUnlockState,
+  getWeeklyCounterState,
+  getBoostState,
   canAccessProfession
 };

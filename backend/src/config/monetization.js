@@ -22,5 +22,19 @@ module.exports = {
     { id: 'pack_50', priceInr: 50, credits: 50 },
     { id: 'pack_100', priceInr: 100, credits: 110 },
     { id: 'pack_200', priceInr: 200, credits: 240 }
-  ]
+  ],
+
+  // Super Like — send a standout like that surfaces first (and highlighted) in
+  // the recipient's Likes list. Everyone gets a small free weekly allowance;
+  // Pro gets more; beyond that they cost credits. Spend model reuses the wallet.
+  SUPERLIKE_COST_CREDITS: 5,
+  FREE_WEEKLY_SUPERLIKES: 1,
+  PRO_WEEKLY_SUPERLIKES: 5,
+
+  // Boost / Spotlight — float to the front of the deck for a fixed window. Free
+  // users buy with credits; Pro gets one free boost each week.
+  BOOST_COST_CREDITS: 30,
+  BOOST_DURATION_MINUTES: 30,
+  FREE_WEEKLY_BOOSTS: 0,
+  PRO_WEEKLY_BOOSTS: 1
 };

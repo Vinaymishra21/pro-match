@@ -99,7 +99,23 @@ const userSchema = new Schema(
     professionUnlocks: {
       weekStart: { type: Date, default: null },
       professions: { type: [String], default: [] }
-    }
+    },
+
+    // Weekly Super Like allowance usage (same Monday-reset model as unlocks).
+    superLikeUsage: {
+      weekStart: { type: Date, default: null },
+      count: { type: Number, default: 0 }
+    },
+
+    // Weekly Boost allowance usage.
+    boostUsage: {
+      weekStart: { type: Date, default: null },
+      count: { type: Number, default: 0 }
+    },
+
+    // Active Boost/Spotlight window — while this is in the future the user is
+    // floated to the front of other people's decks.
+    boostExpiresAt: { type: Date, default: null }
   },
   { timestamps: true, toJSON, toObject: toJSON }
 );
