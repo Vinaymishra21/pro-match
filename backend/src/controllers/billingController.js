@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, ProcessedPayment } = require('../models');
 const { sanitizeUser } = require('../utils/auth');
 const { isProActive } = require('../utils/entitlements');
 const { grantPro, grantCredits } = require('../utils/grants');
@@ -42,6 +42,22 @@ function resolvePurchase(type, packId, planId) {
     };
   }
   return null;
+}
+
+// Reserves an idempotency key BEFORE granting. Returns true if this caller won
+// the reservation (and should grant), false if the payment was already
+// processed (grant must be skipped to avoid double-crediting). Record-first is
+// deliberate: on the rare crash between reserve and grant we under-grant (safe,
+// manually recoverable) rather than double-grant.
+async function reservePayment(key, { userId, type, amountInr, source }) {
+  if (!key) return true; // no id available (stub mode) — nothing to dedupe on
+  try {
+    await ProcessedPayment.create({ key: String(key), userId, type, amountInr, source });
+    return true;
+  } catch (err) {
+    if (err.code === 11000) return false; // already processed
+    throw err;
+  }
 }
 
 // Applies the entitlement for a verified purchase.
@@ -110,6 +126,26 @@ async function verifyPayment(req, res) {
     return res.status(404).json({ message: 'User not found' });
   }
 
+  // Idempotency: dedupe on paymentId so a double /verify (or verify + webhook
+  // for the same payment) grants only once.
+  const idemKey = paymentId || orderId;
+  const won = await reservePayment(idemKey, {
+    userId: user.id,
+    type,
+    amountInr: purchase.amountInr,
+    source: 'verify'
+  });
+
+  if (!won) {
+    // Already granted by an earlier verify/webhook — return current state, no re-grant.
+    return res.json({
+      ok: true,
+      duplicate: true,
+      user: sanitizeUser(user),
+      isPro: isProActive(user)
+    });
+  }
+
   const result = await applyPurchase(user, type, packId, planId);
   return res.json({ ok: true, ...result, user: sanitizeUser(user), isPro: isProActive(user) });
 }
@@ -155,10 +191,21 @@ async function webhook(req, res) {
 
   // Grant on successful payment capture using the notes we attached at order time.
   if (event.event === 'payment.captured') {
-    const notes = event.payload?.payment?.entity?.notes || {};
+    const entity = event.payload?.payment?.entity || {};
+    const notes = entity.notes || {};
     const user = notes.userId ? await User.findById(notes.userId) : null;
     if (user && notes.type) {
-      await applyPurchase(user, notes.type, notes.packId, notes.planId);
+      // Same idempotency key as /verify (the Razorpay payment id), so whichever
+      // path arrives second is a no-op instead of a second grant.
+      const won = await reservePayment(entity.id, {
+        userId: user.id,
+        type: notes.type,
+        amountInr: entity.amount ? entity.amount / 100 : 0,
+        source: 'webhook'
+      });
+      if (won) {
+        await applyPurchase(user, notes.type, notes.packId, notes.planId);
+      }
     }
   }
 

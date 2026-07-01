@@ -5,5 +5,6 @@ module.exports = {
   Message: require('./Message'),
   Otp: require('./Otp'),
   Reveal: require('./Reveal'),
-  Report: require('./Report')
+  Report: require('./Report'),
+  ProcessedPayment: require('./ProcessedPayment')
 };
