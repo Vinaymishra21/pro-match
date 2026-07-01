@@ -12,18 +12,19 @@ import {
   View
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { PrismBackground } from '../../components/PrismBackground';
+import { DarkBackground } from '../../components/DarkBackground';
 import { GradientButton } from '../../components/GradientButton';
 import { useAuth } from '../../hooks/useAuth';
 import { getIncomingLikes, revealLiker } from '../../services/apiService';
 import { professionTheme } from '../../theme/professionTheme';
 import { gradients } from '../../theme/gradients';
-import { colors } from '../../theme/colors';
+import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { IncomingLike, MainTabParamList, RootStackParamList } from '../../types';
@@ -38,6 +39,7 @@ const CARD_WIDTH = (Dimensions.get('window').width - spacing.lg * 2 - COLUMN_GAP
 
 export function LikesScreen({ navigation }: Props) {
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
   const [likes, setLikes] = useState<IncomingLike[]>([]);
   const [isPro, setIsPro] = useState(false);
   const [credits, setCredits] = useState(0);
@@ -106,9 +108,9 @@ export function LikesScreen({ navigation }: Props) {
   const blurredCount = likes.filter((l) => l.blurred).length;
 
   return (
-    <PrismBackground tint={gradients.aurora} bottomInset={false}>
+    <DarkBackground orbColor="rgba(139,92,246,0.22)">
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.md }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -186,7 +188,7 @@ export function LikesScreen({ navigation }: Props) {
           </View>
         )}
       </ScrollView>
-    </PrismBackground>
+    </DarkBackground>
   );
 }
 
@@ -285,7 +287,7 @@ const styles = StyleSheet.create({
   },
   creditChip: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 999,
@@ -293,8 +295,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7
   },
   proChip: {
-    backgroundColor: '#FFF7E6',
-    borderColor: '#F5C56B'
+    backgroundColor: 'rgba(251,191,36,0.15)',
+    borderColor: 'rgba(251,191,36,0.5)'
   },
   creditChipText: { fontWeight: '800', color: colors.text, fontSize: 13 },
   upsell: {
