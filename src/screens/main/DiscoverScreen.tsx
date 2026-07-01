@@ -16,7 +16,9 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PrismBackground } from '../../components/PrismBackground';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DarkBackground } from '../../components/DarkBackground';
 import { ProfessionBadge } from '../../components/ProfessionBadge';
 import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, FilterModal } from '../../components/FilterModal';
@@ -28,7 +30,7 @@ import { getDiscoverProfiles, swipeProfile, undoSwipe } from '../../services/api
 import { ApiError } from '../../services/apiClient';
 import type { FilterState } from '../../types';
 import { professionTheme } from '../../theme/professionTheme';
-import { colors } from '../../theme/colors';
+import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { DiscoverProfile, MainTabParamList, RootStackParamList, UnlockState } from '../../types';
@@ -40,6 +42,7 @@ type Props = CompositeScreenProps<
 
 export function DiscoverScreen({ navigation }: Props) {
   const { token, user } = useAuth();
+  const insets = useSafeAreaInsets();
   const myProfession = user?.profession || '';
 
   const [activeProfession, setActiveProfession] = useState(myProfession);
@@ -167,6 +170,7 @@ export function DiscoverScreen({ navigation }: Props) {
         setProfiles((prev) => prev.filter((p) => p.id !== target.id));
         pan.setValue({ x: 0, y: 0 });
         if (action === 'like' && res.matched && res.match) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setCelebration({
             matchId: res.match.id,
             name: target.name,
@@ -188,6 +192,10 @@ export function DiscoverScreen({ navigation }: Props) {
   const flingOff = useCallback(
     (action: 'like' | 'pass') => {
       if (!current || submitting) return;
+      // Tactile feedback on every decision — the single biggest "feel" upgrade.
+      Haptics.impactAsync(
+        action === 'like' ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light
+      );
       setSubmitting(true);
       const toX = action === 'like' ? SCREEN_W * 1.4 : -SCREEN_W * 1.4;
       Animated.timing(pan, {
@@ -265,8 +273,8 @@ export function DiscoverScreen({ navigation }: Props) {
   const isOwnDeck = activeProfession === myProfession;
 
   return (
-    <PrismBackground tint={viewingTheme.gradient} bottomInset={false}>
-      <View style={styles.container}>
+    <DarkBackground orbColor={viewingTheme.accent + '40'}>
+      <View style={[styles.container, { paddingTop: insets.top + spacing.xs }]}>
         {/* Top bar */}
         <View style={styles.topBar}>
           <View>
@@ -484,7 +492,7 @@ export function DiscoverScreen({ navigation }: Props) {
           }}
         />
       ) : null}
-    </PrismBackground>
+    </DarkBackground>
   );
 }
 
@@ -542,7 +550,7 @@ const styles = StyleSheet.create({
   },
   proBadgeText: { fontWeight: '900', color: '#B45309', fontSize: 12 },
   exploreCounter: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 999,
@@ -555,7 +563,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
@@ -579,7 +587,7 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 999,
@@ -621,9 +629,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     overflow: 'hidden',
     backgroundColor: colors.card,
-    shadowColor: '#16324F',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.5,
     shadowRadius: 22,
     elevation: 8
   },
@@ -665,21 +673,21 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingBottom: spacing.md
   },
-  undoBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.white, borderWidth: 1, borderColor: '#F5C56B' },
-  undoIcon: { fontSize: 22, color: '#D4700A', fontWeight: '800' },
+  undoBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(251,191,36,0.15)', borderWidth: 1, borderColor: 'rgba(251,191,36,0.5)' },
+  undoIcon: { fontSize: 22, color: colors.gold, fontWeight: '800' },
   actionBtn: {
     width: 66,
     height: 66,
     borderRadius: 33,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#16324F',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 6
   },
-  passBtn: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  passBtn: { backgroundColor: colors.surfaceStrong, borderWidth: 1, borderColor: colors.border },
   passIcon: { fontSize: 28, color: colors.textMuted, fontWeight: '700' },
   likeBtn: {},
   likeIcon: { fontSize: 30, color: colors.white }
