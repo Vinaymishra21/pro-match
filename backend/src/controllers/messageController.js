@@ -60,8 +60,11 @@ async function sendMessage(req, res) {
   const { text } = req.body;
   const userId = req.auth.id;
 
-  if (!text || typeof text !== 'string') {
+  if (!text || typeof text !== 'string' || !text.trim()) {
     return res.status(400).json({ message: 'Message text is required' });
+  }
+  if (text.length > 2000) {
+    return res.status(400).json({ message: 'Message is too long (2000 characters max).' });
   }
 
   const match = await Match.findById(matchId);

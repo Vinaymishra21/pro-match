@@ -76,6 +76,11 @@ const userSchema = new Schema(
     isDeactivated: { type: Boolean, default: false, index: true },
     deactivatedAt: { type: Date, default: null },
 
+    // Moderation ban (admin-only). Unlike isDeactivated this is NOT reversible by
+    // the user — logging back in does not lift it, and auth is refused while set.
+    isBanned: { type: Boolean, default: false, index: true },
+    bannedAt: { type: Date, default: null },
+
     // Profession verification (Phase 1.2/2)
     professionVerified: { type: Boolean, default: false },
 

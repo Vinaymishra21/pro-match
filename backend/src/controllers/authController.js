@@ -58,6 +58,10 @@ async function login(req, res) {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
 
+  if (user.isBanned) {
+    return res.status(403).json({ message: 'This account has been suspended.', code: 'BANNED' });
+  }
+
   const token = createToken(user);
   return res.json({ token, user: sanitizeUser(user) });
 }
@@ -121,6 +125,11 @@ async function verifyOtp(req, res) {
   // Find-or-create the user by phone.
   let user = await User.findOne({ phone });
   let isNewUser = false;
+
+  // A banned account cannot log back in (unlike self-deactivation below).
+  if (user && user.isBanned) {
+    return res.status(403).json({ message: 'This account has been suspended.', code: 'BANNED' });
+  }
 
   if (!user) {
     isNewUser = true;

@@ -190,6 +190,19 @@ async function userAction(req, res) {
       u.isDeactivated = false;
       u.deactivatedAt = null;
       break;
+    case 'ban':
+      u.isBanned = true;
+      u.bannedAt = new Date();
+      // Also hide them from discovery immediately.
+      u.isDeactivated = true;
+      u.deactivatedAt = u.deactivatedAt || new Date();
+      break;
+    case 'unban':
+      u.isBanned = false;
+      u.bannedAt = null;
+      u.isDeactivated = false;
+      u.deactivatedAt = null;
+      break;
     case 'verify':
       u.professionVerified = true;
       break;
@@ -261,9 +274,11 @@ async function updateReport(req, res) {
   await report.save();
 
   if (banUser && report.reportedUser) {
+    // A moderation ban is permanent-until-lifted (isBanned), not a reversible
+    // self-deactivation. Hide them from discovery too.
     await User.updateOne(
       { _id: report.reportedUser },
-      { isDeactivated: true, deactivatedAt: new Date() }
+      { isBanned: true, bannedAt: new Date(), isDeactivated: true, deactivatedAt: new Date() }
     );
   }
 
