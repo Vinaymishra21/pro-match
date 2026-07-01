@@ -3,6 +3,7 @@ const { publicProfile } = require('../utils/auth');
 const {
   isProActive,
   getWeeklyUnlockState,
+  getBoostState,
   canAccessProfession
 } = require('../utils/entitlements');
 
@@ -139,12 +140,20 @@ async function getDiscover(req, res) {
     );
   }
 
+  // Boost/Spotlight: people with an active boost float to the front of the deck.
+  // Stable within each group (boosted vs not), so existing ordering is otherwise
+  // preserved. Sort on the raw docs before projecting away boostExpiresAt.
+  const now = Date.now();
+  const isBoosted = (u) => u.boostExpiresAt && new Date(u.boostExpiresAt).getTime() > now;
+  candidates.sort((a, b) => Number(isBoosted(b)) - Number(isBoosted(a)));
+
   return res.json({
-    profiles: candidates.map((u) => publicProfile(u)),
+    profiles: candidates.map((u) => ({ ...publicProfile(u), boosted: isBoosted(u) })),
     profession: requested,
     isOwnProfession: requested === me.profession,
     unlock: getWeeklyUnlockState(me),
-    isPro: isProActive(me)
+    isPro: isProActive(me),
+    myBoost: getBoostState(me)
   });
 }
 

@@ -22,6 +22,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const likesRoutes = require('./routes/likesRoutes');
 const billingRoutes = require('./routes/billingRoutes');
+const boostRoutes = require('./routes/boostRoutes');
 const safetyRoutes = require('./routes/safetyRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
@@ -55,6 +56,7 @@ app.use('/messages', messageRoutes);
 app.use('/uploads', uploadRoutes);
 app.use('/likes', likesRoutes);
 app.use('/billing', billingRoutes);
+app.use('/boost', boostRoutes);
 app.use('/safety', safetyRoutes);
 app.use('/admin', adminRoutes);
 

@@ -6,7 +6,14 @@ const payments = require('../utils/payments');
 const {
   PRO_PLANS,
   CREDIT_PACKS,
-  CREDIT_VALUE_INR
+  CREDIT_VALUE_INR,
+  SUPERLIKE_COST_CREDITS,
+  FREE_WEEKLY_SUPERLIKES,
+  PRO_WEEKLY_SUPERLIKES,
+  BOOST_COST_CREDITS,
+  BOOST_DURATION_MINUTES,
+  FREE_WEEKLY_BOOSTS,
+  PRO_WEEKLY_BOOSTS
 } = require('../config/monetization');
 
 const BILLING_DEV_MODE = process.env.BILLING_DEV_MODE !== 'false' && !payments.LIVE;
@@ -78,6 +85,17 @@ function getCatalog(req, res) {
     proPlans: PRO_PLANS,
     creditPacks: CREDIT_PACKS,
     creditValueInr: CREDIT_VALUE_INR,
+    superLike: {
+      costCredits: SUPERLIKE_COST_CREDITS,
+      freeWeekly: FREE_WEEKLY_SUPERLIKES,
+      proWeekly: PRO_WEEKLY_SUPERLIKES
+    },
+    boost: {
+      costCredits: BOOST_COST_CREDITS,
+      durationMinutes: BOOST_DURATION_MINUTES,
+      freeWeekly: FREE_WEEKLY_BOOSTS,
+      proWeekly: PRO_WEEKLY_BOOSTS
+    },
     devMode: BILLING_DEV_MODE,
     keyId: payments.KEY_ID || null
   });
