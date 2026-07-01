@@ -9,7 +9,7 @@ import {
   Text,
   View
 } from 'react-native';
-import { colors } from '../theme/colors';
+import { colorsDark as colors } from '../theme/colorsDark';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.surface
+    backgroundColor: colors.card
   },
   closeText: {
     ...typography.body,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    backgroundColor: '#FDEEE8',
+    backgroundColor: 'rgba(232,65,90,0.12)',
     borderRadius: 14,
     padding: spacing.md
   },
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     borderColor: colors.primary,
-    backgroundColor: '#FDEEE8'
+    backgroundColor: 'rgba(232,65,90,0.15)'
   },
   chipDot: {
     width: 7,
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#DCE6F2',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     padding: 3,
     justifyContent: 'center'
   },
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     padding: spacing.lg,
     paddingBottom: spacing.xl,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     borderTopWidth: 1,
     borderTopColor: colors.border
   },

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { getReportReasons, reportUser } from '../services/apiService';
-import { colors } from '../theme/colors';
+import { colorsDark as colors } from '../theme/colorsDark';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
@@ -157,9 +157,11 @@ export function ReportSheet({ visible, userId, name, onClose, onReported }: Prop
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(8,16,28,0.45)', justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderColor: colors.border,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: spacing.lg,
@@ -189,13 +191,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     marginBottom: spacing.sm
   },
-  reasonActive: { borderColor: colors.primary, backgroundColor: '#FDEEE8' },
+  reasonActive: { borderColor: colors.primary, backgroundColor: 'rgba(232,65,90,0.15)' },
   reasonText: { ...typography.body, color: colors.text, fontWeight: '600' },
   reasonTextActive: { color: colors.primary, fontWeight: '800' },
   reasonCheck: { color: colors.primary, fontWeight: '900', fontSize: 16 },
   note: {
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: spacing.md,
     minHeight: 70,

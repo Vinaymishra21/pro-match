@@ -42,7 +42,7 @@ export function GradientButton({
     <AnimatedView style={[{ transform: [{ scale }] }, style]}>
       <Pressable onPress={onPress} onPressIn={handleIn} onPressOut={handleOut} disabled={isDisabled}>
         <LinearGradient
-          colors={isDisabled ? ['#C7D2E0', '#B7C4D6'] : (gradientColors as [string, string, ...string[]])}
+          colors={isDisabled ? ['#3A3444', '#2C2738'] : (gradientColors as [string, string, ...string[]])}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.button, size === 'md' ? styles.md : styles.lg]}
