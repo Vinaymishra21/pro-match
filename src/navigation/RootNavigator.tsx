@@ -8,7 +8,7 @@ import { AuthNavigator } from './AuthNavigator';
 import { ChatScreen } from '../screens/chat/ChatScreen';
 import { PaywallScreen } from '../screens/billing/PaywallScreen';
 import { SettingsScreen } from '../screens/main/SettingsScreen';
-import { colors } from '../theme/colors';
+import { darkColors } from '../theme/darkColors';
 import type { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -26,7 +26,7 @@ export function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.background }
+        contentStyle: { backgroundColor: darkColors.bg }
       }}
     >
       {!hasAccess ? (
@@ -39,12 +39,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="Chat"
             component={ChatScreen}
-            options={{
-              headerShown: true,
-              headerStyle: { backgroundColor: colors.surface },
-              headerTintColor: colors.text,
-              title: 'Chat'
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Paywall"

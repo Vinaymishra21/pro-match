@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppButton } from '../../components/AppButton';
-import { AppInput } from '../../components/AppInput';
-import { ScreenContainer } from '../../components/ScreenContainer';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DarkBackground } from '../../components/DarkBackground';
 import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMessages, sendMessage, unmatch } from '../../services/apiService';
 import { getSocket } from '../../services/socket';
-import { colors } from '../../theme/colors';
+import { colorsDark as colors } from '../../theme/colorsDark';
+import { darkColors } from '../../theme/darkColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { MessageRecord, RootStackParamList } from '../../types';
@@ -24,6 +26,7 @@ function formatTime(iso?: string) {
 
 export function ChatScreen({ route, navigation }: Props) {
   const { token, user } = useAuth();
+  const insets = useSafeAreaInsets();
   const { matchId, matchName, matchUserId } = route.params;
   const [messages, setMessages] = useState<MessageRecord[]>([]);
   const [text, setText] = useState('');
@@ -141,22 +144,26 @@ export function ChatScreen({ route, navigation }: Props) {
     }
   }
 
+  const canSend = Boolean(text.trim());
+
   return (
-    <ScreenContainer>
+    <DarkBackground orbColor="rgba(232,65,90,0.18)">
+      <StatusBar style="light" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
+        style={[styles.container, { paddingTop: insets.top + spacing.xs, paddingBottom: insets.bottom + spacing.xs }]}
       >
         <View style={styles.headerRow}>
-          <Text style={styles.heading}>{matchName}</Text>
-          <View style={styles.headerActions}>
-            <Pressable onPress={confirmUnmatch} hitSlop={8} style={styles.unmatchBtn}>
-              <Text style={styles.unmatchText}>Unmatch</Text>
-            </Pressable>
-            <Pressable onPress={openActions} hitSlop={12} style={styles.menuBtn}>
-              <Text style={styles.menuDots}>⋯</Text>
-            </Pressable>
+          <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
+            <Text style={styles.backChevron}>‹</Text>
+          </Pressable>
+          <View style={styles.headerCenter}>
+            <Text style={styles.heading} numberOfLines={1}>{matchName}</Text>
+            <Text style={styles.headerSub}>Matched · say hello</Text>
           </View>
+          <Pressable onPress={openActions} hitSlop={12} style={styles.menuBtn}>
+            <Text style={styles.menuDots}>⋯</Text>
+          </Pressable>
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -165,27 +172,64 @@ export function ChatScreen({ route, navigation }: Props) {
           data={messages}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
+          showsVerticalScrollIndicator={false}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={
-            <Text style={styles.emptyHint}>Say hi 👋 Start the conversation.</Text>
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyEmoji}>💬</Text>
+              <Text style={styles.emptyHint}>Say hi 👋 Start the conversation.</Text>
+            </View>
           }
           renderItem={({ item }) => {
             const mine = item.senderId === user?.id;
             return (
-              <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
-                <Text style={[styles.bubbleText, mine ? styles.bubbleTextMine : null]}>{item.text}</Text>
-                <Text style={[styles.timestamp, mine ? styles.timestampMine : null]}>
-                  {formatTime(item.createdAt)}
-                  {mine && item.readAt ? ' · Read' : ''}
-                </Text>
+              <View style={[styles.bubbleRow, mine ? styles.bubbleRowMine : styles.bubbleRowOther]}>
+                {mine ? (
+                  <LinearGradient
+                    colors={darkColors.brandGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.bubble, styles.bubbleMine]}
+                  >
+                    <Text style={[styles.bubbleText, styles.bubbleTextMine]}>{item.text}</Text>
+                    <Text style={[styles.timestamp, styles.timestampMine]}>
+                      {formatTime(item.createdAt)}
+                      {item.readAt ? ' · Read' : ''}
+                    </Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={[styles.bubble, styles.bubbleOther]}>
+                    <Text style={styles.bubbleText}>{item.text}</Text>
+                    <Text style={styles.timestamp}>{formatTime(item.createdAt)}</Text>
+                  </View>
+                )}
               </View>
             );
           }}
         />
 
-        <AppInput value={text} onChangeText={setText} placeholder="Type a message" />
-        <AppButton title="Send" onPress={handleSend} disabled={!text.trim()} />
+        <View style={styles.composer}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Type a message"
+            placeholderTextColor={colors.textMuted}
+            style={styles.composerInput}
+            multiline
+            onSubmitEditing={handleSend}
+          />
+          <Pressable onPress={handleSend} disabled={!canSend} style={styles.sendWrap}>
+            <LinearGradient
+              colors={canSend ? darkColors.brandGradient : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.sendBtn}
+            >
+              <Text style={[styles.sendIcon, !canSend && styles.sendIconOff]}>➤</Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
       </KeyboardAvoidingView>
 
       <ReportSheet
@@ -197,41 +241,59 @@ export function ChatScreen({ route, navigation }: Props) {
           if (blocked) navigation.goBack();
         }}
       />
-    </ScreenContainer>
+    </DarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    paddingHorizontal: spacing.lg
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
     marginBottom: spacing.md
   },
-  heading: {
-    ...typography.subtitle,
-    color: colors.text
-  },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  unmatchBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2'
-  },
-  unmatchText: { color: '#DC2626', fontWeight: '800', fontSize: 12.5 },
-  menuBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.inputBg
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  backChevron: {
+    fontSize: 28,
+    color: colors.text,
+    fontWeight: '600',
+    marginTop: -3,
+    marginLeft: -2
+  },
+  headerCenter: { flex: 1 },
+  heading: {
+    ...typography.subtitle,
+    color: colors.text,
+    fontWeight: '900'
+  },
+  headerSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: '600',
+    marginTop: 1
+  },
+  menuBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border
   },
   menuDots: {
     fontSize: 22,
@@ -240,38 +302,49 @@ const styles = StyleSheet.create({
     marginTop: -4
   },
   messageList: {
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
     flexGrow: 1
   },
+  emptyWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xxl
+  },
+  emptyEmoji: { fontSize: 44, marginBottom: spacing.sm },
   emptyHint: {
     ...typography.caption,
     color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xl
+    textAlign: 'center'
   },
-  bubble: {
-    maxWidth: '80%',
-    borderRadius: 14,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  bubbleRow: {
+    flexDirection: 'row',
     marginBottom: spacing.sm
   },
+  bubbleRowMine: { justifyContent: 'flex-end' },
+  bubbleRowOther: { justifyContent: 'flex-start' },
+  bubble: {
+    maxWidth: '82%',
+    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
+  },
   bubbleMine: {
-    alignSelf: 'flex-end',
-    backgroundColor: colors.primary
+    borderBottomRightRadius: 6
   },
   bubbleOther: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceStrong,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
+    borderBottomLeftRadius: 6
   },
   bubbleText: {
     color: colors.text,
-    fontSize: 15
+    fontSize: 15,
+    lineHeight: 20
   },
   bubbleTextMine: {
-    color: colors.white
+    color: '#FFFFFF'
   },
   timestamp: {
     ...typography.caption,
@@ -281,7 +354,44 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end'
   },
   timestampMine: {
-    color: 'rgba(255,255,255,0.8)'
+    color: 'rgba(255,255,255,0.75)'
+  },
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+    paddingTop: spacing.sm
+  },
+  composerInput: {
+    flex: 1,
+    minHeight: 48,
+    maxHeight: 120,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 24,
+    paddingHorizontal: spacing.md,
+    paddingTop: 12,
+    paddingBottom: 12,
+    color: colors.text,
+    fontSize: 15
+  },
+  sendWrap: { marginBottom: 2 },
+  sendBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  sendIcon: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    marginLeft: 2
+  },
+  sendIconOff: {
+    color: colors.textMuted
   },
   error: {
     color: '#FCA5A5',
