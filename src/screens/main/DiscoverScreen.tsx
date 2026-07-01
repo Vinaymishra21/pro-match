@@ -26,14 +26,14 @@ import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebrat
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
-import { getDiscoverProfiles, swipeProfile, undoSwipe } from '../../services/apiService';
+import { activateBoost, getDiscoverProfiles, swipeProfile, undoSwipe } from '../../services/apiService';
 import { ApiError } from '../../services/apiClient';
 import type { FilterState } from '../../types';
 import { professionTheme } from '../../theme/professionTheme';
 import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import type { DiscoverProfile, MainTabParamList, RootStackParamList, UnlockState } from '../../types';
+import type { BoostState, DiscoverProfile, MainTabParamList, RootStackParamList, UnlockState } from '../../types';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Discover'>,
@@ -59,6 +59,9 @@ export function DiscoverScreen({ navigation }: Props) {
   const [celebration, setCelebration] = useState<(MatchInfo & { matchId: string }) | null>(null);
   // Full-screen profile detail (opened by tapping the card).
   const [detailOpen, setDetailOpen] = useState(false);
+  const [boost, setBoost] = useState<BoostState | null>(null);
+  const [boostBusy, setBoostBusy] = useState(false);
+  const [nowMs, setNowMs] = useState(Date.now());
 
   const current = profiles[0] || null;
   const viewingTheme = professionTheme(activeProfession);
@@ -106,6 +109,7 @@ export function DiscoverScreen({ navigation }: Props) {
         setProfiles(res.profiles || []);
         if (res.unlock) setUnlock(res.unlock);
         if (typeof res.isPro === 'boolean') setIsPro(res.isPro);
+        if (res.myBoost) setBoost(res.myBoost);
       } catch (loadError) {
         setProfiles([]);
         const err = loadError as ApiError;
@@ -164,9 +168,9 @@ export function DiscoverScreen({ navigation }: Props) {
   // Records the swipe against the backend + advances the deck. Called after the
   // card has animated off (gesture) or immediately (button + manual fling).
   const commitSwipe = useCallback(
-    async (target: DiscoverProfile, action: 'like' | 'pass') => {
+    async (target: DiscoverProfile, action: 'like' | 'pass', superLike = false) => {
       try {
-        const res = await swipeProfile({ toUserId: target.id, action }, token);
+        const res = await swipeProfile({ toUserId: target.id, action, superLike }, token);
         setProfiles((prev) => prev.filter((p) => p.id !== target.id));
         pan.setValue({ x: 0, y: 0 });
         if (action === 'like' && res.matched && res.match) {
@@ -180,30 +184,48 @@ export function DiscoverScreen({ navigation }: Props) {
           });
         }
       } catch (swipeError) {
-        Alert.alert('Could not swipe', (swipeError as Error).message);
-        // Snap the card back if the request failed.
+        const err = swipeError as ApiError;
+        // Snap the card back — the swipe didn't take.
         Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
+        if (err.code === 'INSUFFICIENT_SUPERLIKE') {
+          Alert.alert(
+            'Out of Super Likes ⭐',
+            'You’ve used your Super Likes this week. Get credits or go Pro for more.',
+            [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) }
+            ]
+          );
+          return;
+        }
+        Alert.alert('Could not swipe', err.message);
       }
     },
-    [token, pan]
+    [token, pan, navigation, user]
   );
 
-  // Fling the top card off-screen in a direction, then commit the swipe.
+  // Fling the top card off-screen, then commit the swipe. A Super Like flings the
+  // card UP (the recognisable gesture) instead of sideways.
   const flingOff = useCallback(
-    (action: 'like' | 'pass') => {
+    (action: 'like' | 'pass', superLike = false) => {
       if (!current || submitting) return;
       // Tactile feedback on every decision — the single biggest "feel" upgrade.
       Haptics.impactAsync(
-        action === 'like' ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light
+        superLike
+          ? Haptics.ImpactFeedbackStyle.Heavy
+          : action === 'like'
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : Haptics.ImpactFeedbackStyle.Light
       );
       setSubmitting(true);
-      const toX = action === 'like' ? SCREEN_W * 1.4 : -SCREEN_W * 1.4;
+      const toX = superLike ? 0 : action === 'like' ? SCREEN_W * 1.4 : -SCREEN_W * 1.4;
+      const toY = superLike ? -SCREEN_W * 1.6 : 0;
       Animated.timing(pan, {
-        toValue: { x: toX, y: 0 },
+        toValue: { x: toX, y: toY },
         duration: 250,
         useNativeDriver: false
       }).start(async () => {
-        await commitSwipe(current, action);
+        await commitSwipe(current, action, superLike);
         setSubmitting(false);
       });
     },
@@ -213,6 +235,43 @@ export function DiscoverScreen({ navigation }: Props) {
   // Button handler — same outcome as a fling.
   function handleSwipe(action: 'like' | 'pass') {
     flingOff(action);
+  }
+
+  function handleSuperLike() {
+    flingOff('like', true);
+  }
+
+  // Boost: spotlight myself at the front of the deck for a window.
+  async function handleBoost() {
+    if (boostBusy) return;
+    if (boost?.active) {
+      const mins = Math.max(1, Math.ceil((boost.remainingMs || 0) / 60000));
+      Alert.alert('Boost active ⚡', `You’re spotlighted for about ${mins} more minute${mins !== 1 ? 's' : ''}.`);
+      return;
+    }
+    try {
+      setBoostBusy(true);
+      const res = await activateBoost(token);
+      setBoost(res.boost);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Boost on ⚡', `You’re at the front of the deck for ${res.durationMinutes} minutes.`);
+    } catch (boostError) {
+      const err = boostError as ApiError;
+      if (err.code === 'INSUFFICIENT_BOOST') {
+        Alert.alert(
+          'Boost needs credits ⚡',
+          'Get credits or go Pro for a free weekly Boost.',
+          [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) }
+          ]
+        );
+      } else {
+        Alert.alert('Could not boost', err.message);
+      }
+    } finally {
+      setBoostBusy(false);
+    }
   }
 
   // Rewind the last swipe: restores that person to the top of the deck.
@@ -270,6 +329,17 @@ export function DiscoverScreen({ navigation }: Props) {
     })
   ).current;
 
+  // Tick a clock while a boost is active so the header countdown stays live.
+  useEffect(() => {
+    if (!boost?.active) return undefined;
+    const id = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, [boost?.active]);
+
+  const boostMsLeft = boost?.active && boost.expiresAt ? new Date(boost.expiresAt).getTime() - nowMs : 0;
+  const boostActive = boostMsLeft > 0;
+  const boostMinsLeft = boostActive ? Math.max(1, Math.ceil(boostMsLeft / 60000)) : 0;
+
   const isOwnDeck = activeProfession === myProfession;
 
   return (
@@ -284,6 +354,15 @@ export function DiscoverScreen({ navigation }: Props) {
             </Text>
           </View>
           <View style={styles.topRight}>
+            <Pressable
+              style={[styles.boostBtn, boostActive ? styles.boostBtnActive : null]}
+              onPress={handleBoost}
+              disabled={boostBusy}
+            >
+              <Text style={[styles.boostBtnText, boostActive ? styles.boostBtnTextActive : null]}>
+                {boostActive ? `⚡ ${boostMinsLeft}m` : '⚡ Boost'}
+              </Text>
+            </Pressable>
             {isPro ? (
               <View style={styles.proBadge}>
                 <Text style={styles.proBadgeText}>⭐ PRO</Text>
@@ -427,6 +506,11 @@ export function DiscoverScreen({ navigation }: Props) {
 
               <Pressable style={styles.swipeWrap} onPress={() => setDetailOpen(true)}>
                 <ProfileCard profile={current} />
+                {current.boosted ? (
+                  <View style={styles.boostedTag}>
+                    <Text style={styles.boostedTagText}>⚡ Boosted</Text>
+                  </View>
+                ) : null}
                 <View style={styles.tapHint}>
                   <Text style={styles.tapHintText}>tap for details</Text>
                 </View>
@@ -451,6 +535,16 @@ export function DiscoverScreen({ navigation }: Props) {
               disabled={submitting}
             >
               <Text style={styles.passIcon}>✕</Text>
+            </Pressable>
+            <Pressable onPress={handleSuperLike} disabled={submitting}>
+              <LinearGradient
+                colors={['#FBBF24', '#F59E0B']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.actionBtn, styles.superBtn]}
+              >
+                <Text style={styles.superIcon}>★</Text>
+              </LinearGradient>
             </Pressable>
             <Pressable onPress={() => handleSwipe('like')} disabled={submitting}>
               <LinearGradient
@@ -549,6 +643,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6
   },
   proBadgeText: { fontWeight: '900', color: colors.gold, fontSize: 12 },
+  boostBtn: {
+    backgroundColor: 'rgba(139,92,246,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.55)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  boostBtnActive: {
+    backgroundColor: 'rgba(251,191,36,0.18)',
+    borderColor: 'rgba(251,191,36,0.6)'
+  },
+  boostBtnText: { fontWeight: '900', color: '#C4B5FD', fontSize: 12 },
+  boostBtnTextActive: { color: colors.gold },
   exploreCounter: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -670,7 +778,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.lg,
+    gap: spacing.md,
     paddingBottom: spacing.md
   },
   undoBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(251,191,36,0.15)', borderWidth: 1, borderColor: 'rgba(251,191,36,0.5)' },
@@ -689,6 +797,20 @@ const styles = StyleSheet.create({
   },
   passBtn: { backgroundColor: colors.surfaceStrong, borderWidth: 1, borderColor: colors.border },
   passIcon: { fontSize: 28, color: colors.textMuted, fontWeight: '700' },
+  superBtn: { width: 56, height: 56, borderRadius: 28 },
+  superIcon: { fontSize: 26, color: colors.white, fontWeight: '900' },
+  boostedTag: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(139,92,246,0.9)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  boostedTagText: { color: colors.white, fontWeight: '900', fontSize: 12 },
   likeBtn: {},
   likeIcon: { fontSize: 30, color: colors.white }
 });

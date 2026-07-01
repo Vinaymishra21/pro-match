@@ -3,6 +3,8 @@ import type {
   AuthPayload,
   AuthResponse,
   BillingCatalog,
+  BoostActivateResponse,
+  BoostStatusResponse,
   CreateOrderResponse,
   DiscoverAccessResponse,
   DiscoverProfile,
@@ -254,7 +256,10 @@ export function verifyPayment(
   );
 }
 
-export function swipeProfile(payload: { toUserId: string; action: SwipeAction }, token: string) {
+export function swipeProfile(
+  payload: { toUserId: string; action: SwipeAction; superLike?: boolean },
+  token: string
+) {
   return apiRequest<SwipeResponse>(
     '/swipes',
     {
@@ -263,6 +268,14 @@ export function swipeProfile(payload: { toUserId: string; action: SwipeAction },
     },
     token
   );
+}
+
+export function getBoostStatus(token: string) {
+  return apiRequest<BoostStatusResponse>('/boost/status', { method: 'GET' }, token);
+}
+
+export function activateBoost(token: string) {
+  return apiRequest<BoostActivateResponse>('/boost/activate', { method: 'POST' }, token);
 }
 
 export function undoSwipe(token: string) {

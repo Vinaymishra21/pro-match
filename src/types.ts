@@ -93,6 +93,13 @@ export interface FilterState {
 
 export interface DiscoverProfile extends User {
   id: string;
+  boosted?: boolean;
+}
+
+export interface BoostState {
+  active: boolean;
+  expiresAt?: string | null;
+  remainingMs?: number;
 }
 
 export interface MatchRecord {
@@ -140,6 +147,7 @@ export interface DiscoverResponse {
   isOwnProfession?: boolean;
   unlock?: UnlockState;
   isPro?: boolean;
+  myBoost?: BoostState;
 }
 
 export interface DiscoverAccessResponse {
@@ -154,6 +162,7 @@ export interface IncomingLike extends Partial<User> {
   profession?: string;
   crossProfession?: boolean;
   teaser?: string;
+  superLike?: boolean;
 }
 
 export interface IncomingLikesResponse {
@@ -184,12 +193,52 @@ export interface ProPlan {
   popular?: boolean;
 }
 
+export interface SuperLikeConfig {
+  costCredits: number;
+  freeWeekly: number;
+  proWeekly: number;
+}
+
+export interface BoostConfig {
+  costCredits: number;
+  durationMinutes: number;
+  freeWeekly: number;
+  proWeekly: number;
+}
+
 export interface BillingCatalog {
   proPlans: ProPlan[];
   creditPacks: CreditPack[];
   creditValueInr: number;
+  superLike?: SuperLikeConfig;
+  boost?: BoostConfig;
   devMode: boolean;
   keyId: string | null;
+}
+
+export interface WeeklyAllowance {
+  weekStart: string | null;
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
+export interface BoostStatusResponse {
+  boost: BoostState;
+  allowance: WeeklyAllowance;
+  costCredits: number;
+  durationMinutes: number;
+  credits: number;
+  isPro: boolean;
+}
+
+export interface BoostActivateResponse {
+  ok: boolean;
+  charged: number;
+  via: 'allowance' | 'credits';
+  credits: number;
+  boost: BoostState;
+  durationMinutes: number;
 }
 
 export interface GrantResponse {
@@ -211,6 +260,9 @@ export interface CreateOrderResponse {
 export interface SwipeResponse {
   matched: boolean;
   match: { id: string; crossProfession?: boolean } | null;
+  superLike?: boolean;
+  superLikeCharged?: number;
+  credits?: number;
 }
 
 export interface MatchesResponse {
