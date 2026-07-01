@@ -541,14 +541,14 @@ const styles = StyleSheet.create({
   brand: { fontSize: 28, fontWeight: '900', color: colors.text, letterSpacing: -0.6 },
   subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
   proBadge: {
-    backgroundColor: '#FFF7E6',
+    backgroundColor: 'rgba(251,191,36,0.15)',
     borderWidth: 1,
-    borderColor: '#F5C56B',
+    borderColor: 'rgba(251,191,36,0.5)',
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6
   },
-  proBadgeText: { fontWeight: '900', color: '#B45309', fontSize: 12 },
+  proBadgeText: { fontWeight: '900', color: colors.gold, fontSize: 12 },
   exploreCounter: {
     backgroundColor: colors.surface,
     borderWidth: 1,
