@@ -347,9 +347,9 @@ export function DiscoverScreen({ navigation }: Props) {
       <View style={[styles.container, { paddingTop: insets.top + spacing.xs }]}>
         {/* Top bar */}
         <View style={styles.topBar}>
-          <View>
+          <View style={styles.topLeft}>
             <Text style={styles.brand}>Discover</Text>
-            <Text style={styles.subtitle}>
+            <Text style={styles.subtitle} numberOfLines={1}>
               {isOwnDeck ? 'Your profession · always free' : `Exploring ${activeProfession}`}
             </Text>
           </View>
@@ -372,7 +372,9 @@ export function DiscoverScreen({ navigation }: Props) {
                 style={styles.exploreCounter}
                 onPress={() => navigation.navigate('Paywall', { focus: 'pro' })}
               >
-                <Text style={styles.exploreCounterText}>🔓 {unlock.remaining} left</Text>
+                <Text style={styles.exploreCounterText}>
+                  🔓 {unlock.remaining} {unlock.remaining === 1 ? 'explore' : 'explores'} left
+                </Text>
               </Pressable>
             ) : null}
             <Pressable style={styles.filterBtn} onPress={() => setShowFilters(true)}>
@@ -577,6 +579,7 @@ export function DiscoverScreen({ navigation }: Props) {
 
       {celebration ? (
         <MatchCelebration
+          key={celebration.matchId}
           match={celebration}
           onKeepSwiping={() => setCelebration(null)}
           onSendMessage={() => {
@@ -632,6 +635,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md
   },
+  topLeft: { flex: 1, marginRight: spacing.sm },
   brand: { fontSize: 28, fontWeight: '900', color: colors.text, letterSpacing: -0.6 },
   subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
   proBadge: {
@@ -666,7 +670,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6
   },
   exploreCounterText: { fontWeight: '800', color: colors.text, fontSize: 12 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 0 },
   filterBtn: {
     width: 40,
     height: 40,

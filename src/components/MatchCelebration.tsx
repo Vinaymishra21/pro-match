@@ -37,7 +37,13 @@ export function MatchCelebration({
   }, [pop, title]);
 
   return (
-    <View style={styles.overlay}>
+    <View
+      style={styles.overlay}
+      // Absorb all touches so swipes/taps don't fall through to the deck behind
+      // the overlay — the buttons (Pressables) still win via responder bubbling.
+      onStartShouldSetResponder={() => true}
+      onMoveShouldSetResponder={() => true}
+    >
       <LinearGradient
         colors={['rgba(14,11,20,0.94)', 'rgba(14,11,20,0.985)']}
         style={StyleSheet.absoluteFill}
