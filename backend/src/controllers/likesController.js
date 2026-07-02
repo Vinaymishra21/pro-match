@@ -52,7 +52,14 @@ async function getIncomingLikes(req, res) {
   const revealedSet = new Set(revealedRows.map((r) => String(r.likerId)));
 
   const likerIds = pending.map((s) => s.fromUserId);
-  const likers = await User.find({ _id: { $in: likerIds } });
+  // Hide likes from accounts that shouldn't be visible (banned / shadow-banned /
+  // deactivated) so moderated abusers don't keep surfacing in who-likes-you.
+  const likers = await User.find({
+    _id: { $in: likerIds },
+    isBanned: { $ne: true },
+    isShadowBanned: { $ne: true },
+    isDeactivated: { $ne: true }
+  });
   const likerMap = new Map(likers.map((u) => [String(u.id), u]));
 
   // Super Likes float to the top of the list; within each group, newest first

@@ -81,8 +81,27 @@ const userSchema = new Schema(
     isBanned: { type: Boolean, default: false, index: true },
     bannedAt: { type: Date, default: null },
 
-    // Profession verification (Phase 1.2/2)
+    // Profession verification (Phase 1.2/2). professionVerified is the trust
+    // badge — now only set true by admin approval (see verificationStatus), never
+    // self-serve. verificationStatus tracks the request lifecycle.
     professionVerified: { type: Boolean, default: false },
+    verificationStatus: {
+      type: String,
+      enum: ['none', 'pending', 'verified', 'rejected'],
+      default: 'none'
+    },
+
+    // Moderation signals.
+    // Shadow ban: the user keeps using the app but is hidden from everyone else
+    // (discovery + who-likes-you). Used for auto-actions so abusers don't
+    // immediately know to make a new account.
+    isShadowBanned: { type: Boolean, default: false, index: true },
+    shadowBannedAt: { type: Date, default: null },
+    // Count of blocked-content attempts (chat/profile); escalates to shadow ban.
+    spamStrikes: { type: Number, default: 0 },
+    // Set when an automated signal (e.g. duplicate photo) needs a human look.
+    flaggedForReview: { type: Boolean, default: false },
+    flagReason: { type: String, default: '' },
 
     // Admin/moderation access (for the admin dashboard). Off for normal users.
     isAdmin: { type: Boolean, default: false },

@@ -6,5 +6,8 @@ module.exports = {
   Otp: require('./Otp'),
   Reveal: require('./Reveal'),
   Report: require('./Report'),
-  ProcessedPayment: require('./ProcessedPayment')
+  ProcessedPayment: require('./ProcessedPayment'),
+  VerificationRequest: require('./VerificationRequest'),
+  BannedIdentity: require('./BannedIdentity'),
+  PhotoHash: require('./PhotoHash')
 };

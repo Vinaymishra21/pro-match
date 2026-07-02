@@ -14,6 +14,8 @@ router.get('/users/:id', adminGuard, admin.getUser);
 router.post('/users/:id/action', adminGuard, admin.userAction);
 router.get('/reports', adminGuard, admin.listReports);
 router.post('/reports/:id', adminGuard, admin.updateReport);
+router.get('/verifications', adminGuard, admin.listVerifications);
+router.post('/verifications/:id', adminGuard, admin.reviewVerification);
 router.get('/matches', adminGuard, admin.listMatches);
 router.get('/matches/:id/messages', adminGuard, admin.getConversation);
 

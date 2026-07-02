@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User, Match, Message, Report, Swipe, Reveal } = require('../models');
+const { User, Match, Message, Report, Swipe, Reveal, VerificationRequest } = require('../models');
 const { CREDIT_PACKS, PRO_PRICE_INR, REVEAL_COST_CREDITS, CREDIT_VALUE_INR } = require('../config/monetization');
+const { blocklistUserIdentifiers } = require('../utils/identity');
 
 function adminToken(user) {
   return jwt.sign({ id: user.id, admin: true }, process.env.JWT_SECRET, { expiresIn: '1d' });
@@ -196,12 +197,23 @@ async function userAction(req, res) {
       // Also hide them from discovery immediately.
       u.isDeactivated = true;
       u.deactivatedAt = u.deactivatedAt || new Date();
+      await blocklistUserIdentifiers(u, 'admin ban'); // ban-evasion blocklist
       break;
     case 'unban':
       u.isBanned = false;
       u.bannedAt = null;
       u.isDeactivated = false;
       u.deactivatedAt = null;
+      break;
+    case 'shadowban':
+      u.isShadowBanned = true;
+      u.shadowBannedAt = new Date();
+      break;
+    case 'unshadowban':
+      u.isShadowBanned = false;
+      u.shadowBannedAt = null;
+      u.flaggedForReview = false;
+      u.flagReason = '';
       break;
     case 'verify':
       u.professionVerified = true;
@@ -280,6 +292,8 @@ async function updateReport(req, res) {
       { _id: report.reportedUser },
       { isBanned: true, bannedAt: new Date(), isDeactivated: true, deactivatedAt: new Date() }
     );
+    const banned = await User.findById(report.reportedUser).select('phone email');
+    if (banned) await blocklistUserIdentifiers(banned, 'report ban'); // ban-evasion
   }
 
   return res.json({ ok: true });
@@ -340,6 +354,72 @@ async function getConversation(req, res) {
   });
 }
 
+// GET /admin/verifications?status=pending — profession verification queue.
+async function listVerifications(req, res) {
+  const status = ['pending', 'approved', 'rejected'].includes(req.query.status)
+    ? req.query.status
+    : 'pending';
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+
+  const [total, requests] = await Promise.all([
+    VerificationRequest.countDocuments({ status }),
+    VerificationRequest.find({ status })
+      .sort({ createdAt: 1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('user', 'name profession photos professionVerified isBanned')
+  ]);
+
+  return res.json({
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    requests: requests.map((r) => ({
+      id: r.id,
+      profession: r.profession,
+      note: r.note,
+      status: r.status,
+      createdAt: r.createdAt,
+      user: r.user
+        ? {
+            id: r.user.id,
+            name: r.user.name,
+            profession: r.user.profession,
+            photo: (r.user.photos && r.user.photos[0]) || '',
+            professionVerified: r.user.professionVerified
+          }
+        : null
+    }))
+  });
+}
+
+// POST /admin/verifications/:id { action: 'approve' | 'reject' }
+async function reviewVerification(req, res) {
+  const { action } = req.body;
+  if (!['approve', 'reject'].includes(action)) {
+    return res.status(400).json({ message: "action must be 'approve' or 'reject'" });
+  }
+
+  const request = await VerificationRequest.findById(req.params.id);
+  if (!request) return res.status(404).json({ message: 'Request not found' });
+
+  request.status = action === 'approve' ? 'approved' : 'rejected';
+  request.reviewedBy = req.auth.id;
+  request.reviewedAt = new Date();
+  await request.save();
+
+  // Reflect the decision on the user (the badge is set ONLY here).
+  await User.updateOne(
+    { _id: request.user },
+    action === 'approve'
+      ? { professionVerified: true, verificationStatus: 'verified' }
+      : { professionVerified: false, verificationStatus: 'rejected' }
+  );
+
+  return res.json({ ok: true, status: request.status });
+}
+
 module.exports = {
   login,
   getStats,
@@ -350,5 +430,7 @@ module.exports = {
   listReports,
   updateReport,
   listMatches,
-  getConversation
+  getConversation,
+  listVerifications,
+  reviewVerification
 };

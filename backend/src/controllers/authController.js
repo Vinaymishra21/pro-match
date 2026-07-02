@@ -2,7 +2,10 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { User, Otp } = require('../models');
 const { createToken, sanitizeUser } = require('../utils/auth');
+const { isIdentifierBanned } = require('../utils/identity');
 const { sendSms, DEV_MODE } = require('../utils/sms');
+
+const BANNED_RESPONSE = { message: 'This account has been suspended.', code: 'BANNED' };
 
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_OTP_ATTEMPTS = 5;
@@ -26,6 +29,11 @@ async function register(req, res) {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+
+  // Ban-evasion: refuse signups whose identifier is on the blocklist.
+  if (await isIdentifierBanned(normalizedEmail)) {
+    return res.status(403).json(BANNED_RESPONSE);
+  }
 
   const exists = await User.findOne({ email: normalizedEmail });
   if (exists) {
@@ -122,13 +130,18 @@ async function verifyOtp(req, res) {
   // Success — consume the challenge.
   await Otp.deleteOne({ _id: challenge._id });
 
+  // Ban-evasion: this phone was previously banned (even if the account is gone).
+  if (await isIdentifierBanned(phone)) {
+    return res.status(403).json(BANNED_RESPONSE);
+  }
+
   // Find-or-create the user by phone.
   let user = await User.findOne({ phone });
   let isNewUser = false;
 
   // A banned account cannot log back in (unlike self-deactivation below).
   if (user && user.isBanned) {
-    return res.status(403).json({ message: 'This account has been suspended.', code: 'BANNED' });
+    return res.status(403).json(BANNED_RESPONSE);
   }
 
   if (!user) {

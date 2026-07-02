@@ -59,9 +59,14 @@ async function getDiscover(req, res) {
   const query = {
     _id: { $ne: me.id, $nin: excludeIds },
     profession: requested,
-    // Never surface deactivated or banned accounts.
+    // Never surface deactivated, banned, or shadow-banned accounts.
     isDeactivated: { $ne: true },
-    isBanned: { $ne: true }
+    isBanned: { $ne: true },
+    isShadowBanned: { $ne: true },
+    // Completeness gate: hide empty/bot-like profiles (no photo or no age). Keeps
+    // low-effort fakes and half-finished accounts out of the deck.
+    'photos.0': { $exists: true },
+    age: { $ne: null }
   };
 
   // Age range filter.

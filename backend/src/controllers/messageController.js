@@ -2,6 +2,8 @@ const { Match, Message, User } = require('../models');
 const { emitNewMessage } = require('../realtime/io');
 const { sendPush } = require('../utils/push');
 const { isProActive } = require('../utils/entitlements');
+const { scanText, describe } = require('../utils/contentFilter');
+const { recordSpamStrike } = require('../utils/moderation');
 
 function isParticipant(match, userId) {
   return (
@@ -65,6 +67,19 @@ async function sendMessage(req, res) {
   }
   if (text.length > 2000) {
     return res.status(400).json({ message: 'Message is too long (2000 characters max).' });
+  }
+
+  // Content filter: block off-platform hand-offs / links / scam solicitations.
+  // Each blocked attempt is a strike; enough strikes shadow-bans the sender.
+  const scan = scanText(text);
+  if (!scan.clean) {
+    const strike = await recordSpamStrike(userId, 'blocked chat content');
+    return res.status(400).json({
+      message: `Message blocked — it looks like it contains ${describe(scan.reasons)}. For your safety, keep chats on Pro Match and don't share contact details.`,
+      code: 'CONTENT_BLOCKED',
+      reasons: scan.reasons.map((r) => r.code),
+      shadowBanned: strike.shadowBanned
+    });
   }
 
   const match = await Match.findById(matchId);

@@ -1,5 +1,6 @@
 const { User, Match, Report } = require('../models');
 const { REPORT_REASONS } = require('../models/Report');
+const { maybeShadowBanFromReports } = require('../utils/moderation');
 
 // POST /safety/block { userId }
 // Adds userId to my block list and soft-marks any match between us as 'blocked'.
@@ -133,6 +134,9 @@ async function reportUser(req, res) {
     note: typeof note === 'string' ? note.slice(0, 1000) : '',
     alsoBlocked: wantsBlock
   });
+
+  // Auto shadow-ban once enough distinct users have reported this person.
+  await maybeShadowBanFromReports(userId);
 
   if (wantsBlock) {
     await User.updateOne({ _id: meId }, { $addToSet: { blockedUsers: userId } });

@@ -1,5 +1,7 @@
-const { User, Swipe, Match, Message, Reveal, Report } = require('../models');
+const { User, Swipe, Match, Message, Reveal, Report, VerificationRequest } = require('../models');
 const { sanitizeUser } = require('../utils/auth');
+const { scanFields, describe } = require('../utils/contentFilter');
+const { recordSpamStrike } = require('../utils/moderation');
 
 async function getMe(req, res) {
   const user = await User.findById(req.auth.id);
@@ -29,10 +31,12 @@ async function updatePushToken(req, res) {
   return res.json({ ok: true });
 }
 
-// POST /users/verify-profession
-// Marks the user's profession as verified. Today this is a lightweight stub
-// (instant in dev) so the badge + flow are testable; swap the body for a real
-// check later (work-email domain, LinkedIn OAuth, or doc upload + review).
+// POST /users/verify-profession { note? }
+// SUBMITS a verification REQUEST for admin review — it does NOT grant the badge
+// (that was a trust hole: anyone could self-verify in one tap). The badge is set
+// only when an admin approves (see adminController.reviewVerification). Real
+// automated checks (work-email OTP, LinkedIn OAuth, doc upload) can slot in here
+// later without changing the client contract.
 async function verifyProfession(req, res) {
   const user = await User.findById(req.auth.id);
   if (!user) {
@@ -41,11 +45,24 @@ async function verifyProfession(req, res) {
   if (!user.profession) {
     return res.status(400).json({ message: 'Set your profession before verifying.' });
   }
+  if (user.professionVerified) {
+    return res.json({ user: sanitizeUser(user), status: 'verified' });
+  }
 
-  user.professionVerified = true;
+  const note = typeof req.body.note === 'string' ? req.body.note.trim().slice(0, 500) : '';
+
+  user.verificationStatus = 'pending';
   await user.save();
 
-  return res.json({ user: sanitizeUser(user) });
+  // One open request per user (unique partial index); upsert so repeated taps
+  // just refresh the pending request rather than pile up.
+  await VerificationRequest.findOneAndUpdate(
+    { user: user.id, status: 'pending' },
+    { user: user.id, profession: user.profession, note, status: 'pending' },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  return res.json({ user: sanitizeUser(user), status: 'pending' });
 }
 
 async function updateProfession(req, res) {
@@ -102,6 +119,23 @@ async function updateProfile(req, res) {
 
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
+  }
+
+  // Content filter: don't let profiles carry links / contact details / scam text
+  // (bio, headline, and prompt answers are the common hiding spots).
+  const promptText = Array.isArray(customPrompts)
+    ? customPrompts.map((p) => (p && typeof p.answer === 'string' ? p.answer : '')).join('  ')
+    : '';
+  const scan = scanFields({ bio, headline, prompts: promptText });
+  if (!scan.clean) {
+    const strike = await recordSpamStrike(user.id, 'blocked profile content');
+    return res.status(400).json({
+      message: `Your ${scan.field === 'prompts' ? 'prompt answers' : scan.field} can't include ${describe(scan.reasons)}. Please remove contact details and links.`,
+      code: 'CONTENT_BLOCKED',
+      field: scan.field,
+      reasons: scan.reasons.map((r) => r.code),
+      shadowBanned: strike.shadowBanned
+    });
   }
 
   if (typeof bio === 'string') {
