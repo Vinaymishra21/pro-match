@@ -71,6 +71,17 @@ export const api = {
   },
   updateReport: (id: string, body: { status?: string; banUser?: boolean }) =>
     request<{ ok: boolean }>(`/admin/reports/${id}`, { method: 'POST', body: JSON.stringify(body) }),
+  verifications: (params: { status?: string; page?: number }) => {
+    const q = new URLSearchParams();
+    if (params.status) q.set('status', params.status);
+    if (params.page) q.set('page', String(params.page));
+    return request<VerificationsResponse>(`/admin/verifications?${q.toString()}`);
+  },
+  reviewVerification: (id: string, action: 'approve' | 'reject') =>
+    request<{ ok: boolean; status: string }>(`/admin/verifications/${id}`, {
+      method: 'POST',
+      body: JSON.stringify({ action })
+    }),
   matches: (params: { page?: number }) => {
     const q = new URLSearchParams();
     if (params.page) q.set('page', String(params.page));
@@ -137,6 +148,22 @@ export type AdminReport = {
 };
 
 export type ReportsResponse = { total: number; page: number; pages: number; reports: AdminReport[] };
+
+export type AdminVerification = {
+  id: string;
+  profession: string;
+  note: string;
+  status: string;
+  createdAt: string;
+  user: { id: string; name: string; profession: string; photo: string; professionVerified: boolean } | null;
+};
+
+export type VerificationsResponse = {
+  total: number;
+  page: number;
+  pages: number;
+  requests: AdminVerification[];
+};
 
 export type AdminMatch = {
   id: string;
