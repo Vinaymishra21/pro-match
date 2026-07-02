@@ -375,9 +375,7 @@ export function DiscoverScreen({ navigation }: Props) {
                 style={styles.exploreCounter}
                 onPress={() => navigation.navigate('Paywall', { focus: 'pro' })}
               >
-                <Text style={styles.exploreCounterText}>
-                  🔓 {unlock.remaining} {unlock.remaining === 1 ? 'explore' : 'explores'} left
-                </Text>
+                <Text style={styles.exploreCounterText}>🔓 {unlock.remaining} left</Text>
               </Pressable>
             ) : null}
             <Pressable style={styles.filterBtn} onPress={() => setShowFilters(true)}>
