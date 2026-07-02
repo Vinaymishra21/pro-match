@@ -352,7 +352,7 @@ export function DiscoverScreen({ navigation }: Props) {
         {/* Top bar */}
         <View style={styles.topBar}>
           <View style={styles.topLeft}>
-            <Text style={styles.brand}>Discover</Text>
+            <Text style={styles.brand} numberOfLines={1}>Discover</Text>
             <Text style={styles.subtitle} numberOfLines={1}>
               {isOwnDeck ? 'Your profession · always free' : `Exploring ${activeProfession}`}
             </Text>
@@ -364,7 +364,7 @@ export function DiscoverScreen({ navigation }: Props) {
               disabled={boostBusy}
             >
               <Text style={[styles.boostBtnText, boostActive ? styles.boostBtnTextActive : null]}>
-                {boostActive ? `⚡ ${boostMinsLeft}m` : '⚡ Boost'}
+                {boostActive ? `⚡ ${boostMinsLeft}m` : '⚡'}
               </Text>
             </Pressable>
             {isPro ? (
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md
   },
   topLeft: { flex: 1, marginRight: spacing.sm },
-  brand: { fontFamily: fonts.displayBold, fontSize: 28, lineHeight: 34, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
+  brand: { fontFamily: fonts.displayBold, fontSize: 26, lineHeight: 32, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
   subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
   proBadge: {
     backgroundColor: 'rgba(251,191,36,0.15)',
