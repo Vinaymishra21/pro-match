@@ -22,6 +22,7 @@ import { DarkBackground } from '../../components/DarkBackground';
 import { GradientButton } from '../../components/GradientButton';
 import { useAuth } from '../../hooks/useAuth';
 import { getIncomingLikes, revealLiker } from '../../services/apiService';
+import { ApiError } from '../../services/apiClient';
 import { professionTheme } from '../../theme/professionTheme';
 import { gradients } from '../../theme/gradients';
 import { colorsDark as colors } from '../../theme/colorsDark';
@@ -97,9 +98,22 @@ export function LikesScreen({ navigation }: Props) {
       setRevealingId(like.likerId);
       const res = await revealLiker(like.likerId, token);
       setCredits(res.credits);
-      setLikes((prev) => prev.map((l) => (l.likerId === like.likerId ? res.liker : l)));
+      // Optimistic: open the tapped card immediately. Merge into the LATEST list
+      // by likerId so previously-revealed cards are never dropped.
+      setLikes((prev) =>
+        prev.map((l) => (l.likerId === like.likerId ? { ...l, ...res.liker } : l))
+      );
+      // Reconcile with the server (source of truth) so every already-revealed
+      // like stays revealed regardless of local state.
+      load();
     } catch (err) {
-      Alert.alert('Could not reveal', (err as Error).message);
+      const e = err as ApiError;
+      // Out of credits → straight to the buy-credits / Pro paywall.
+      if (e.code === 'INSUFFICIENT_CREDITS') {
+        navigation.navigate('Paywall', { focus: 'credits' });
+        return;
+      }
+      Alert.alert('Could not reveal', e.message);
     } finally {
       setRevealingId(null);
     }
