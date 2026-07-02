@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Paywall'>;
 
 const PRO_PERKS = [
   { icon: '👀', text: 'See everyone who likes you — instantly unblurred' },
-  { icon: '🌐', text: 'Explore unlimited professions, not just 2 a week' },
+  { icon: '🌐', text: 'Explore unlimited professions, not just 1 a week' },
   { icon: '💬', text: 'Chat with cross-profession matches' },
   { icon: '🚀', text: 'Priority placement in your profession deck' }
 ];

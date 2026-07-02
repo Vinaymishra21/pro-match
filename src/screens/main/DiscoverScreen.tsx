@@ -139,9 +139,10 @@ export function DiscoverScreen({ navigation }: Props) {
     const noSlots = !isPro && !isOwn && !alreadyUnlocked && (unlock?.remaining ?? 0) <= 0;
 
     if (noSlots) {
+      const limit = unlock?.limit ?? 1;
       Alert.alert(
         'Weekly explores used up',
-        `You've opened your ${unlock?.limit ?? 2} free professions this week. Go Pro to explore unlimited professions.`,
+        `You've used your ${limit} free profession explore${limit === 1 ? '' : 's'} this week. Go Pro to explore unlimited professions.`,
         [
           { text: 'Not now', style: 'cancel' },
           { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) }
@@ -151,10 +152,12 @@ export function DiscoverScreen({ navigation }: Props) {
     }
 
     if (!isPro && !isOwn && !alreadyUnlocked) {
-      Alert.alert(
-        `Explore ${profession}?`,
-        `This uses 1 of your ${unlock?.remaining ?? 0} free profession explores this week.`,
-        [
+      const remaining = unlock?.remaining ?? 0;
+      const msg =
+        remaining <= 1
+          ? 'This is your last free profession explore this week.'
+          : `This uses 1 of your ${remaining} free explores this week.`;
+      Alert.alert(`Explore ${profession}?`, msg, [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Explore', onPress: () => setActiveProfession(profession) }
         ]

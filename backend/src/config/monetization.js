@@ -11,7 +11,7 @@ module.exports = {
   PRO_PERIOD_DAYS: 30,
 
   // Cross-profession discovery (the USP funnel)
-  FREE_WEEKLY_PROFESSION_UNLOCKS: 2, // free users may open 2 other-profession decks per week
+  FREE_WEEKLY_PROFESSION_UNLOCKS: 1, // free users may open 1 other-profession deck per week (2 total incl. their own)
 
   // Credits wallet — 1 credit = ₹1. A spot-reveal costs 10 credits (≈ ₹10).
   CREDIT_VALUE_INR: 1,
