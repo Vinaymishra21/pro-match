@@ -343,15 +343,17 @@ export function ProfileScreen() {
                   onChange={(value) => updateField('languages', value)}
                   multi
                 />
+                <Text style={[styles.fieldLabel, styles.fieldLabelAfterChips]}>Headline</Text>
                 <DarkInput
                   value={form.headline}
                   onChangeText={(value) => updateField('headline', value)}
                   placeholder="One-line headline"
                 />
+                <Text style={styles.fieldLabel}>Bio</Text>
                 <DarkInput
                   value={form.bio}
                   onChangeText={(value) => updateField('bio', value)}
-                  placeholder="Short bio"
+                  placeholder="Tell people a little about yourself"
                   multiline
                   numberOfLines={4}
                   style={styles.bioInput}
@@ -583,6 +585,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: spacing.xs,
     marginTop: spacing.sm
+  },
+  // Extra breathing room when a label directly follows a chip group (chips
+  // have no bottom margin of their own, unlike inputs/dropdowns).
+  fieldLabelAfterChips: {
+    marginTop: spacing.lg
   },
   fieldHint: {
     ...typography.caption,

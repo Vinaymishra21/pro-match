@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colorsDark as colors } from '../theme/colorsDark';
 import { spacing } from '../theme/spacing';
-import { typography } from '../theme/typography';
+import { fonts, typography } from '../theme/typography';
 
 type DropdownProps = {
   value: string;
@@ -69,9 +69,11 @@ const styles = StyleSheet.create({
   fieldText: { ...typography.body, color: colors.text, fontWeight: '600' },
   placeholder: { color: colors.textMuted, fontWeight: '400' },
   chevron: { color: colors.textMuted, fontSize: 16 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(8,16,28,0.4)', justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderColor: colors.border,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: spacing.lg,
@@ -96,7 +98,7 @@ const styles = StyleSheet.create({
     borderRadius: 12
   },
   optionActive: { backgroundColor: 'rgba(232,65,90,0.15)' },
-  optionText: { ...typography.body, color: colors.text, fontWeight: '600' },
-  optionTextActive: { color: colors.primary, fontWeight: '800' },
+  optionText: { ...typography.body, fontFamily: fonts.sansSemiBold, color: colors.text },
+  optionTextActive: { color: colors.primary, fontFamily: fonts.sansExtraBold },
   check: { color: colors.primary, fontWeight: '900', fontSize: 16 }
 });
