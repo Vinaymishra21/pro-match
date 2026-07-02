@@ -1,0 +1,158 @@
+import React, { type ReactNode } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DarkBackground } from '../../components/DarkBackground';
+import { darkColors } from '../../theme/darkColors';
+import { spacing } from '../../theme/spacing';
+
+// One consistent frame for every onboarding step: progress bar + back/skip in
+// the header, a big title/subtitle, the step's content, and a sticky primary
+// button. Keeps the whole wizard feeling like one premium flow.
+export function OnboardingScaffold({
+  step,
+  total,
+  title,
+  subtitle,
+  children,
+  onNext,
+  nextLabel = 'Continue',
+  nextDisabled,
+  loading,
+  onBack,
+  onSkip,
+  scroll = true
+}: {
+  step: number;
+  total: number;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  onNext: () => void;
+  nextLabel?: string;
+  nextDisabled?: boolean;
+  loading?: boolean;
+  onBack?: () => void;
+  onSkip?: () => void;
+  scroll?: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 28 : 0);
+  const progress = Math.min(1, Math.max(0, step / total));
+
+  const Body = scroll ? ScrollView : View;
+
+  return (
+    <DarkBackground>
+      <StatusBar style="light" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={[styles.root, { paddingTop: topPad + spacing.sm }]}
+      >
+        {/* Header: back · progress · skip */}
+        <View style={styles.header}>
+          {onBack ? (
+            <Pressable onPress={onBack} hitSlop={12} style={styles.iconBtn}>
+              <Text style={styles.backIcon}>←</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.iconBtn} />
+          )}
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          </View>
+          {onSkip ? (
+            <Pressable onPress={onSkip} hitSlop={12} style={styles.skipBtn}>
+              <Text style={styles.skipText}>Skip</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.iconBtn} />
+          )}
+        </View>
+
+        <Body
+          style={styles.body}
+          {...(scroll
+            ? { contentContainerStyle: styles.bodyContent, showsVerticalScrollIndicator: false, keyboardShouldPersistTaps: 'handled' as const }
+            : {})}
+        >
+          <Text style={styles.stepLabel}>STEP {step} OF {total}</Text>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <View style={styles.content}>{children}</View>
+        </Body>
+
+        <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
+          <Pressable onPress={onNext} disabled={nextDisabled || loading}>
+            <LinearGradient
+              colors={darkColors.brandGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.cta, nextDisabled ? styles.ctaDisabled : null]}
+            >
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>{nextLabel}</Text>}
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </DarkBackground>
+  );
+}
+
+// Dark glass text input used across the steps.
+export function OnbInput(props: TextInputProps) {
+  return <TextInput placeholderTextColor={darkColors.textFaint} {...props} style={[styles.input, props.style]} />;
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, paddingHorizontal: spacing.lg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg },
+  iconBtn: { width: 44, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
+  backIcon: { fontSize: 24, color: darkColors.text },
+  progressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3, backgroundColor: darkColors.primary },
+  skipBtn: { width: 44, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
+  skipText: { color: darkColors.textMuted, fontSize: 14, fontWeight: '700' },
+  body: { flex: 1 },
+  bodyContent: { paddingBottom: spacing.xl },
+  stepLabel: { color: darkColors.brandText, fontWeight: '800', fontSize: 11, letterSpacing: 1 },
+  title: { fontSize: 30, fontWeight: '900', color: darkColors.text, letterSpacing: -0.8, marginTop: 6, lineHeight: 36 },
+  subtitle: { color: darkColors.textMuted, fontSize: 15, marginTop: spacing.sm, lineHeight: 22 },
+  content: { marginTop: spacing.xl },
+  input: {
+    backgroundColor: darkColors.surface,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 16,
+    color: darkColors.text,
+    fontSize: 16
+  },
+  footer: { paddingTop: spacing.sm },
+  cta: {
+    height: 56,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: darkColors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 8
+  },
+  ctaDisabled: { opacity: 0.4 },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.2 }
+});

@@ -1,9 +1,10 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ProfessionSelectScreen } from '../screens/auth/ProfessionSelectScreen';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { useAuth } from '../hooks/useAuth';
+import { hasCoreProfile } from '../utils/onboarding';
 import { MainTabNavigator } from './MainTabNavigator';
+import { OnboardingNavigator } from './OnboardingNavigator';
 import { AuthNavigator } from './AuthNavigator';
 import { ChatScreen } from '../screens/chat/ChatScreen';
 import { PaywallScreen } from '../screens/billing/PaywallScreen';
@@ -16,7 +17,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const { user, isLoading } = useAuth();
   const hasAccess = Boolean(user);
-  const needsProfessionSetup = Boolean(user) && !user.profession;
+  // New members complete a step-by-step onboarding (name, DOB, profession,
+  // 2+ photos) before entering the app.
+  const needsOnboarding = Boolean(user) && !hasCoreProfile(user);
 
   if (isLoading) {
     return <SplashScreen onComplete={() => {}} />;
@@ -31,8 +34,8 @@ export function RootNavigator() {
     >
       {!hasAccess ? (
         <Stack.Screen name="AuthFlow" component={AuthNavigator} />
-      ) : needsProfessionSetup ? (
-        <Stack.Screen name="ProfessionSetup" component={ProfessionSelectScreen} />
+      ) : needsOnboarding ? (
+        <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={MainTabNavigator} />

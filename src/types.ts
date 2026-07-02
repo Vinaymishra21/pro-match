@@ -15,6 +15,7 @@ export interface User {
   proExpiresAt?: string | null;
   credits?: number;
   age?: number | null;
+  dob?: string | null;
   bio?: string;
   location?: string;
   gender?: string;
@@ -47,6 +48,7 @@ export interface User {
 export interface ProfileForm {
   name: string;
   age: string;
+  dob?: string;
   bio: string;
   location: string;
   gender: string;
@@ -320,7 +322,7 @@ export type MainTabParamList = {
 
 export type RootStackParamList = {
   AuthFlow: NavigatorScreenParams<AuthStackParamList>;
-  ProfessionSetup: undefined;
+  Onboarding: undefined;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
   Chat: {
     matchId: string;

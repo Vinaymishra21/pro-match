@@ -22,7 +22,12 @@ export const DEV_OFFLINE_USER = {
   id: 'dev-offline-user',
   name: 'Dev Preview',
   profession: 'Software Engineer',
+  age: 27,
   tier: 'free' as const,
   credits: 0,
-  photos: [] as string[]
+  // A complete core profile so offline preview lands on the tabs (skips onboarding).
+  photos: [
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800',
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800'
+  ] as string[]
 };
