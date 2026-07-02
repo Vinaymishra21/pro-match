@@ -11,10 +11,27 @@ export class ApiError extends Error {
   }
 }
 
+// The app registers a handler here so a dead session (invalid/expired token, or
+// a deleted/banned account) clears itself and routes to login — instead of the
+// user hitting "Invalid token" on every request.
+let onAuthError: (() => void) | null = null;
+export function setAuthErrorHandler(fn: (() => void) | null) {
+  onAuthError = fn;
+}
+
+function isDeadSession(status: number, data: any): boolean {
+  if (status === 401 && (data?.code === 'NO_ACCOUNT' || data?.message === 'Invalid token')) return true;
+  if (status === 403 && data?.code === 'BANNED') return true;
+  return false;
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (isDeadSession(response.status, data)) {
+      onAuthError?.();
+    }
     const message = data?.message || 'Request failed';
     throw new ApiError(message, response.status, data?.code);
   }

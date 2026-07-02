@@ -9,6 +9,7 @@ import {
   deactivateAccount as deactivateAccountApi,
   deleteAccount as deleteAccountApi
 } from '../services/apiService';
+import { ApiError, setAuthErrorHandler } from '../services/apiClient';
 import { DEV_BYPASS_PHONE, DEV_OFFLINE_USER } from '../constants/config';
 import { registerForPushNotifications } from '../services/push';
 import type { AuthContextValue, AuthPayload, AuthResponse, OtpRequestResponse, User } from '../types';
@@ -32,14 +33,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]);
 
         if (storedToken && storedUser) {
+          // Optimistically restore the cached session for a fast launch...
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
 
-          const fresh = await getMe(storedToken);
-          setUser(fresh.user);
-          await AsyncStorage.setItem(USER_KEY, JSON.stringify(fresh.user));
-          // Refresh push registration for the restored session.
-          registerForPushNotifications(storedToken);
+          try {
+            const fresh = await getMe(storedToken);
+            setUser(fresh.user);
+            await AsyncStorage.setItem(USER_KEY, JSON.stringify(fresh.user));
+            // Refresh push registration for the restored session.
+            registerForPushNotifications(storedToken);
+          } catch (validateError) {
+            // ...but if the stored token is rejected (invalid/expired/banned),
+            // fully clear the session (state + storage) so the user lands on
+            // login instead of hitting "Invalid token" everywhere. A NETWORK
+            // error is NOT a rejection — keep the cached session so offline works.
+            if (validateError instanceof ApiError && (validateError.status === 401 || validateError.status === 403)) {
+              setToken('');
+              setUser(null);
+              await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+            }
+          }
         }
       } catch (error) {
         await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
@@ -135,6 +149,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
   }, []);
+
+  // If any request reports a dead session (invalid token / banned / deleted
+  // account), sign out so the user is routed to login instead of getting stuck.
+  useEffect(() => {
+    setAuthErrorHandler(() => {
+      signOut();
+    });
+    return () => setAuthErrorHandler(null);
+  }, [signOut]);
 
   // Deactivate (reversible): hide the account, then sign out locally. Logging
   // back in reactivates it server-side.
