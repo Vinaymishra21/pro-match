@@ -18,6 +18,10 @@ const verificationRequestSchema = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     profession: { type: String, default: '' },
+    // Evidence the admin reviews. Both optional individually, but a request must
+    // carry at least one (enforced in the controller).
+    linkedinUrl: { type: String, default: '' },
+    documentUrl: { type: String, default: '' }, // hosted image of proof (ID / license / degree)
     note: { type: String, default: '', maxlength: 500 }, // optional user-supplied context
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
     reviewedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },

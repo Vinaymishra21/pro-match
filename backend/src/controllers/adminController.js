@@ -378,6 +378,8 @@ async function listVerifications(req, res) {
     requests: requests.map((r) => ({
       id: r.id,
       profession: r.profession,
+      linkedinUrl: r.linkedinUrl,
+      documentUrl: r.documentUrl,
       note: r.note,
       status: r.status,
       createdAt: r.createdAt,

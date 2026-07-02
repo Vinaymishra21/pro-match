@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ProfessionBadge } from './ProfessionBadge';
+import { VerifiedTick } from './VerifiedTick';
 import { professionTheme } from '../theme/professionTheme';
 import { darkColors, darkRadius } from '../theme/darkColors';
 import { spacing } from '../theme/spacing';
@@ -98,10 +99,13 @@ export function ProfileDetailModal({
               style={styles.heroOverlay}
             >
               <ProfessionBadge profession={profile.profession} verified={profile.professionVerified} />
-              <Text style={styles.name}>
-                {profile.name}
-                {profile.age ? `, ${profile.age}` : ''}
-              </Text>
+              <View style={styles.nameRow}>
+                <Text style={styles.name}>
+                  {profile.name}
+                  {profile.age ? `, ${profile.age}` : ''}
+                </Text>
+                {profile.professionVerified ? <VerifiedTick size={22} /> : null}
+              </View>
               {profile.headline ? <Text style={styles.headline}>{profile.headline}</Text> : null}
               {profile.location ? <Text style={styles.location}>📍 {profile.location}</Text> : null}
             </LinearGradient>
@@ -306,7 +310,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl + spacing.lg,
     gap: 6
   },
-  name: { color: darkColors.white, fontSize: 32, fontWeight: '900', letterSpacing: -0.6, marginTop: 8 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  name: { color: darkColors.white, fontSize: 32, fontWeight: '900', letterSpacing: -0.6 },
   headline: { color: 'rgba(255,255,255,0.92)', fontSize: 15, fontWeight: '700' },
   location: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600', marginTop: 2 },
   body: { padding: spacing.lg, paddingTop: spacing.xl },

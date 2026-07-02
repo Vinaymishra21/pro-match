@@ -96,12 +96,16 @@ export function updateProfession(profession: string, token: string) {
   );
 }
 
-// Submits a profession-verification REQUEST for admin review (no longer an
-// instant self-serve verify). Returns the user + the request status.
-export function requestProfessionVerification(token: string, note?: string) {
+// Submits a profession-verification REQUEST with evidence for admin review (no
+// longer an instant self-serve verify). At least one of linkedinUrl / documentUrl
+// is required by the backend. Returns the user + the request status.
+export function requestProfessionVerification(
+  token: string,
+  evidence: { linkedinUrl?: string; documentUrl?: string; note?: string }
+) {
   return apiRequest<{ user: User; status: 'pending' | 'verified' }>(
     '/users/verify-profession',
-    { method: 'POST', body: JSON.stringify(note ? { note } : {}) },
+    { method: 'POST', body: JSON.stringify(evidence) },
     token
   );
 }

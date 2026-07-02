@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
 import { ProfessionBadge } from '../../components/ProfessionBadge';
+import { VerifiedTick } from '../../components/VerifiedTick';
 import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, FilterModal } from '../../components/FilterModal';
 import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
@@ -612,10 +613,13 @@ function ProfileCard({ profile }: { profile: DiscoverProfile }) {
 
       <LinearGradient colors={['transparent', 'rgba(8,12,24,0.92)']} style={styles.cardOverlay}>
         <ProfessionBadge profession={profile.profession} verified={profile.professionVerified} />
-        <Text style={styles.cardName}>
-          {profile.name}
-          {profile.age ? `, ${profile.age}` : ''}
-        </Text>
+        <View style={styles.cardNameRow}>
+          <Text style={styles.cardName}>
+            {profile.name}
+            {profile.age ? `, ${profile.age}` : ''}
+          </Text>
+          {profile.professionVerified ? <VerifiedTick size={22} /> : null}
+        </View>
         {profile.headline ? <Text style={styles.cardHeadline}>{profile.headline}</Text> : null}
         {profile.bio ? (
           <Text style={styles.cardBio} numberOfLines={3}>
@@ -759,7 +763,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     gap: 6
   },
-  cardName: { color: colors.white, fontSize: 28, fontWeight: '900', letterSpacing: -0.5, marginTop: 6 },
+  cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  cardName: { color: colors.white, fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
   cardHeadline: { color: 'rgba(255,255,255,0.95)', fontSize: 15, fontWeight: '700' },
   cardBio: { color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 20, marginTop: 2 },
   cardLocation: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 },

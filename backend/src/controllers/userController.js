@@ -31,12 +31,13 @@ async function updatePushToken(req, res) {
   return res.json({ ok: true });
 }
 
-// POST /users/verify-profession { note? }
-// SUBMITS a verification REQUEST for admin review — it does NOT grant the badge
-// (that was a trust hole: anyone could self-verify in one tap). The badge is set
-// only when an admin approves (see adminController.reviewVerification). Real
-// automated checks (work-email OTP, LinkedIn OAuth, doc upload) can slot in here
-// later without changing the client contract.
+// POST /users/verify-profession { linkedinUrl?, documentUrl?, note? }
+// SUBMITS a verification REQUEST (with evidence) for admin review — it does NOT
+// grant the badge (that was a trust hole: anyone could self-verify in one tap).
+// A request must carry at least one piece of evidence (a LinkedIn URL or an
+// uploaded proof document). The badge is set only when an admin approves the
+// evidence (see adminController.reviewVerification). Automated checks (work-email
+// OTP, LinkedIn OAuth) can slot in here later without changing the client contract.
 async function verifyProfession(req, res) {
   const user = await User.findById(req.auth.id);
   if (!user) {
@@ -49,7 +50,24 @@ async function verifyProfession(req, res) {
     return res.json({ user: sanitizeUser(user), status: 'verified' });
   }
 
+  const linkedinUrl = typeof req.body.linkedinUrl === 'string' ? req.body.linkedinUrl.trim().slice(0, 300) : '';
+  const documentUrl = typeof req.body.documentUrl === 'string' ? req.body.documentUrl.trim().slice(0, 500) : '';
   const note = typeof req.body.note === 'string' ? req.body.note.trim().slice(0, 500) : '';
+
+  // Require at least one evidence item so the badge stays meaningful.
+  if (!linkedinUrl && !documentUrl) {
+    return res.status(400).json({
+      message: 'Add your LinkedIn URL or upload a proof document to request verification.',
+      code: 'NO_EVIDENCE'
+    });
+  }
+  // Light sanity check on the LinkedIn URL (if provided).
+  if (linkedinUrl && !/linkedin\.com\//i.test(linkedinUrl)) {
+    return res.status(400).json({
+      message: 'That doesn’t look like a LinkedIn profile URL (e.g. linkedin.com/in/your-name).',
+      code: 'BAD_LINKEDIN'
+    });
+  }
 
   user.verificationStatus = 'pending';
   await user.save();
@@ -58,7 +76,7 @@ async function verifyProfession(req, res) {
   // just refresh the pending request rather than pile up.
   await VerificationRequest.findOneAndUpdate(
     { user: user.id, status: 'pending' },
-    { user: user.id, profession: user.profession, note, status: 'pending' },
+    { user: user.id, profession: user.profession, linkedinUrl, documentUrl, note, status: 'pending' },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
