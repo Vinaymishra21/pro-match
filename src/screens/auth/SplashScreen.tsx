@@ -35,6 +35,9 @@ export function SplashScreen({ onComplete }: { onComplete?: () => void }) {
   );
 }
 
+// NOTE: this screen intentionally uses SYSTEM fonts — it renders while the
+// custom fonts (Fraunces / Plus Jakarta Sans) are still loading in App.tsx,
+// so referencing them here would warn and fall back anyway.
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   badge: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg },

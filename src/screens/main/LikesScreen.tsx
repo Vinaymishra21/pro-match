@@ -27,7 +27,7 @@ import { professionTheme } from '../../theme/professionTheme';
 import { gradients } from '../../theme/gradients';
 import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { fonts, typography } from '../../theme/typography';
 import type { IncomingLike, MainTabParamList, RootStackParamList } from '../../types';
 
 type Props = CompositeScreenProps<
@@ -296,18 +296,17 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
   header: { marginBottom: spacing.lg },
   kicker: {
-    ...typography.caption,
+    ...typography.eyebrow,
     color: colors.primary,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    fontSize: 12,
     marginBottom: 4
   },
   title: {
+    fontFamily: fonts.displayBold,
     fontSize: 30,
-    fontWeight: '900',
+    lineHeight: 38,
+    fontWeight: '700',
     color: colors.text,
-    letterSpacing: -0.8,
+    letterSpacing: -0.5,
     marginBottom: spacing.sm
   },
   creditChip: {

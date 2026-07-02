@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { professionTheme } from '../theme/professionTheme';
 import { colorsDark as colors } from '../theme/colorsDark';
 import { spacing } from '../theme/spacing';
-import { typography } from '../theme/typography';
+import { fonts, typography } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
 
@@ -106,10 +106,25 @@ const AV = Math.min(130, width * 0.34);
 
 const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, zIndex: 100, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
-  kicker: { ...typography.caption, color: 'rgba(255,255,255,0.85)', fontWeight: '800', letterSpacing: 1, marginBottom: spacing.sm },
-  titlePill: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 999 },
-  title: { fontSize: 38, fontWeight: '900', color: '#fff', letterSpacing: -1 },
-  sub: { color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: '600', marginTop: spacing.md },
+  kicker: { ...typography.eyebrow, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.sm },
+  titlePill: { paddingHorizontal: 26, paddingVertical: 10, borderRadius: 999 },
+  title: {
+    fontFamily: fonts.displayBold,
+    fontSize: 38,
+    lineHeight: 48,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: -0.6
+  },
+  sub: {
+    fontFamily: fonts.sansSemiBold,
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+    marginTop: spacing.md
+  },
   avatarRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: spacing.xxl },
   avatar: { width: AV, height: AV, borderRadius: AV / 2, borderWidth: 4, overflow: 'hidden' },
   avatarImg: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
@@ -123,7 +138,7 @@ const styles = StyleSheet.create({
   actions: { width: '100%', maxWidth: 360, gap: spacing.sm },
   primaryWrap: { borderRadius: 16, overflow: 'hidden' },
   primary: { paddingVertical: 16, alignItems: 'center', borderRadius: 16 },
-  primaryText: { color: '#fff', fontWeight: '900', fontSize: 16 },
+  primaryText: { fontFamily: fonts.sansExtraBold, color: '#fff', fontWeight: '800', fontSize: 16, letterSpacing: 0.3 },
   secondary: { paddingVertical: 14, alignItems: 'center' },
-  secondaryText: { color: 'rgba(255,255,255,0.9)', fontWeight: '800', fontSize: 15 }
+  secondaryText: { fontFamily: fonts.sansBold, color: 'rgba(255,255,255,0.9)', fontWeight: '700', fontSize: 15, letterSpacing: 0.2 }
 });

@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: 30, color: colors.text, marginTop: -4 },
   title: { ...typography.subtitle, color: colors.text, fontWeight: '900' },
   scroll: { paddingBottom: spacing.xxl },
-  account: { ...typography.title, color: colors.text, fontWeight: '900', fontSize: 22 },
+  account: { ...typography.title, color: colors.text, fontSize: 22, lineHeight: 28 },
   accountSub: { ...typography.caption, color: colors.textMuted, marginTop: 2, marginBottom: spacing.lg },
   sectionTitle: {
     ...typography.caption,

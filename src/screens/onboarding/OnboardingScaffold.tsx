@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
 import { darkColors } from '../../theme/darkColors';
 import { spacing } from '../../theme/spacing';
+import { fonts } from '../../theme/typography';
 
 // One consistent frame for every onboarding step: progress bar + back/skip in
 // the header, a big title/subtitle, the step's content, and a sticky primary
@@ -124,12 +125,34 @@ const styles = StyleSheet.create({
   progressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3, backgroundColor: darkColors.primary },
   skipBtn: { width: 44, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
-  skipText: { color: darkColors.textMuted, fontSize: 14, fontWeight: '700' },
+  skipText: { fontFamily: fonts.sansBold, color: darkColors.textMuted, fontSize: 14, fontWeight: '700' },
   body: { flex: 1 },
   bodyContent: { paddingBottom: spacing.xl },
-  stepLabel: { color: darkColors.brandText, fontWeight: '800', fontSize: 11, letterSpacing: 1 },
-  title: { fontSize: 30, fontWeight: '900', color: darkColors.text, letterSpacing: -0.8, marginTop: 6, lineHeight: 36 },
-  subtitle: { color: darkColors.textMuted, fontSize: 15, marginTop: spacing.sm, lineHeight: 22 },
+  stepLabel: {
+    fontFamily: fonts.sansExtraBold,
+    color: darkColors.brandText,
+    fontWeight: '800',
+    fontSize: 11,
+    lineHeight: 15,
+    letterSpacing: 1.6
+  },
+  title: {
+    fontFamily: fonts.displayBold,
+    fontSize: 30,
+    fontWeight: '700',
+    color: darkColors.text,
+    letterSpacing: -0.5,
+    marginTop: 6,
+    lineHeight: 38
+  },
+  subtitle: {
+    fontFamily: fonts.sans,
+    color: darkColors.textMuted,
+    fontSize: 15,
+    letterSpacing: 0.1,
+    marginTop: spacing.sm,
+    lineHeight: 22
+  },
   content: { marginTop: spacing.xl },
   input: {
     backgroundColor: darkColors.surface,
@@ -139,7 +162,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 16,
     color: darkColors.text,
-    fontSize: 16
+    fontSize: 16,
+    fontFamily: fonts.sans
   },
   footer: { paddingTop: spacing.sm },
   cta: {
@@ -154,5 +178,5 @@ const styles = StyleSheet.create({
     elevation: 8
   },
   ctaDisabled: { opacity: 0.4 },
-  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.2 }
+  ctaText: { fontFamily: fonts.sansExtraBold, color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 }
 });

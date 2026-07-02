@@ -35,7 +35,7 @@ import { updateProfile } from '../../services/apiService';
 import { colorsDark as colors } from '../../theme/colorsDark';
 import { professionTheme } from '../../theme/professionTheme';
 import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { fonts, typography } from '../../theme/typography';
 
 // Dark text input matching the new design (used in place of the shared AppInput,
 // which is light-themed and shared with Chat/Auth).
@@ -549,8 +549,9 @@ const styles = StyleSheet.create({
   settingsIcon: { fontSize: 18, color: colors.text },
   heading: {
     ...typography.title,
-    color: colors.text,
-    fontWeight: '800'
+    fontFamily: fonts.displayBold,
+    fontWeight: '700',
+    color: colors.text
   },
   professionRow: {
     flexDirection: 'row',

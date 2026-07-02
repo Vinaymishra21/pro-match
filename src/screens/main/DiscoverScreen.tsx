@@ -32,7 +32,7 @@ import type { FilterState } from '../../types';
 import { professionTheme } from '../../theme/professionTheme';
 import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { fonts, typography } from '../../theme/typography';
 import type { BoostState, DiscoverProfile, MainTabParamList, RootStackParamList, UnlockState } from '../../types';
 
 type Props = CompositeScreenProps<
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md
   },
   topLeft: { flex: 1, marginRight: spacing.sm },
-  brand: { fontSize: 28, fontWeight: '900', color: colors.text, letterSpacing: -0.6 },
+  brand: { fontFamily: fonts.displayBold, fontSize: 28, lineHeight: 34, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
   subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
   proBadge: {
     backgroundColor: 'rgba(251,191,36,0.15)',

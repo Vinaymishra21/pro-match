@@ -11,7 +11,7 @@ import { devGrant, getBillingCatalog } from '../../services/apiService';
 import { gradients } from '../../theme/gradients';
 import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { fonts, typography } from '../../theme/typography';
 import type { BillingCatalog, CreditPack, RootStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Paywall'>;
@@ -231,8 +231,15 @@ const styles = StyleSheet.create({
   closeText: { fontSize: 18, color: colors.text, fontWeight: '700' },
   hero: { alignItems: 'center', marginBottom: spacing.xl },
   crown: { fontSize: 52, marginBottom: spacing.sm },
-  heroTitle: { fontSize: 30, fontWeight: '900', color: colors.text, letterSpacing: -0.8 },
-  heroSub: { ...typography.body, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
+  heroTitle: {
+    fontFamily: fonts.displayBold,
+    fontSize: 32,
+    lineHeight: 40,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.5
+  },
+  heroSub: { ...typography.tagline, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
   center: { paddingVertical: spacing.xxl, alignItems: 'center' },
   proCard: {
     borderRadius: 26,
@@ -246,7 +253,7 @@ const styles = StyleSheet.create({
   },
   focused: { borderWidth: 2, borderColor: '#FFFFFF' },
   focusedText: {},
-  proName: { fontSize: 24, fontWeight: '900', color: '#2A1C00' },
+  proName: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 30, fontWeight: '700', color: '#2A1C00', letterSpacing: -0.3 },
   planRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
   planCard: {
     flex: 1,
@@ -275,7 +282,7 @@ const styles = StyleSheet.create({
   perkIcon: { fontSize: 18, marginRight: spacing.sm },
   perkText: { flex: 1, color: '#2A1C00', fontWeight: '700', fontSize: 14 },
   creditsHeader: { marginBottom: spacing.md },
-  sectionTitle: { fontSize: 20, fontWeight: '900', color: colors.text },
+  sectionTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, fontWeight: '600', color: colors.text, letterSpacing: -0.3 },
   sectionSub: { ...typography.caption, color: colors.textMuted, marginTop: 4, lineHeight: 19 },
   packs: { gap: spacing.sm },
   packCard: {

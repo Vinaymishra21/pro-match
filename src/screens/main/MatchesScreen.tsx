@@ -14,7 +14,7 @@ import { isProUser } from '../../utils/entitlements';
 import { professionTheme } from '../../theme/professionTheme';
 import { colorsDark as colors } from '../../theme/colorsDark';
 import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { fonts, typography } from '../../theme/typography';
 import type { MainTabParamList, MatchRecord, RootStackParamList } from '../../types';
 
 type Props = CompositeScreenProps<
@@ -198,7 +198,7 @@ export function MatchesScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   list: { padding: spacing.lg },
   header: { marginBottom: spacing.md },
-  title: { fontSize: 30, fontWeight: '900', color: colors.text, letterSpacing: -0.8 },
+  title: { fontFamily: fonts.displayBold, fontSize: 30, lineHeight: 38, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
   subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
   error: { color: '#DC2626', marginTop: spacing.sm },
   row: {

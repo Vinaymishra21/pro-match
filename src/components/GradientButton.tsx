@@ -3,6 +3,7 @@ import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View, type St
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients } from '../theme/gradients';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type GradientButtonProps = {
   title: string;
@@ -75,8 +76,10 @@ const styles = StyleSheet.create({
   lg: { height: 58, paddingHorizontal: 28 },
   md: { height: 46, paddingHorizontal: 20 },
   label: {
+    fontFamily: fonts.sansExtraBold,
     color: colors.white,
     fontSize: 16,
+    lineHeight: 20,
     fontWeight: '800',
     letterSpacing: 0.3
   }

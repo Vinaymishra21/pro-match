@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../DarkBackground';
 import { darkColors } from '../../theme/darkColors';
 import { spacing } from '../../theme/spacing';
+import { fonts } from '../../theme/typography';
 
 // Shared luxury-dark building blocks for the whole auth flow, so every screen
 // (Welcome, method pickers, phone, OTP, email, profession) feels like one
@@ -142,9 +143,30 @@ export function FieldLabel({ children }: { children: ReactNode }) {
 }
 
 export const authText = {
-  title: { fontSize: 32, lineHeight: 38, fontWeight: '800', color: darkColors.text, letterSpacing: -0.8 },
-  desc: { fontSize: 15, lineHeight: 23, color: darkColors.textMuted, marginTop: spacing.sm },
-  error: { color: darkColors.danger, fontSize: 13, fontWeight: '600', marginTop: spacing.sm }
+  title: {
+    fontFamily: fonts.displayBold,
+    fontSize: 32,
+    lineHeight: 40,
+    fontWeight: '700',
+    color: darkColors.text,
+    letterSpacing: -0.6
+  },
+  desc: {
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    lineHeight: 23,
+    letterSpacing: 0.1,
+    color: darkColors.textMuted,
+    marginTop: spacing.sm
+  },
+  error: {
+    fontFamily: fonts.sansSemiBold,
+    color: darkColors.danger,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    marginTop: spacing.sm
+  }
 } as const;
 
 const shell = StyleSheet.create({
@@ -165,11 +187,19 @@ const shell = StyleSheet.create({
   brandBadge: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   brandBadgeLg: { width: 48, height: 48, borderRadius: 24 },
   brandHeart: { color: '#fff', fontSize: 20 },
-  brandText: { color: darkColors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.6 },
+  brandText: { fontFamily: fonts.displayBold, color: darkColors.text, fontSize: 24, fontWeight: '700', letterSpacing: -0.4 },
   brandAccent: { color: darkColors.primary },
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   eyebrowDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: darkColors.primary, marginRight: spacing.sm },
-  eyebrow: { fontSize: 12, fontWeight: '800', color: darkColors.brandText, textTransform: 'uppercase', letterSpacing: 1 },
+  eyebrow: {
+    fontFamily: fonts.sansExtraBold,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: darkColors.brandText,
+    textTransform: 'uppercase',
+    letterSpacing: 1.6
+  },
   cta: {
     height: 56,
     borderRadius: 22,
@@ -182,7 +212,7 @@ const shell = StyleSheet.create({
     elevation: 8
   },
   ctaDisabled: { opacity: 0.4 },
-  ctaText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
+  ctaText: { fontFamily: fonts.sansExtraBold, color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
   outline: {
     height: 56,
     borderRadius: 22,
@@ -193,7 +223,7 @@ const shell = StyleSheet.create({
     backgroundColor: darkColors.surface
   },
   outlinePressed: { backgroundColor: darkColors.surfaceStrong },
-  outlineText: { color: darkColors.text, fontSize: 16, fontWeight: '700' },
+  outlineText: { fontFamily: fonts.sansBold, color: darkColors.text, fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
   fabWrap: { alignSelf: 'flex-end' },
   fab: {
     width: 64,
@@ -210,11 +240,13 @@ const shell = StyleSheet.create({
   fabDisabled: { opacity: 0.4 },
   fabIcon: { color: '#fff', fontSize: 28, fontWeight: '800' },
   fieldLabel: {
-    fontSize: 12.5,
+    fontFamily: fonts.sansBold,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '700',
     color: darkColors.textMuted,
     marginBottom: spacing.sm,
-    letterSpacing: 0.3,
+    letterSpacing: 1.1,
     textTransform: 'uppercase'
   }
 });

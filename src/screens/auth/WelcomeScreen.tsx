@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { DEV_BYPASS_AUTH } from '../../constants/config';
 import { darkColors } from '../../theme/darkColors';
 import { spacing } from '../../theme/spacing';
+import { fonts } from '../../theme/typography';
 import type { AuthStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
@@ -95,12 +96,22 @@ const styles = StyleSheet.create({
   },
   logoBadge: { width: 78, height: 78, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   logoHeart: { color: '#fff', fontSize: 40 },
-  brand: { color: darkColors.text, fontSize: 44, fontWeight: '900', letterSpacing: -1.4 },
+  brand: {
+    fontFamily: fonts.displayBold,
+    color: darkColors.text,
+    fontSize: 46,
+    lineHeight: 54,
+    fontWeight: '700',
+    letterSpacing: -1
+  },
   brandAccent: { color: darkColors.primary },
   tagline: {
+    fontFamily: fonts.displayItalic,
     color: darkColors.textDim,
-    fontSize: 17,
+    fontSize: 18,
+    lineHeight: 26,
     fontWeight: '500',
+    letterSpacing: 0.2,
     marginTop: spacing.sm,
     textAlign: 'center'
   },
@@ -117,7 +128,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md
   },
   hIcon: { fontSize: 18 },
-  hText: { color: darkColors.textDim, fontSize: 14.5, fontWeight: '600' },
+  hText: { fontFamily: fonts.sansSemiBold, color: darkColors.textDim, fontSize: 14.5, lineHeight: 20, fontWeight: '600', letterSpacing: 0.1 },
   actions: { gap: spacing.sm },
   devButton: {
     height: 44,
@@ -130,6 +141,14 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     marginTop: spacing.xs
   },
-  devLabel: { color: darkColors.textMuted, fontSize: 13, fontWeight: '600' },
-  legal: { color: darkColors.textFaint, fontSize: 12, textAlign: 'center', marginTop: spacing.sm, lineHeight: 18 }
+  devLabel: { fontFamily: fonts.sansSemiBold, color: darkColors.textMuted, fontSize: 13, fontWeight: '600' },
+  legal: {
+    fontFamily: fonts.sansMedium,
+    color: darkColors.textFaint,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    lineHeight: 18
+  }
 });
