@@ -119,8 +119,10 @@ export function ProfilePhotoGallery({ photos = [], onChange, token }) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: 'images',
         quality: 0.8,
-        allowsEditing: true,
-        aspect: [4, 5]
+        // No forced crop: Android's built-in crop step was trapping users (no
+        // clear "done", couldn't proceed). We use the full image and display it
+        // with resizeMode="cover", so cropping isn't needed.
+        allowsEditing: false
       });
 
       if (result.canceled || !result.assets?.length) {
@@ -368,21 +370,23 @@ const styles = StyleSheet.create({
     fontSize: 11
   },
   plusCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E8EFF8',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(232,65,90,0.18)',
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6
   },
   plusText: {
-    fontSize: 20,
-    color: colors.textMuted,
-    fontWeight: '600',
-    marginTop: -1
+    fontSize: 24,
+    lineHeight: 26,
+    color: colors.primary,
+    fontWeight: '900',
+    includeFontPadding: false,
+    textAlign: 'center'
   },
   slotLabel: {
     ...typography.caption,

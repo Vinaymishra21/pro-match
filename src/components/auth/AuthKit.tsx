@@ -238,7 +238,18 @@ const shell = StyleSheet.create({
     elevation: 8
   },
   fabDisabled: { opacity: 0.4 },
-  fabIcon: { color: '#fff', fontSize: 28, fontWeight: '800' },
+  // includeFontPadding:false + line-height = fontSize keeps the arrow glyph
+  // optically centered in the circle on Android (Android bakes extra font
+  // padding that pushes single glyphs off-centre otherwise).
+  fabIcon: {
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: '800',
+    lineHeight: 26,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
   fieldLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
