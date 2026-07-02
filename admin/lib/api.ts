@@ -152,6 +152,8 @@ export type ReportsResponse = { total: number; page: number; pages: number; repo
 export type AdminVerification = {
   id: string;
   profession: string;
+  linkedinUrl: string;
+  documentUrl: string;
   note: string;
   status: string;
   createdAt: string;

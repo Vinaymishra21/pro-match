@@ -88,6 +88,35 @@ export default function VerificationsPage() {
                       {r.user?.professionVerified ? <span className="badge green" style={{ marginLeft: 6 }}>verified</span> : null}
                     </div>
                     <div style={{ marginTop: 6 }}><ProfChip profession={r.profession || r.user?.profession} /></div>
+
+                    {/* Evidence */}
+                    <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                      {r.linkedinUrl ? (
+                        <a
+                          href={r.linkedinUrl.startsWith('http') ? r.linkedinUrl : `https://${r.linkedinUrl}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="badge"
+                          style={{ background: '#0A66C2', color: '#fff', textDecoration: 'none' }}
+                        >
+                          in · View LinkedIn ↗
+                        </a>
+                      ) : null}
+                      {r.documentUrl ? (
+                        <a href={r.documentUrl} target="_blank" rel="noreferrer" title="Open full document">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={r.documentUrl}
+                            alt="proof document"
+                            style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--border)', display: 'block' }}
+                          />
+                        </a>
+                      ) : null}
+                      {!r.linkedinUrl && !r.documentUrl ? (
+                        <span className="badge amber">no evidence attached</span>
+                      ) : null}
+                    </div>
+
                     {r.note ? <div style={{ marginTop: 10, color: 'var(--text-dim)', fontSize: 14 }}>“{r.note}”</div> : null}
                     <div className="u-meta" style={{ marginTop: 10 }}>Requested {timeAgo(r.createdAt)}</div>
                   </div>
