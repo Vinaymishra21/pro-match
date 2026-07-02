@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../../hooks/useAuth';
-import { verifyProfession } from '../../../services/apiService';
+import { requestProfessionVerification } from '../../../services/apiService';
 import { colorsDark as colors } from '../../../theme/colorsDark';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
-// Profession verification is the trust anchor of the app's USP. When verified,
-// shows a badge; otherwise a CTA to start verification.
+// Profession verification is the trust anchor of the app's USP. The badge is
+// granted only after admin review — this card lets a member REQUEST it and
+// reflects the request state (none / pending / verified).
 export function VerificationCard({ profession }) {
   const { user, token, updateLocalUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const verified = Boolean(user?.professionVerified);
+  const pending = !verified && user?.verificationStatus === 'pending';
 
   async function handleVerify() {
     if (!profession) {
@@ -20,24 +22,24 @@ export function VerificationCard({ profession }) {
       return;
     }
     Alert.alert(
-      'Verify your profession',
-      `Confirm you work as a ${profession}. Verified members are trusted and stand out in their deck.`,
+      'Request verification',
+      `Submit your ${profession} profile for review. Our team checks each request — verified members are trusted and stand out.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Verify now',
+          text: 'Submit request',
           onPress: async () => {
             try {
               setBusy(true);
               if (!token) {
-                await updateLocalUser({ ...(user || {}), professionVerified: true });
+                await updateLocalUser({ ...(user || {}), verificationStatus: 'pending' });
               } else {
-                const res = await verifyProfession(token);
+                const res = await requestProfessionVerification(token);
                 await updateLocalUser(res.user);
               }
-              Alert.alert('Verified ✓', 'Your profession is now verified.');
+              Alert.alert('Request submitted ✓', 'Your profession is under review. You’ll get the badge once approved.');
             } catch (err) {
-              Alert.alert('Verification failed', err?.message || 'Please try again.');
+              Alert.alert('Could not submit', err?.message || 'Please try again.');
             } finally {
               setBusy(false);
             }
@@ -66,6 +68,22 @@ export function VerificationCard({ profession }) {
     );
   }
 
+  if (pending) {
+    return (
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={styles.shieldCircle}>
+            <Text style={styles.shield}>⏳</Text>
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={styles.title}>Verification under review</Text>
+            <Text style={styles.sub}>Your {profession} request is being reviewed. You’ll get the badge once approved.</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.card}>
       <View style={styles.row}>
@@ -81,7 +99,7 @@ export function VerificationCard({ profession }) {
         {busy ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.ctaText}>Verify now</Text>
+          <Text style={styles.ctaText}>Request verification</Text>
         )}
       </Pressable>
     </View>

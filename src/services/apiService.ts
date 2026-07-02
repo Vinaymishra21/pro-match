@@ -96,8 +96,14 @@ export function updateProfession(profession: string, token: string) {
   );
 }
 
-export function verifyProfession(token: string) {
-  return apiRequest<{ user: User }>('/users/verify-profession', { method: 'POST' }, token);
+// Submits a profession-verification REQUEST for admin review (no longer an
+// instant self-serve verify). Returns the user + the request status.
+export function requestProfessionVerification(token: string, note?: string) {
+  return apiRequest<{ user: User; status: 'pending' | 'verified' }>(
+    '/users/verify-profession',
+    { method: 'POST', body: JSON.stringify(note ? { note } : {}) },
+    token
+  );
 }
 
 export function deactivateAccount(token: string) {

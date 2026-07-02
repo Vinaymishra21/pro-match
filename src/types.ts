@@ -26,6 +26,7 @@ export interface User {
   languages?: string[];
   religion?: string;
   professionVerified?: boolean;
+  verificationStatus?: 'none' | 'pending' | 'verified' | 'rejected';
   customPrompts?: { prompt: string; answer: string }[];
   education?: string;
   company?: string;
