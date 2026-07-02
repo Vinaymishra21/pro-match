@@ -23,6 +23,9 @@ const userSchema = new Schema(
     profession: { type: String, default: '', trim: true },
     bio: { type: String, default: '' },
     age: { type: Number, default: null, min: 18, max: 80 },
+    // Date of birth (source of truth for age; age is derived + stored for the
+    // discovery age filter). Collected at onboarding, enforced 18+.
+    dob: { type: Date, default: null },
     location: { type: String, default: '' },
     // Self identity + who they want to be matched with.
     gender: { type: String, default: '' }, // e.g. 'Man', 'Woman', 'Non-binary', …

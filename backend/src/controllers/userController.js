@@ -88,6 +88,7 @@ async function updateProfile(req, res) {
   const {
     bio,
     age,
+    dob,
     name,
     location,
     gender,
@@ -152,6 +153,27 @@ async function updateProfile(req, res) {
 
   if (age === null) {
     user.age = null;
+  }
+
+  // Date of birth → derive + store age (used by the discovery age filter).
+  // Enforce the 18+ floor server-side so it can't be bypassed by a custom client.
+  if (typeof dob === 'string' && dob) {
+    const d = new Date(dob);
+    if (Number.isNaN(d.getTime())) {
+      return res.status(400).json({ message: 'Invalid date of birth.', code: 'BAD_DOB' });
+    }
+    const now = new Date();
+    let derivedAge = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) derivedAge -= 1;
+    if (derivedAge < 18) {
+      return res.status(400).json({ message: 'You must be at least 18 to use Pro Match.', code: 'UNDERAGE' });
+    }
+    if (derivedAge > 100) {
+      return res.status(400).json({ message: 'Please enter a valid date of birth.', code: 'BAD_DOB' });
+    }
+    user.dob = d;
+    user.age = derivedAge;
   }
 
   const stringUpdates = {
