@@ -133,7 +133,14 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1 },
   rowTitle: { color: darkColors.text, fontSize: 15, fontWeight: '700', marginBottom: 2 },
   rowHint: { color: darkColors.textMuted, fontSize: 12.5, fontWeight: '500' },
-  chevron: { color: darkColors.textMuted, fontSize: 26, fontWeight: '300', marginLeft: 8 },
+  chevron: {
+    color: darkColors.textMuted,
+    fontSize: 26,
+    fontWeight: '300',
+    marginLeft: 8,
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
   dividerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
   dividerLine: { flex: 1, height: 1, backgroundColor: darkColors.border },
   dividerText: { color: darkColors.textFaint, fontSize: 13, fontWeight: '600', paddingHorizontal: spacing.md },

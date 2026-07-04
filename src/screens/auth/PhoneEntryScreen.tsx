@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   countryCode: { fontSize: 18, fontWeight: '800', color: darkColors.text },
   countryName: { fontSize: 12, color: darkColors.textMuted, marginTop: 3 },
-  countryChevron: { position: 'absolute', top: 14, right: 12, fontSize: 14, color: darkColors.textMuted },
+  countryChevron: { position: 'absolute', top: 14, right: 12, fontSize: 14, color: darkColors.textMuted, includeFontPadding: false },
   phoneWrap: { flex: 1 },
   phoneInput: {
     height: 70,

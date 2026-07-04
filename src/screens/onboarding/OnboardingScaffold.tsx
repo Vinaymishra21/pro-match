@@ -121,7 +121,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg },
   iconBtn: { width: 44, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  backIcon: { fontSize: 24, color: darkColors.text },
+  backIcon: {
+    fontSize: 24,
+    lineHeight: 40,
+    color: darkColors.text,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
   progressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3, backgroundColor: darkColors.primary },
   skipBtn: { width: 44, height: 40, alignItems: 'flex-end', justifyContent: 'center' },

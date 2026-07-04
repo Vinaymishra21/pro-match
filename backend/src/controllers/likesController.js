@@ -3,18 +3,24 @@ const { publicProfile } = require('../utils/auth');
 const { isProActive } = require('../utils/entitlements');
 const { REVEAL_COST_CREDITS } = require('../config/monetization');
 
+// "An" before vowel-initial professions ("An Architect"), "A" otherwise.
+function articleFor(word) {
+  return /^[aeiou]/i.test(word || '') ? 'An' : 'A';
+}
+
 // Builds the blurred teaser shown to free users for an unrevealed liker.
 function blurredCard(likerUser, crossProfession, superLike = false) {
+  const profession = likerUser.profession;
   return {
     likerId: likerUser.id,
     blurred: true,
-    profession: likerUser.profession,
+    profession,
     crossProfession,
     superLike,
     // Coarse hint only — no name, no photos.
     teaser: superLike
-      ? `⭐ Someone in ${likerUser.profession} Super Liked you`
-      : `Someone in ${likerUser.profession} liked you`
+      ? `⭐ ${articleFor(profession)} ${profession} Super Liked you`
+      : `${articleFor(profession)} ${profession} liked you`
   };
 }
 

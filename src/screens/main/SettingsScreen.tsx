@@ -152,7 +152,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   back: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 30, color: colors.text, marginTop: -4 },
+  backText: {
+    fontSize: 30,
+    lineHeight: 32,
+    color: colors.text,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
   title: { ...typography.subtitle, color: colors.text, fontWeight: '900' },
   scroll: { paddingBottom: spacing.xxl },
   account: { ...typography.title, color: colors.text, fontSize: 22, lineHeight: 28 },

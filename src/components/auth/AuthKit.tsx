@@ -182,7 +182,14 @@ const shell = StyleSheet.create({
     borderWidth: 1,
     borderColor: darkColors.border
   },
-  backIcon: { fontSize: 22, color: darkColors.text, marginTop: -2 },
+  backIcon: {
+    fontSize: 22,
+    lineHeight: 42,
+    color: darkColors.text,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   brandBadge: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   brandBadgeLg: { width: 48, height: 48, borderRadius: 24 },

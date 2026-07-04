@@ -38,6 +38,12 @@ type Props = CompositeScreenProps<
 const COLUMN_GAP = spacing.md;
 const CARD_WIDTH = (Dimensions.get('window').width - spacing.lg * 2 - COLUMN_GAP) / 2;
 
+// "An" before vowel-initial professions ("An Architect"), "A" otherwise.
+// Mirrors the server's teaser phrasing — this is only the fallback.
+function articleFor(word: string) {
+  return /^[aeiou]/i.test(word || '') ? 'An' : 'A';
+}
+
 export function LikesScreen({ navigation }: Props) {
   const { token } = useAuth();
   const insets = useSafeAreaInsets();
@@ -236,7 +242,7 @@ function LikeCard({
             <>
               <Text style={styles.lockIcon}>🔒</Text>
               <Text style={styles.lockTeaser} numberOfLines={2}>
-                {like.teaser || `Someone in ${like.profession} liked you`}
+                {like.teaser || `${articleFor(like.profession)} ${like.profession} liked you`}
               </Text>
               {like.crossProfession ? (
                 <View style={styles.crossTag}>

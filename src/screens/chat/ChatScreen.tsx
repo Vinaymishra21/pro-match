@@ -268,10 +268,12 @@ const styles = StyleSheet.create({
   },
   backChevron: {
     fontSize: 28,
+    lineHeight: 38,
     color: colors.text,
     fontWeight: '600',
-    marginTop: -3,
-    marginLeft: -2
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
   },
   headerCenter: { flex: 1 },
   heading: {
@@ -297,9 +299,12 @@ const styles = StyleSheet.create({
   },
   menuDots: {
     fontSize: 22,
+    lineHeight: 38,
     color: colors.text,
     fontWeight: '800',
-    marginTop: -4
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
   },
   messageList: {
     paddingBottom: spacing.md,

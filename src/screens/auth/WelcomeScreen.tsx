@@ -54,11 +54,15 @@ export function WelcomeScreen({ navigation }: Props) {
           <Text style={styles.tagline}>Where ambition meets attraction.</Text>
 
           <View style={styles.highlights}>
-            {HIGHLIGHTS.map((h) => (
-              <View key={h.text} style={styles.hRow}>
-                <Text style={styles.hIcon}>{h.icon}</Text>
-                <Text style={styles.hText}>{h.text}</Text>
-              </View>
+            {HIGHLIGHTS.map((h, index) => (
+              <React.Fragment key={h.text}>
+                {index > 0 ? <View style={styles.hDot} /> : null}
+                <Text style={styles.hLine}>
+                  <Text style={styles.hIcon}>{h.icon}</Text>
+                  {'  '}
+                  {h.text}
+                </Text>
+              </React.Fragment>
             ))}
           </View>
         </View>
@@ -115,20 +119,20 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     textAlign: 'center'
   },
-  highlights: { marginTop: spacing.xl, gap: spacing.sm, alignSelf: 'stretch', paddingHorizontal: spacing.md },
-  hRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.md
+  // Value props read as quiet manifesto lines — plain centered type separated
+  // by tiny dots, deliberately free of any button-like chrome.
+  highlights: { marginTop: spacing.xl, alignItems: 'center', gap: spacing.sm, alignSelf: 'stretch', paddingHorizontal: spacing.md },
+  hDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: darkColors.textFaint },
+  hLine: {
+    fontFamily: fonts.sansMedium,
+    color: darkColors.textDim,
+    fontSize: 15,
+    lineHeight: 24,
+    fontWeight: '500',
+    letterSpacing: 0.4,
+    textAlign: 'center'
   },
-  hIcon: { fontSize: 18 },
-  hText: { fontFamily: fonts.sansSemiBold, color: darkColors.textDim, fontSize: 14.5, lineHeight: 20, fontWeight: '600', letterSpacing: 0.1 },
+  hIcon: { fontSize: 14 },
   actions: { gap: spacing.sm },
   devButton: {
     height: 44,
