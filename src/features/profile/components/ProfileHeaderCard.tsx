@@ -1,11 +1,14 @@
 // @ts-nocheck
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useTheme, useThemedStyles } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
 function AnimatedProgressRing({ percent }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const animated = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -33,6 +36,7 @@ function AnimatedProgressRing({ percent }) {
 }
 
 export function ProfileHeaderCard({ completion, mode, onModeChange }) {
+  const styles = useThemedStyles(makeStyles);
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -113,15 +117,15 @@ export function ProfileHeaderCard({ completion, mode, onModeChange }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 20,
     padding: spacing.lg,
     marginBottom: spacing.md,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -136,7 +140,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(232,65,90,0.15)',
+    backgroundColor: c.brandSoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm
@@ -149,18 +153,18 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.subtitle,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700'
   },
   subtitle: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     marginTop: 2
   },
   progressTrack: {
     height: 8,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: c.border,
     overflow: 'hidden'
   },
   progressFill: {
@@ -175,20 +179,20 @@ const styles = StyleSheet.create({
   },
   progressPercent: {
     ...typography.subtitle,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700',
     fontSize: 16
   },
   progressMeta: {
     ...typography.caption,
-    color: colors.textMuted
+    color: c.textMuted
   },
   missingWrap: {
     marginTop: spacing.md
   },
   missingLabel: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '600',
     marginBottom: spacing.xs
   },
@@ -207,7 +211,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     ...typography.caption,
-    color: '#FBBF24',
+    color: c.gold,
     fontWeight: '600',
     fontSize: 12
   },
@@ -221,15 +225,15 @@ const styles = StyleSheet.create({
   },
   doneText: {
     ...typography.caption,
-    color: colors.secondary,
+    color: c.secondary,
     fontWeight: '700'
   },
   toggleRow: {
     marginTop: spacing.md,
-    backgroundColor: colors.inputBg,
+    backgroundColor: c.inputBg,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     flexDirection: 'row',
     padding: 4
   },
@@ -240,8 +244,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   toggleActive: {
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    backgroundColor: c.primary,
+    shadowColor: c.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -249,10 +253,10 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '700'
   },
   toggleLabelActive: {
-    color: colors.white
+    color: c.white
   }
 });

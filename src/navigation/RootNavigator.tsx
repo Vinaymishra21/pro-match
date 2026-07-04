@@ -9,13 +9,14 @@ import { AuthNavigator } from './AuthNavigator';
 import { ChatScreen } from '../screens/chat/ChatScreen';
 import { PaywallScreen } from '../screens/billing/PaywallScreen';
 import { SettingsScreen } from '../screens/main/SettingsScreen';
-import { darkColors } from '../theme/darkColors';
+import { useTheme } from '../theme/ThemeProvider';
 import type { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const { user, isLoading } = useAuth();
+  const { colors } = useTheme();
   const hasAccess = Boolean(user);
   // New members complete a step-by-step onboarding (name, DOB, profession,
   // 2+ photos) before entering the app.
@@ -29,7 +30,7 @@ export function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: darkColors.bg }
+        contentStyle: { backgroundColor: colors.bg }
       }}
     >
       {!hasAccess ? (

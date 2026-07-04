@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
@@ -9,7 +8,8 @@ import { GradientButton } from '../../components/GradientButton';
 import { useAuth } from '../../hooks/useAuth';
 import { devGrant, getBillingCatalog } from '../../services/apiService';
 import { gradients } from '../../theme/gradients';
-import { colorsDark as colors } from '../../theme/colorsDark';
+import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
 import type { BillingCatalog, CreditPack, RootStackParamList } from '../../types';
@@ -25,6 +25,8 @@ const PRO_PERKS = [
 
 export function PaywallScreen({ navigation, route }: Props) {
   const focus = route.params?.focus ?? 'pro';
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { token, refreshUser } = useAuth();
   const [catalog, setCatalog] = useState<BillingCatalog | null>(null);
@@ -80,7 +82,7 @@ export function PaywallScreen({ navigation, route }: Props) {
 
   return (
     <DarkBackground orbColor="rgba(251,191,36,0.22)">
-      <StatusBar style="light" />
+      <ThemedStatusBar />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.md }]}
         showsVerticalScrollIndicator={false}
@@ -215,112 +217,115 @@ export function PaywallScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
-  close: {
-    alignSelf: 'flex-end',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border
-  },
-  closeText: { fontSize: 18, color: colors.text, fontWeight: '700' },
-  hero: { alignItems: 'center', marginBottom: spacing.xl },
-  crown: { fontSize: 52, marginBottom: spacing.sm },
-  heroTitle: {
-    fontFamily: fonts.displayBold,
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.5
-  },
-  heroSub: { ...typography.tagline, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
-  center: { paddingVertical: spacing.xxl, alignItems: 'center' },
-  proCard: {
-    borderRadius: 26,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.32,
-    shadowRadius: 22,
-    elevation: 8
-  },
-  focused: { borderWidth: 2, borderColor: '#FFFFFF' },
-  focusedText: {},
-  proName: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 30, fontWeight: '700', color: '#2A1C00', letterSpacing: -0.3 },
-  planRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-  planCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: spacing.md,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center'
-  },
-  planCardActive: { backgroundColor: '#FFFFFF', borderColor: '#1F2937' },
-  popularTag: {
-    position: 'absolute',
-    top: -10,
-    backgroundColor: '#1F2937',
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2
-  },
-  popularText: { color: '#fff', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  planLabel: { fontSize: 13, fontWeight: '800', color: '#5C4500', marginTop: 2 },
-  planPrice: { fontSize: 24, fontWeight: '900', color: '#2A1C00', marginTop: 4 },
-  planPer: { fontSize: 11, fontWeight: '700', color: '#7A6020', marginTop: 2 },
-  perks: { marginTop: spacing.md, gap: spacing.sm },
-  perkRow: { flexDirection: 'row', alignItems: 'center' },
-  perkIcon: { fontSize: 18, marginRight: spacing.sm },
-  perkText: { flex: 1, color: '#2A1C00', fontWeight: '700', fontSize: 14 },
-  creditsHeader: { marginBottom: spacing.md },
-  sectionTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, fontWeight: '600', color: colors.text, letterSpacing: -0.3 },
-  sectionSub: { ...typography.caption, color: colors.textMuted, marginTop: 4, lineHeight: 19 },
-  packs: { gap: spacing.sm },
-  packCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    padding: spacing.md
-  },
-  packLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  packCredits: { fontSize: 18, fontWeight: '900', color: colors.text },
-  packBonus: {
-    color: colors.gold,
-    fontWeight: '800',
-    fontSize: 12,
-    backgroundColor: 'rgba(251,191,36,0.15)',
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2
-  },
-  packPriceWrap: { minWidth: 56, alignItems: 'flex-end' },
-  packPrice: { fontSize: 18, fontWeight: '900', color: colors.primary },
-  devNote: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    fontStyle: 'italic'
-  },
-  legal: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.md,
-    lineHeight: 18,
-    fontSize: 12
-  }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    scroll: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
+    close: {
+      alignSelf: 'flex-end',
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border
+    },
+    closeText: { fontSize: 18, color: c.text, fontWeight: '700' },
+    hero: { alignItems: 'center', marginBottom: spacing.xl },
+    crown: { fontSize: 52, marginBottom: spacing.sm },
+    heroTitle: {
+      fontFamily: fonts.displayBold,
+      fontSize: 32,
+      lineHeight: 40,
+      fontWeight: '700',
+      color: c.text,
+      letterSpacing: -0.5
+    },
+    heroSub: { ...typography.tagline, color: c.textMuted, marginTop: 4, textAlign: 'center' },
+    center: { paddingVertical: spacing.xxl, alignItems: 'center' },
+    // Gold card keeps its own on-gradient palette (dark-amber text, gold glow).
+    proCard: {
+      borderRadius: 26,
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+      shadowColor: '#F59E0B',
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.32,
+      shadowRadius: 22,
+      elevation: 8
+    },
+    // A white focus ring is invisible against the cream bg — use ink in light.
+    focused: { borderWidth: 2, borderColor: mode === 'dark' ? '#FFFFFF' : c.text },
+    focusedText: {},
+    proName: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 30, fontWeight: '700', color: '#2A1C00', letterSpacing: -0.3 },
+    planRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+    planCard: {
+      flex: 1,
+      borderRadius: 16,
+      padding: spacing.md,
+      backgroundColor: 'rgba(255,255,255,0.55)',
+      borderWidth: 2,
+      borderColor: 'transparent',
+      alignItems: 'center'
+    },
+    planCardActive: { backgroundColor: '#FFFFFF', borderColor: '#1F2937' },
+    popularTag: {
+      position: 'absolute',
+      top: -10,
+      backgroundColor: '#1F2937',
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 2
+    },
+    popularText: { color: '#fff', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
+    planLabel: { fontSize: 13, fontWeight: '800', color: '#5C4500', marginTop: 2 },
+    planPrice: { fontSize: 24, fontWeight: '900', color: '#2A1C00', marginTop: 4 },
+    planPer: { fontSize: 11, fontWeight: '700', color: '#7A6020', marginTop: 2 },
+    perks: { marginTop: spacing.md, gap: spacing.sm },
+    perkRow: { flexDirection: 'row', alignItems: 'center' },
+    perkIcon: { fontSize: 18, marginRight: spacing.sm },
+    perkText: { flex: 1, color: '#2A1C00', fontWeight: '700', fontSize: 14 },
+    creditsHeader: { marginBottom: spacing.md },
+    sectionTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, fontWeight: '600', color: c.text, letterSpacing: -0.3 },
+    sectionSub: { ...typography.caption, color: c.textMuted, marginTop: 4, lineHeight: 19 },
+    packs: { gap: spacing.sm },
+    packCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 18,
+      padding: spacing.md
+    },
+    packLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    packCredits: { fontSize: 18, fontWeight: '900', color: c.text },
+    packBonus: {
+      color: c.gold,
+      fontWeight: '800',
+      fontSize: 12,
+      backgroundColor: 'rgba(251,191,36,0.15)',
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 2
+    },
+    packPriceWrap: { minWidth: 56, alignItems: 'flex-end' },
+    packPrice: { fontSize: 18, fontWeight: '900', color: c.primary },
+    devNote: {
+      ...typography.caption,
+      color: c.textMuted,
+      textAlign: 'center',
+      marginTop: spacing.lg,
+      fontStyle: 'italic'
+    },
+    legal: {
+      ...typography.caption,
+      color: c.textMuted,
+      textAlign: 'center',
+      marginTop: spacing.md,
+      lineHeight: 18,
+      fontSize: 12
+    }
+  });

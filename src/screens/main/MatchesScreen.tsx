@@ -12,7 +12,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMatches, unmatch } from '../../services/apiService';
 import { isProUser } from '../../utils/entitlements';
 import { professionTheme } from '../../theme/professionTheme';
-import { colorsDark as colors } from '../../theme/colorsDark';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
 import type { MainTabParamList, MatchRecord, RootStackParamList } from '../../types';
@@ -24,6 +25,8 @@ type Props = CompositeScreenProps<
 
 export function MatchesScreen({ navigation }: Props) {
   const { token, user } = useAuth();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const pro = isProUser(user);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
@@ -195,55 +198,59 @@ export function MatchesScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  list: { padding: spacing.lg },
-  header: { marginBottom: spacing.md },
-  title: { fontFamily: fonts.displayBold, fontSize: 30, lineHeight: 38, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
-  subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
-  error: { color: '#DC2626', marginTop: spacing.sm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 2
-  },
-  rowPressed: { backgroundColor: colors.surfaceStrong },
-  avatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-    overflow: 'hidden'
-  },
-  avatarLetter: { fontSize: 22, fontWeight: '900', color: colors.white },
-  rowText: { flex: 1 },
-  name: { ...typography.body, color: colors.text, fontWeight: '800' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  metaEmoji: { fontSize: 12, marginRight: 4 },
-  meta: { ...typography.caption, color: colors.textMuted, flex: 1 },
-  lockTag: {
-    backgroundColor: 'rgba(251,191,36,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.5)',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5
-  },
-  lockTagText: { color: colors.gold, fontWeight: '800', fontSize: 11 },
-  chevron: { fontSize: 24, color: colors.textMuted, marginLeft: spacing.xs },
-  empty: { alignItems: 'center', paddingVertical: spacing.xxl },
-  emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
-  emptyTitle: { ...typography.subtitle, fontWeight: '900', color: colors.text, marginBottom: spacing.xs },
-  emptyText: { ...typography.caption, color: colors.textMuted, textAlign: 'center', paddingHorizontal: spacing.lg }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    list: { padding: spacing.lg },
+    header: { marginBottom: spacing.md },
+    title: { fontFamily: fonts.displayBold, fontSize: 30, lineHeight: 38, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
+    subtitle: { ...typography.caption, color: c.textMuted, fontWeight: '600', marginTop: 2 },
+    // '#DC2626' predates the theme system; keep it byte-identical in dark,
+    // use the palette's AA-checked danger tone in light.
+    error: { color: mode === 'dark' ? '#DC2626' : c.danger, marginTop: spacing.sm },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 18,
+      padding: spacing.sm,
+      marginBottom: spacing.sm,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 2
+    },
+    rowPressed: { backgroundColor: c.surfaceStrong },
+    avatar: {
+      width: 54,
+      height: 54,
+      borderRadius: 27,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.sm,
+      overflow: 'hidden'
+    },
+    // White letter sits on the profession gradient avatar — correct in both modes.
+    avatarLetter: { fontSize: 22, fontWeight: '900', color: c.white },
+    rowText: { flex: 1 },
+    name: { ...typography.body, color: c.text, fontWeight: '800' },
+    metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+    metaEmoji: { fontSize: 12, marginRight: 4 },
+    meta: { ...typography.caption, color: c.textMuted, flex: 1 },
+    lockTag: {
+      backgroundColor: 'rgba(251,191,36,0.15)',
+      borderWidth: 1,
+      borderColor: 'rgba(251,191,36,0.5)',
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 5
+    },
+    lockTagText: { color: c.gold, fontWeight: '800', fontSize: 11 },
+    chevron: { fontSize: 24, color: c.textMuted, marginLeft: spacing.xs },
+    empty: { alignItems: 'center', paddingVertical: spacing.xxl },
+    emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
+    emptyTitle: { ...typography.subtitle, fontWeight: '900', color: c.text, marginBottom: spacing.xs },
+    emptyText: { ...typography.caption, color: c.textMuted, textAlign: 'center', paddingHorizontal: spacing.lg }
+  });

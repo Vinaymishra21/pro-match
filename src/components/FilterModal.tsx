@@ -10,7 +10,8 @@ import {
   Text,
   View
 } from 'react-native';
-import { colorsDark as colors } from '../theme/colorsDark';
+import { useThemedStyles, type ThemeMode } from '../theme/ThemeProvider';
+import type { ThemeColors } from '../theme/themes';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
@@ -47,6 +48,7 @@ const DEFAULT_FILTERS = {
 export { DEFAULT_FILTERS, DISTANCE_ANY_KM };
 
 function SectionHeader({ title, subtitle }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -56,6 +58,7 @@ function SectionHeader({ title, subtitle }) {
 }
 
 function ChipRow({ options, selected, onToggle, multi = false }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.chipRow}>
       {options.map((option) => {
@@ -77,6 +80,7 @@ function ChipRow({ options, selected, onToggle, multi = false }) {
 }
 
 function AnimatedChip({ label, selected, onPress }) {
+  const styles = useThemedStyles(makeStyles);
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(() => {
@@ -103,6 +107,7 @@ function AnimatedChip({ label, selected, onPress }) {
 }
 
 function RangeStepper({ range, onChange, bound, step = 1, unit = '', minLabel, maxLabel }) {
+  const styles = useThemedStyles(makeStyles);
   const [min, max] = range;
 
   function adjust(index, delta) {
@@ -153,6 +158,7 @@ function RangeStepper({ range, onChange, bound, step = 1, unit = '', minLabel, m
 // track (or the thumb) — moves relative to where the value was when the
 // gesture started, snapping to DISTANCE_STEP. Top end = "Any distance".
 function DistanceSlider({ value, onChange }) {
+  const styles = useThemedStyles(makeStyles);
   const [trackWidth, setTrackWidth] = useState(0);
   const trackWidthRef = useRef(0);
   const valueRef = useRef(value);
@@ -212,6 +218,7 @@ function DistanceSlider({ value, onChange }) {
 }
 
 function ToggleRow({ label, description, value, onToggle }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable style={styles.toggleRow} onPress={onToggle}>
       <View style={styles.toggleTextWrap}>
@@ -226,6 +233,7 @@ function ToggleRow({ label, description, value, onToggle }) {
 }
 
 export function FilterModal({ visible, onClose, filters: externalFilters, onApply }) {
+  const styles = useThemedStyles(makeStyles);
   const [filters, setFilters] = useState(() => {
     const initial = { ...DEFAULT_FILTERS, ...(externalFilters || {}) };
     // Older saved filters stored distance as a display string ('25 km').
@@ -394,296 +402,300 @@ FilterModal.DEFAULT_FILTERS = DEFAULT_FILTERS;
 
 const SLIDER_THUMB = 26;
 
-const styles = StyleSheet.create({
-  modal: {
-    flex: 1,
-    backgroundColor: colors.background
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.card
-  },
-  closeText: {
-    ...typography.body,
-    color: colors.textMuted,
-    fontWeight: '600'
-  },
-  modalTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    fontWeight: '800'
-  },
-  resetText: {
-    ...typography.body,
-    color: colors.primary,
-    fontWeight: '700'
-  },
-  scrollContent: {
-    padding: spacing.lg
-  },
-  sectionHeader: {
-    marginBottom: spacing.sm
-  },
-  sectionTitle: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700',
-    fontSize: 16
-  },
-  sectionSub: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: 2
-  },
-  uspNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(232,65,90,0.12)',
-    borderRadius: 14,
-    padding: spacing.md
-  },
-  uspNoteIcon: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '900',
-    marginTop: 1
-  },
-  uspNoteText: {
-    ...typography.caption,
-    color: colors.text,
-    flex: 1,
-    lineHeight: 18
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    backgroundColor: colors.surface
-  },
-  chipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(232,65,90,0.15)'
-  },
-  chipDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginRight: 6
-  },
-  chipLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '600'
-  },
-  chipLabelSelected: {
-    color: colors.primary,
-    fontWeight: '700'
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.lg
-  },
-  ageDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md
-  },
-  ageValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text
-  },
-  ageDash: {
-    fontSize: 24,
-    color: colors.textMuted,
-    marginHorizontal: spacing.sm
-  },
-  ageControls: {
-    flexDirection: 'row',
-    gap: spacing.md
-  },
-  ageControl: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.sm,
-    alignItems: 'center'
-  },
-  ageControlLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '600',
-    marginBottom: spacing.xs
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md
-  },
-  stepperBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  stepperText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text
-  },
-  stepperValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    minWidth: 28,
-    textAlign: 'center'
-  },
-  sliderHitArea: {
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    marginTop: spacing.xs
-  },
-  sliderTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    overflow: 'hidden'
-  },
-  sliderFill: {
-    height: '100%',
-    borderRadius: 3,
-    backgroundColor: colors.primary
-  },
-  sliderThumb: {
-    position: 'absolute',
-    top: '50%',
-    marginTop: -SLIDER_THUMB / 2,
-    width: SLIDER_THUMB,
-    height: SLIDER_THUMB,
-    borderRadius: SLIDER_THUMB / 2,
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  sliderScale: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs
-  },
-  sliderScaleText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600'
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md
-  },
-  toggleTextWrap: {
-    flex: 1,
-    marginRight: spacing.sm
-  },
-  toggleLabel: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '700'
-  },
-  toggleDesc: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: 2
-  },
-  toggleTrack: {
-    width: 50,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    padding: 3,
-    justifyContent: 'center'
-  },
-  toggleTrackOn: {
-    backgroundColor: colors.primary
-  },
-  toggleThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2
-  },
-  toggleThumbOn: {
-    alignSelf: 'flex-end'
-  },
-  bottomPad: {
-    height: 100
-  },
-  applyBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.border
-  },
-  applyButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4
-  },
-  applyButtonPressed: {
-    opacity: 0.9
-  },
-  applyText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '700'
-  }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    modal: {
+      flex: 1,
+      backgroundColor: c.background
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      backgroundColor: c.card
+    },
+    closeText: {
+      ...typography.body,
+      color: c.textMuted,
+      fontWeight: '600'
+    },
+    modalTitle: {
+      ...typography.subtitle,
+      color: c.text,
+      fontWeight: '800'
+    },
+    resetText: {
+      ...typography.body,
+      color: c.primary,
+      fontWeight: '700'
+    },
+    scrollContent: {
+      padding: spacing.lg
+    },
+    sectionHeader: {
+      marginBottom: spacing.sm
+    },
+    sectionTitle: {
+      ...typography.body,
+      color: c.text,
+      fontWeight: '700',
+      fontSize: 16
+    },
+    sectionSub: {
+      ...typography.caption,
+      color: c.textMuted,
+      marginTop: 2
+    },
+    uspNote: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      backgroundColor: 'rgba(232,65,90,0.12)',
+      borderRadius: 14,
+      padding: spacing.md
+    },
+    uspNoteIcon: {
+      color: c.primary,
+      fontSize: 16,
+      fontWeight: '900',
+      marginTop: 1
+    },
+    uspNoteText: {
+      ...typography.caption,
+      color: c.text,
+      flex: 1,
+      lineHeight: 18
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs
+    },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1.5,
+      borderColor: c.border,
+      borderRadius: 999,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 10,
+      backgroundColor: c.surface
+    },
+    // brandSoft === the old 'rgba(232,65,90,0.15)' in dark.
+    chipSelected: {
+      borderColor: c.primary,
+      backgroundColor: c.brandSoft
+    },
+    chipDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: c.primary,
+      marginRight: 6
+    },
+    chipLabel: {
+      ...typography.caption,
+      color: c.textMuted,
+      fontWeight: '600'
+    },
+    chipLabelSelected: {
+      color: c.primary,
+      fontWeight: '700'
+    },
+    divider: {
+      height: 1,
+      backgroundColor: c.border,
+      marginVertical: spacing.lg
+    },
+    ageDisplay: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.md
+    },
+    ageValue: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: c.text
+    },
+    ageDash: {
+      fontSize: 24,
+      color: c.textMuted,
+      marginHorizontal: spacing.sm
+    },
+    ageControls: {
+      flexDirection: 'row',
+      gap: spacing.md
+    },
+    ageControl: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: spacing.sm,
+      alignItems: 'center'
+    },
+    ageControlLabel: {
+      ...typography.caption,
+      color: c.textMuted,
+      fontWeight: '600',
+      marginBottom: spacing.xs
+    },
+    stepperRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md
+    },
+    stepperBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: c.inputBg,
+      borderWidth: 1,
+      borderColor: c.border,
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    stepperText: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: c.text
+    },
+    stepperValue: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.text,
+      minWidth: 28,
+      textAlign: 'center'
+    },
+    sliderHitArea: {
+      justifyContent: 'center',
+      paddingVertical: spacing.sm,
+      marginTop: spacing.xs
+    },
+    // The white-wash track predates the theme system; keep it byte-identical in
+    // dark, use the ink wash on cream.
+    sliderTrack: {
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.12)' : c.surfaceStrong,
+      overflow: 'hidden'
+    },
+    sliderFill: {
+      height: '100%',
+      borderRadius: 3,
+      backgroundColor: c.primary
+    },
+    sliderThumb: {
+      position: 'absolute',
+      top: '50%',
+      marginTop: -SLIDER_THUMB / 2,
+      width: SLIDER_THUMB,
+      height: SLIDER_THUMB,
+      borderRadius: SLIDER_THUMB / 2,
+      backgroundColor: c.white,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 3
+    },
+    sliderScale: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: spacing.xs
+    },
+    sliderScaleText: {
+      ...typography.caption,
+      color: c.textMuted,
+      fontSize: 12,
+      fontWeight: '600'
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: c.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: spacing.md
+    },
+    toggleTextWrap: {
+      flex: 1,
+      marginRight: spacing.sm
+    },
+    toggleLabel: {
+      ...typography.body,
+      color: c.text,
+      fontWeight: '700'
+    },
+    toggleDesc: {
+      ...typography.caption,
+      color: c.textMuted,
+      marginTop: 2
+    },
+    toggleTrack: {
+      width: 50,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.12)' : c.surfaceStrong,
+      padding: 3,
+      justifyContent: 'center'
+    },
+    toggleTrackOn: {
+      backgroundColor: c.primary
+    },
+    toggleThumb: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: c.white,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.15,
+      shadowRadius: 2,
+      elevation: 2
+    },
+    toggleThumbOn: {
+      alignSelf: 'flex-end'
+    },
+    bottomPad: {
+      height: 100
+    },
+    applyBar: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      padding: spacing.lg,
+      paddingBottom: spacing.xl,
+      backgroundColor: c.card,
+      borderTopWidth: 1,
+      borderTopColor: c.border
+    },
+    applyButton: {
+      backgroundColor: c.primary,
+      borderRadius: 14,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      shadowColor: c.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4
+    },
+    applyButtonPressed: {
+      opacity: 0.9
+    },
+    applyText: {
+      color: c.white,
+      fontSize: 16,
+      fontWeight: '700'
+    }
+  });

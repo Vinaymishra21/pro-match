@@ -1,15 +1,15 @@
 import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthShell, BackButton, Eyebrow } from '../../components/auth/AuthKit';
 import { HeroCarousel } from '../../components/auth/HeroCarousel';
 import { useAuth } from '../../hooks/useAuth';
 import { DEV_BYPASS_AUTH } from '../../constants/config';
-import { darkColors } from '../../theme/darkColors';
+import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 
-// Shared dark "choose a method" screen for both Sign up and Login.
+// Shared "choose a method" screen for both Sign up and Login.
 export function MethodScreenBase({
   navigation,
   mode
@@ -18,6 +18,8 @@ export function MethodScreenBase({
   mode: 'register' | 'login';
 }) {
   const { devBypass } = useAuth();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const isRegister = mode === 'register';
 
   async function handleSocial() {
@@ -34,7 +36,7 @@ export function MethodScreenBase({
 
   return (
     <AuthShell hero={<HeroCarousel />}>
-      <StatusBar style="light" />
+      <ThemedStatusBar />
       <BackButton onPress={() => navigation.goBack()} />
 
       <View style={styles.header}>
@@ -46,7 +48,7 @@ export function MethodScreenBase({
       <View style={styles.actions}>
         <MethodRow
           icon="📱"
-          iconBg={darkColors.brandGradient}
+          iconBg={colors.brandGradient}
           title="Use mobile number"
           hint={isRegister ? 'We’ll send you a verification code' : 'Sign in with a one-time code'}
           onPress={() => navigation.navigate('PhoneEntry')}
@@ -99,6 +101,7 @@ function MethodRow({
   onPress: () => void;
   gradientIcon?: boolean;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]} onPress={onPress}>
       <LinearGradient colors={iconBg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.rowIcon}>
@@ -113,49 +116,54 @@ function MethodRow({
   );
 }
 
-const styles = StyleSheet.create({
-  header: { marginTop: spacing.xl, marginBottom: spacing.xl, gap: 6 },
-  title: { color: darkColors.text, fontSize: 36, fontWeight: '900', letterSpacing: -1, lineHeight: 42 },
-  subtitle: { color: darkColors.textMuted, fontSize: 15, fontWeight: '500', marginTop: 4 },
-  actions: { gap: spacing.sm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 18,
-    padding: 14,
-    backgroundColor: 'rgba(28,21,40,0.72)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)'
-  },
-  rowPressed: { backgroundColor: 'rgba(40,30,56,0.85)' },
-  rowIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
-  rowIconText: { fontWeight: '800' },
-  rowInfo: { flex: 1 },
-  rowTitle: { color: darkColors.text, fontSize: 15, fontWeight: '700', marginBottom: 2 },
-  rowHint: { color: darkColors.textMuted, fontSize: 12.5, fontWeight: '500' },
-  chevron: {
-    color: darkColors.textMuted,
-    fontSize: 26,
-    fontWeight: '300',
-    marginLeft: 8,
-    textAlignVertical: 'center',
-    includeFontPadding: false
-  },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
-  dividerLine: { flex: 1, height: 1, backgroundColor: darkColors.border },
-  dividerText: { color: darkColors.textFaint, fontSize: 13, fontWeight: '600', paddingHorizontal: spacing.md },
-  emailBtn: {
-    height: 54,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.7)',
-    backgroundColor: 'rgba(28,21,40,0.55)'
-  },
-  emailPressed: { backgroundColor: 'rgba(40,30,56,0.75)' },
-  emailLabel: { color: darkColors.text, fontSize: 15, fontWeight: '700' },
-  switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm },
-  switchText: { color: darkColors.textMuted, fontSize: 14 },
-  switchAction: { color: darkColors.brandText, fontSize: 14, fontWeight: '800' }
-});
+// The glass rows/buttons sit over the HeroCarousel photos, so they use
+// scrim-matched translucent washes: dark keeps the original literals (card
+// tint over the dark scrim); light mirrors them with warm-white glass and ink
+// hairlines over the cream scrim.
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    header: { marginTop: spacing.xl, marginBottom: spacing.xl, gap: 6 },
+    title: { color: c.text, fontSize: 36, fontWeight: '900', letterSpacing: -1, lineHeight: 42 },
+    subtitle: { color: c.textMuted, fontSize: 15, fontWeight: '500', marginTop: 4 },
+    actions: { gap: spacing.sm },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 18,
+      padding: 14,
+      backgroundColor: mode === 'dark' ? 'rgba(28,21,40,0.72)' : 'rgba(255,253,251,0.72)',
+      borderWidth: 1,
+      borderColor: mode === 'dark' ? 'rgba(255,255,255,0.14)' : 'rgba(35,26,47,0.14)'
+    },
+    rowPressed: { backgroundColor: mode === 'dark' ? 'rgba(40,30,56,0.85)' : 'rgba(244,238,240,0.85)' },
+    rowIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+    rowIconText: { fontWeight: '800' },
+    rowInfo: { flex: 1 },
+    rowTitle: { color: c.text, fontSize: 15, fontWeight: '700', marginBottom: 2 },
+    rowHint: { color: c.textMuted, fontSize: 12.5, fontWeight: '500' },
+    chevron: {
+      color: c.textMuted,
+      fontSize: 26,
+      fontWeight: '300',
+      marginLeft: 8,
+      textAlignVertical: 'center',
+      includeFontPadding: false
+    },
+    dividerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
+    dividerLine: { flex: 1, height: 1, backgroundColor: c.border },
+    dividerText: { color: c.textFaint, fontSize: 13, fontWeight: '600', paddingHorizontal: spacing.md },
+    emailBtn: {
+      height: 54,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(35,26,47,0.7)',
+      backgroundColor: mode === 'dark' ? 'rgba(28,21,40,0.55)' : 'rgba(255,253,251,0.55)'
+    },
+    emailPressed: { backgroundColor: mode === 'dark' ? 'rgba(40,30,56,0.75)' : 'rgba(244,238,240,0.75)' },
+    emailLabel: { color: c.text, fontSize: 15, fontWeight: '700' },
+    switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm },
+    switchText: { color: c.textMuted, fontSize: 14 },
+    switchAction: { color: c.brandText, fontSize: 14, fontWeight: '800' }
+  });

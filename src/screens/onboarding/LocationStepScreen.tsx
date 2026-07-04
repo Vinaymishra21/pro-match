@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
-import { FieldLabel, authText } from '../../components/auth/AuthKit';
+import { FieldLabel, useAuthText } from '../../components/auth/AuthKit';
 import { OnboardingScaffold, OnbInput } from './OnboardingScaffold';
 import { TOTAL_STEPS, useOnboarding, type OnboardingDraft } from './OnboardingContext';
-import { darkColors } from '../../theme/darkColors';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts } from '../../theme/typography';
 
@@ -22,6 +23,9 @@ function placeLabel(place?: Location.LocationGeocodedAddress | null): string {
 // nearby-first deck) OR at least a typed city before the user can continue.
 export function LocationStepScreen({ navigation }: any) {
   const { draft, persist } = useOnboarding();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const authText = useAuthText();
   const [city, setCity] = useState(draft.location);
   const [coords, setCoords] = useState<[number, number] | undefined>(draft.coordinates);
   const [detecting, setDetecting] = useState(false);
@@ -136,7 +140,7 @@ export function LocationStepScreen({ navigation }: any) {
             <Text style={styles.detectSub}>Fast, precise, and private — we never show your exact spot</Text>
           </View>
           {detecting ? (
-            <ActivityIndicator color={darkColors.primary} />
+            <ActivityIndicator color={colors.primary} />
           ) : (
             <Text style={styles.detectChevron}>›</Text>
           )}
@@ -175,74 +179,78 @@ export function LocationStepScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  detectCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: darkColors.surface,
-    borderWidth: 1.5,
-    borderColor: darkColors.brandBorder,
-    borderRadius: 18,
-    padding: spacing.md
-  },
-  detectCardPressed: { backgroundColor: darkColors.surfaceStrong },
-  detectIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: darkColors.brandSoft,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  detectIcon: { fontSize: 20 },
-  detectTextWrap: { flex: 1 },
-  detectTitle: { fontFamily: fonts.sansBold, color: darkColors.text, fontSize: 16, fontWeight: '700' },
-  detectSub: {
-    fontFamily: fonts.sansMedium,
-    color: darkColors.textMuted,
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 2
-  },
-  detectChevron: { color: darkColors.brandText, fontSize: 26, fontWeight: '700', marginLeft: spacing.xs },
-  detectedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(52,211,153,0.1)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(52,211,153,0.4)',
-    borderRadius: 18,
-    padding: spacing.md
-  },
-  detectedIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(52,211,153,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  detectedIcon: { fontSize: 20 },
-  detectedTextWrap: { flex: 1 },
-  detectedCity: { fontFamily: fonts.sansBold, color: darkColors.text, fontSize: 16, fontWeight: '700' },
-  detectedSub: {
-    fontFamily: fonts.sansMedium,
-    color: darkColors.textMuted,
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 2
-  },
-  detectedTick: { color: darkColors.success, fontSize: 20, fontWeight: '900', marginLeft: spacing.xs },
-  altLink: { alignSelf: 'center', marginTop: spacing.md },
-  altLinkText: { fontFamily: fonts.sansBold, color: darkColors.textMuted, fontSize: 13, fontWeight: '700' },
-  hint: {
-    fontFamily: fonts.sansMedium,
-    color: darkColors.textDim,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: spacing.md
-  },
-  manualWrap: { marginTop: spacing.lg }
-});
+// The "detected" card uses success-tinted washes: dark keeps the original
+// rgba(52,211,153,…) literals (darkTheme.success #34D399); light mirrors the
+// same opacities with lightTheme.success #047857 → rgb(4,120,87).
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    detectCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: c.surface,
+      borderWidth: 1.5,
+      borderColor: c.brandBorder,
+      borderRadius: 18,
+      padding: spacing.md
+    },
+    detectCardPressed: { backgroundColor: c.surfaceStrong },
+    detectIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: c.brandSoft,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    detectIcon: { fontSize: 20 },
+    detectTextWrap: { flex: 1 },
+    detectTitle: { fontFamily: fonts.sansBold, color: c.text, fontSize: 16, fontWeight: '700' },
+    detectSub: {
+      fontFamily: fonts.sansMedium,
+      color: c.textMuted,
+      fontSize: 12,
+      lineHeight: 17,
+      marginTop: 2
+    },
+    detectChevron: { color: c.brandText, fontSize: 26, fontWeight: '700', marginLeft: spacing.xs },
+    detectedCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: mode === 'dark' ? 'rgba(52,211,153,0.1)' : 'rgba(4,120,87,0.1)',
+      borderWidth: 1.5,
+      borderColor: mode === 'dark' ? 'rgba(52,211,153,0.4)' : 'rgba(4,120,87,0.4)',
+      borderRadius: 18,
+      padding: spacing.md
+    },
+    detectedIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: mode === 'dark' ? 'rgba(52,211,153,0.15)' : 'rgba(4,120,87,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    detectedIcon: { fontSize: 20 },
+    detectedTextWrap: { flex: 1 },
+    detectedCity: { fontFamily: fonts.sansBold, color: c.text, fontSize: 16, fontWeight: '700' },
+    detectedSub: {
+      fontFamily: fonts.sansMedium,
+      color: c.textMuted,
+      fontSize: 12,
+      lineHeight: 17,
+      marginTop: 2
+    },
+    detectedTick: { color: c.success, fontSize: 20, fontWeight: '900', marginLeft: spacing.xs },
+    altLink: { alignSelf: 'center', marginTop: spacing.md },
+    altLinkText: { fontFamily: fonts.sansBold, color: c.textMuted, fontSize: 13, fontWeight: '700' },
+    hint: {
+      fontFamily: fonts.sansMedium,
+      color: c.textDim,
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: spacing.md
+    },
+    manualWrap: { marginTop: spacing.lg }
+  });

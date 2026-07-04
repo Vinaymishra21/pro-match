@@ -14,7 +14,9 @@ import { BlurView } from 'expo-blur';
 import { ProfessionBadge } from './ProfessionBadge';
 import { VerifiedTick } from './VerifiedTick';
 import { professionTheme } from '../theme/professionTheme';
-import { darkColors, darkRadius } from '../theme/darkColors';
+import { darkRadius } from '../theme/darkColors';
+import { useTheme, useThemedStyles, type ThemeMode } from '../theme/ThemeProvider';
+import type { ThemeColors } from '../theme/themes';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import type { DiscoverProfile } from '../types';
@@ -37,6 +39,8 @@ export function ProfileDetailModal({
   onLike: () => void;
   onPass: () => void;
 }) {
+  const { colors, mode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   if (!profile) return null;
   const theme = professionTheme(profile.profession);
   const accent = theme.accent;
@@ -71,8 +75,8 @@ export function ProfileDetailModal({
       <Pressable style={styles.backdrop} onPress={onClose} />
 
       <View style={styles.sheet}>
-        {/* dark gradient base + profession-tinted glow */}
-        <LinearGradient colors={darkColors.bgGradient} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+        {/* themed gradient base + profession-tinted glow */}
+        <LinearGradient colors={colors.bgGradient} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
 
         {/* Grab handle (contrasting pill) */}
         <View style={styles.handle} />
@@ -95,7 +99,13 @@ export function ProfileDetailModal({
             ) : null}
 
             <LinearGradient
-              colors={['transparent', 'rgba(14,11,20,0.5)', 'rgba(14,11,20,0.98)']}
+              // The photo must fade INTO the sheet base: night ink in dark,
+              // cream (#FAF6F0) in light — the overlay text flips with it.
+              colors={
+                mode === 'dark'
+                  ? ['transparent', 'rgba(14,11,20,0.5)', 'rgba(14,11,20,0.98)']
+                  : ['transparent', 'rgba(250,246,240,0.5)', 'rgba(250,246,240,0.98)']
+              }
               style={styles.heroOverlay}
             >
               <ProfessionBadge profession={profile.profession} verified={profile.professionVerified} />
@@ -150,7 +160,9 @@ export function ProfileDetailModal({
                 <View style={styles.chipWrap}>
                   {interests.map((it) => (
                     <View key={it} style={[styles.chip, { borderColor: accent + '66', backgroundColor: accent + '1f' }]}>
-                      <Text style={[styles.chipText, { color: '#fff' }]}>{it}</Text>
+                      {/* The accent wash is translucent over the theme bg, so the
+                          label follows the theme (white was dark-only). */}
+                      <Text style={[styles.chipText, { color: mode === 'dark' ? '#fff' : colors.text }]}>{it}</Text>
                     </View>
                   ))}
                 </View>
@@ -186,8 +198,8 @@ export function ProfileDetailModal({
           </View>
         </ScrollView>
 
-        {/* Sticky action bar */}
-        <BlurView intensity={30} tint="dark" style={styles.actions}>
+        {/* Sticky action bar — blur tint follows the theme */}
+        <BlurView intensity={30} tint={mode === 'dark' ? 'dark' : 'light'} style={styles.actions}>
           <Pressable style={[styles.actionBtn, styles.passBtn]} onPress={() => act(onPass)}>
             <Text style={styles.passIcon}>✕</Text>
           </Pressable>
@@ -206,6 +218,7 @@ export function ProfileDetailModal({
 }
 
 function Section({ title, accent, children }: { title: string; accent: string; children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -223,10 +236,12 @@ function Section({ title, accent, children }: { title: string; accent: string; c
 }
 
 function Card({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.glassCard}>{children}</View>;
 }
 
 function Row({ icon, label, value }: { icon: string; label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.row}>
       <Text style={styles.rowIcon}>{icon}</Text>
@@ -239,6 +254,7 @@ function Row({ icon, label, value }: { icon: string; label: string; value: strin
 }
 
 function PromptCard({ prompt, accent }: { prompt: { prompt: string; answer: string }; accent: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.promptCard}>
       <LinearGradient colors={[accent, accent + '44']} style={styles.promptBar} />
@@ -250,156 +266,163 @@ function PromptCard({ prompt, accent }: { prompt: { prompt: string; answer: stri
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: SHEET_HEIGHT,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    overflow: 'hidden',
-    backgroundColor: darkColors.bg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 18
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 44,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-    marginTop: spacing.sm,
-    position: 'absolute',
-    top: 0,
-    zIndex: 10
-  },
-  sheetInner: { flex: 1 },
-  scroll: { paddingBottom: spacing.lg },
-  hero: {
-    width,
-    height: width * 1.12,
-    backgroundColor: darkColors.card,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    overflow: 'hidden'
-  },
-  heroImg: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  heroEmoji: { fontSize: 130, opacity: 0.6 },
-  countPill: {
-    position: 'absolute',
-    top: spacing.lg,
-    right: spacing.lg,
-    borderRadius: darkRadius.pill,
-    overflow: 'hidden',
-    paddingHorizontal: 12,
-    paddingVertical: 6
-  },
-  countText: { color: darkColors.white, fontSize: 12, fontWeight: '800' },
-  heroOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: spacing.lg,
-    paddingTop: spacing.xxl + spacing.lg,
-    gap: 6
-  },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  name: { color: darkColors.white, fontSize: 32, fontWeight: '900', letterSpacing: -0.6 },
-  headline: { color: 'rgba(255,255,255,0.92)', fontSize: 15, fontWeight: '700' },
-  location: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600', marginTop: 2 },
-  body: { padding: spacing.lg, paddingTop: spacing.xl },
-  section: { marginBottom: spacing.xl },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm },
-  sectionTick: { width: 18, height: 4, borderRadius: 2 },
-  sectionTitle: {
-    ...typography.caption,
-    color: darkColors.textMuted,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    fontSize: 11
-  },
-  bodyText: { ...typography.body, color: darkColors.textDim, lineHeight: 23, fontWeight: '500' },
-  glassCard: {
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    borderRadius: darkRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs
-  },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9 },
-  rowIcon: { fontSize: 16, width: 28 },
-  rowLabel: { ...typography.caption, color: darkColors.textMuted, fontWeight: '700', width: 100, fontSize: 13 },
-  rowValue: { ...typography.body, color: darkColors.text, fontWeight: '700', flex: 1, fontSize: 14 },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: { borderWidth: 1, borderRadius: darkRadius.pill, paddingHorizontal: 14, paddingVertical: 9 },
-  chipText: { ...typography.caption, fontWeight: '700', fontSize: 13 },
-  promptCard: {
-    flexDirection: 'row',
-    backgroundColor: darkColors.card,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    borderRadius: darkRadius.xl,
-    marginBottom: spacing.md,
-    overflow: 'hidden'
-  },
-  promptBar: { width: 5 },
-  promptInner: { flex: 1, padding: spacing.md },
-  promptQ: { ...typography.caption, color: darkColors.textMuted, fontWeight: '800', marginBottom: 6, fontSize: 12 },
-  promptA: { ...typography.subtitle, color: darkColors.text, fontWeight: '700', lineHeight: 26 },
-  galleryImg: {
-    width: '100%',
-    height: width * 1.05,
-    borderRadius: darkRadius.xl,
-    marginBottom: spacing.sm,
-    backgroundColor: darkColors.card
-  },
-  actions: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingBottom: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: darkColors.border,
-    backgroundColor: 'rgba(14,11,20,0.85)'
-  },
-  actionBtn: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6
-  },
-  passBtn: { backgroundColor: darkColors.surfaceStrong, borderWidth: 1, borderColor: darkColors.borderStrong },
-  passIcon: { fontSize: 24, color: darkColors.textDim, fontWeight: '700' },
-  likeBtn: {},
-  likeIcon: { fontSize: 28, color: darkColors.white },
-  closeMid: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 11,
-    borderRadius: darkRadius.pill,
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border
-  },
-  closeMidText: { ...typography.caption, color: darkColors.textMuted, fontWeight: '800' }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+    sheet: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: SHEET_HEIGHT,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      overflow: 'hidden',
+      backgroundColor: c.bg,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: -8 },
+      shadowOpacity: 0.4,
+      shadowRadius: 24,
+      elevation: 18
+    },
+    // Handle sits ON the hero photo — keep the white pill in both modes.
+    handle: {
+      alignSelf: 'center',
+      width: 44,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: 'rgba(255,255,255,0.35)',
+      marginTop: spacing.sm,
+      position: 'absolute',
+      top: 0,
+      zIndex: 10
+    },
+    sheetInner: { flex: 1 },
+    scroll: { paddingBottom: spacing.lg },
+    hero: {
+      width,
+      height: width * 1.12,
+      backgroundColor: c.card,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      overflow: 'hidden'
+    },
+    heroImg: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+    heroEmoji: { fontSize: 130, opacity: 0.6 },
+    countPill: {
+      position: 'absolute',
+      top: spacing.lg,
+      right: spacing.lg,
+      borderRadius: darkRadius.pill,
+      overflow: 'hidden',
+      paddingHorizontal: 12,
+      paddingVertical: 6
+    },
+    // On the dark-tinted blur over the photo — white in both modes.
+    countText: { color: c.white, fontSize: 12, fontWeight: '800' },
+    heroOverlay: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      padding: spacing.lg,
+      paddingTop: spacing.xxl + spacing.lg,
+      gap: 6
+    },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+    // Hero text sits on the mode-matched fade (night ink / cream), so it flips
+    // with the theme: white tiers in dark, ink tiers in light.
+    name: { color: mode === 'dark' ? c.white : c.text, fontSize: 32, fontWeight: '900', letterSpacing: -0.6 },
+    headline: { color: mode === 'dark' ? 'rgba(255,255,255,0.92)' : c.textDim, fontSize: 15, fontWeight: '700' },
+    location: { color: mode === 'dark' ? 'rgba(255,255,255,0.7)' : c.textMuted, fontSize: 13, fontWeight: '600', marginTop: 2 },
+    body: { padding: spacing.lg, paddingTop: spacing.xl },
+    section: { marginBottom: spacing.xl },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm },
+    sectionTick: { width: 18, height: 4, borderRadius: 2 },
+    sectionTitle: {
+      ...typography.caption,
+      color: c.textMuted,
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      fontSize: 11
+    },
+    bodyText: { ...typography.body, color: c.textDim, lineHeight: 23, fontWeight: '500' },
+    glassCard: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: darkRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs
+    },
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9 },
+    rowIcon: { fontSize: 16, width: 28 },
+    rowLabel: { ...typography.caption, color: c.textMuted, fontWeight: '700', width: 100, fontSize: 13 },
+    rowValue: { ...typography.body, color: c.text, fontWeight: '700', flex: 1, fontSize: 14 },
+    chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    chip: { borderWidth: 1, borderRadius: darkRadius.pill, paddingHorizontal: 14, paddingVertical: 9 },
+    chipText: { ...typography.caption, fontWeight: '700', fontSize: 13 },
+    promptCard: {
+      flexDirection: 'row',
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: darkRadius.xl,
+      marginBottom: spacing.md,
+      overflow: 'hidden'
+    },
+    promptBar: { width: 5 },
+    promptInner: { flex: 1, padding: spacing.md },
+    promptQ: { ...typography.caption, color: c.textMuted, fontWeight: '800', marginBottom: 6, fontSize: 12 },
+    promptA: { ...typography.subtitle, color: c.text, fontWeight: '700', lineHeight: 26 },
+    galleryImg: {
+      width: '100%',
+      height: width * 1.05,
+      borderRadius: darkRadius.xl,
+      marginBottom: spacing.sm,
+      backgroundColor: c.card
+    },
+    // The blur wash must match the sheet base: night ink in dark, cream in light.
+    actions: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: spacing.lg,
+      paddingVertical: spacing.md,
+      paddingBottom: spacing.xl,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+      backgroundColor: mode === 'dark' ? 'rgba(14,11,20,0.85)' : 'rgba(250,246,240,0.85)'
+    },
+    actionBtn: {
+      width: 62,
+      height: 62,
+      borderRadius: 31,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.4,
+      shadowRadius: 12,
+      elevation: 6
+    },
+    passBtn: { backgroundColor: c.surfaceStrong, borderWidth: 1, borderColor: c.borderStrong },
+    passIcon: { fontSize: 24, color: c.textDim, fontWeight: '700' },
+    likeBtn: {},
+    // White on the profession gradient — correct in both modes.
+    likeIcon: { fontSize: 28, color: c.white },
+    closeMid: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: 11,
+      borderRadius: darkRadius.pill,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border
+    },
+    closeMidText: { ...typography.caption, color: c.textMuted, fontWeight: '800' }
+  });

@@ -3,7 +3,8 @@ import React, { useMemo, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, Alert, Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { uploadPhoto } from '../../../services/apiService';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useTheme, useThemedStyles } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -22,6 +23,8 @@ function getPhotoScore(asset) {
 }
 
 function PhotoTile({ photo, index, selected, isHero, uploading, onPress, onLongPress, onRemove }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
@@ -95,6 +98,7 @@ function PhotoTile({ photo, index, selected, isHero, uploading, onPress, onLongP
 }
 
 export function ProfilePhotoGallery({ photos = [], onChange, token }) {
+  const styles = useThemedStyles(makeStyles);
   const normalized = useMemo(() => {
     const copy = [...photos];
     while (copy.length < MAX_PHOTOS) {
@@ -292,7 +296,7 @@ export function ProfilePhotoGallery({ photos = [], onChange, token }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   heroTileWrap: {
     marginBottom: spacing.sm
   },
@@ -301,8 +305,8 @@ const styles = StyleSheet.create({
     aspectRatio: 0.85,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: colors.border,
-    backgroundColor: colors.inputBg,
+    borderColor: c.border,
+    backgroundColor: c.inputBg,
     overflow: 'hidden'
   },
   tileWrap: {
@@ -314,12 +318,12 @@ const styles = StyleSheet.create({
     aspectRatio: 0.75,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.inputBg,
+    borderColor: c.border,
+    backgroundColor: c.inputBg,
     overflow: 'hidden'
   },
   tileSelected: {
-    borderColor: colors.primary,
+    borderColor: c.primary,
     borderWidth: 2.5
   },
   image: {
@@ -336,7 +340,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4
   },
   heroBadgeText: {
-    color: colors.white,
+    color: c.white,
     fontSize: 12,
     fontWeight: '700'
   },
@@ -349,9 +353,9 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
     borderWidth: 2,
-    borderColor: colors.white
+    borderColor: c.white
   },
   emptySlot: {
     flex: 1,
@@ -366,7 +370,7 @@ const styles = StyleSheet.create({
   },
   uploadingText: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontSize: 11
   },
   plusCircle: {
@@ -375,7 +379,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: 'rgba(232,65,90,0.18)',
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: c.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6
@@ -383,14 +387,14 @@ const styles = StyleSheet.create({
   plusText: {
     fontSize: 24,
     lineHeight: 26,
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '900',
     includeFontPadding: false,
     textAlign: 'center'
   },
   slotLabel: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontSize: 11,
     textAlign: 'center'
   },
@@ -402,7 +406,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontSize: 11,
     flex: 1
   },
@@ -420,10 +424,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderWidth: 1
   },
-  countPillOk: { backgroundColor: 'rgba(42,157,143,0.12)', borderColor: colors.secondary },
+  countPillOk: { backgroundColor: 'rgba(42,157,143,0.12)', borderColor: c.secondary },
   countPillWarn: { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' },
   countText: { fontSize: 11, fontWeight: '800' },
-  countTextOk: { color: colors.secondary },
+  countTextOk: { color: c.secondary },
   countTextWarn: { color: '#B45309' },
   removeBadge: {
     position: 'absolute',
@@ -437,7 +441,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   removeBadgeText: {
-    color: colors.white,
+    color: c.white,
     fontSize: 17,
     fontWeight: '800',
     lineHeight: 19,
@@ -452,24 +456,24 @@ const styles = StyleSheet.create({
   actionPill: {
     borderRadius: 999,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
+    borderColor: c.border,
+    backgroundColor: c.card,
     paddingHorizontal: spacing.md,
     paddingVertical: 8
   },
   actionPillPressed: {
-    backgroundColor: colors.inputBg,
-    borderColor: colors.primary
+    backgroundColor: c.inputBg,
+    borderColor: c.primary
   },
   actionText: {
     ...typography.caption,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700',
     fontSize: 13
   },
   clear: {
     ...typography.caption,
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '700',
     textAlign: 'center',
     marginTop: spacing.xs,
@@ -495,7 +499,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md
   },
   modalCloseText: {
-    color: colors.white,
+    color: c.white,
     fontWeight: '700'
   }
 });

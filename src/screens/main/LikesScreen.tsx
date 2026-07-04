@@ -25,7 +25,8 @@ import { getIncomingLikes, revealLiker } from '../../services/apiService';
 import { ApiError } from '../../services/apiClient';
 import { professionTheme } from '../../theme/professionTheme';
 import { gradients } from '../../theme/gradients';
-import { colorsDark as colors } from '../../theme/colorsDark';
+import { useTheme, useThemedStyles } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
 import type { IncomingLike, MainTabParamList, RootStackParamList } from '../../types';
@@ -46,6 +47,8 @@ function articleFor(word: string) {
 
 export function LikesScreen({ navigation }: Props) {
   const { token } = useAuth();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [likes, setLikes] = useState<IncomingLike[]>([]);
   const [isPro, setIsPro] = useState(false);
@@ -223,6 +226,8 @@ function LikeCard({
   revealCost: number;
   onReveal: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const theme = professionTheme(like.profession);
   const isSuper = Boolean(like.superLike);
 
@@ -298,134 +303,141 @@ function LikeCard({
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  header: { marginBottom: spacing.lg },
-  kicker: {
-    ...typography.eyebrow,
-    color: colors.primary,
-    marginBottom: 4
-  },
-  title: {
-    fontFamily: fonts.displayBold,
-    fontSize: 30,
-    lineHeight: 38,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.5,
-    marginBottom: spacing.sm
-  },
-  creditChip: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 7
-  },
-  proChip: {
-    backgroundColor: 'rgba(251,191,36,0.15)',
-    borderColor: 'rgba(251,191,36,0.5)'
-  },
-  creditChipText: { fontWeight: '800', color: colors.text, fontSize: 13 },
-  upsell: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    elevation: 5
-  },
-  upsellTitle: { color: '#3A2A00', fontWeight: '900', fontSize: 16 },
-  upsellSub: { color: '#5C4500', fontWeight: '600', fontSize: 13, marginTop: 2 },
-  upsellArrow: { color: '#3A2A00', fontSize: 24, fontWeight: '900', marginLeft: spacing.sm },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: COLUMN_GAP
-  },
-  card: {
-    width: CARD_WIDTH,
-    aspectRatio: 0.74,
-    borderRadius: 22,
-    overflow: 'hidden',
-    backgroundColor: colors.card,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4
-  },
-  cardSuper: { borderWidth: 2, borderColor: colors.gold },
-  superRibbon: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: colors.gold,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    zIndex: 5
-  },
-  superRibbonText: { color: '#1A1206', fontWeight: '900', fontSize: 10, letterSpacing: 0.5 },
-  mystery: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  mysteryEmoji: { fontSize: 64, opacity: 0.5 },
-  avatarLetter: { fontSize: 56, fontWeight: '900', color: 'rgba(255,255,255,0.85)' },
-  lockOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.sm
-  },
-  lockIcon: { fontSize: 26, marginBottom: 6 },
-  lockTeaser: {
-    color: colors.text,
-    fontWeight: '800',
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: spacing.sm
-  },
-  crossTag: {
-    backgroundColor: 'rgba(129,140,248,0.28)',
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginBottom: spacing.sm
-  },
-  crossTagText: { color: '#C7D2FE', fontWeight: '800', fontSize: 10, letterSpacing: 0.3 },
-  revealBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8
-  },
-  revealBtnText: { color: colors.white, fontWeight: '800', fontSize: 12 },
-  captionFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: spacing.sm,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.sm
-  },
-  cardName: { color: colors.white, fontWeight: '900', fontSize: 16 },
-  cardProfRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  cardProfEmoji: { fontSize: 12, marginRight: 4 },
-  cardProf: { color: 'rgba(255,255,255,0.9)', fontWeight: '700', fontSize: 12, flex: 1 },
-  center: { paddingVertical: spacing.xxl, alignItems: 'center' },
-  empty: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.lg
-  },
-  emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
-  emptyTitle: { ...typography.subtitle, fontWeight: '900', color: colors.text, marginBottom: spacing.xs },
-  emptyText: { ...typography.caption, color: colors.textMuted, textAlign: 'center', lineHeight: 20 }
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
+    header: { marginBottom: spacing.lg },
+    kicker: {
+      ...typography.eyebrow,
+      color: c.primary,
+      marginBottom: 4
+    },
+    title: {
+      fontFamily: fonts.displayBold,
+      fontSize: 30,
+      lineHeight: 38,
+      fontWeight: '700',
+      color: c.text,
+      letterSpacing: -0.5,
+      marginBottom: spacing.sm
+    },
+    creditChip: {
+      alignSelf: 'flex-start',
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 7
+    },
+    proChip: {
+      backgroundColor: 'rgba(251,191,36,0.15)',
+      borderColor: 'rgba(251,191,36,0.5)'
+    },
+    creditChipText: { fontWeight: '800', color: c.text, fontSize: 13 },
+    // Gold banner keeps its own on-gradient palette (dark-amber text, gold glow).
+    upsell: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 20,
+      padding: spacing.md,
+      marginBottom: spacing.lg,
+      shadowColor: '#F59E0B',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 14,
+      elevation: 5
+    },
+    upsellTitle: { color: '#3A2A00', fontWeight: '900', fontSize: 16 },
+    upsellSub: { color: '#5C4500', fontWeight: '600', fontSize: 13, marginTop: 2 },
+    upsellArrow: { color: '#3A2A00', fontSize: 24, fontWeight: '900', marginLeft: spacing.sm },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      rowGap: COLUMN_GAP
+    },
+    card: {
+      width: CARD_WIDTH,
+      aspectRatio: 0.74,
+      borderRadius: 22,
+      overflow: 'hidden',
+      backgroundColor: c.card,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      elevation: 4
+    },
+    cardSuper: { borderWidth: 2, borderColor: c.gold },
+    // Ribbon sits ON the photo/gradient card — keep the bright gold + dark text
+    // pairing byte-identical in both modes ('#FBBF24' = dark palette's gold).
+    superRibbon: {
+      position: 'absolute',
+      top: 10,
+      left: 10,
+      backgroundColor: '#FBBF24',
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      zIndex: 5
+    },
+    superRibbonText: { color: '#1A1206', fontWeight: '900', fontSize: 10, letterSpacing: 0.5 },
+    mystery: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    mysteryEmoji: { fontSize: 64, opacity: 0.5 },
+    avatarLetter: { fontSize: 56, fontWeight: '900', color: 'rgba(255,255,255,0.85)' },
+    lockOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.sm
+    },
+    lockIcon: { fontSize: 26, marginBottom: 6 },
+    // Sits inside the dark-tinted BlurView over the gradient card — stays white
+    // in both modes (dark palette's text === white).
+    lockTeaser: {
+      color: c.white,
+      fontWeight: '800',
+      fontSize: 13,
+      textAlign: 'center',
+      marginBottom: spacing.sm
+    },
+    crossTag: {
+      backgroundColor: 'rgba(129,140,248,0.28)',
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      marginBottom: spacing.sm
+    },
+    crossTagText: { color: '#C7D2FE', fontWeight: '800', fontSize: 10, letterSpacing: 0.3 },
+    revealBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 8
+    },
+    revealBtnText: { color: c.white, fontWeight: '800', fontSize: 12 },
+    captionFade: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      paddingHorizontal: spacing.sm,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.sm
+    },
+    // On the photo's dark fade — white in both modes.
+    cardName: { color: c.white, fontWeight: '900', fontSize: 16 },
+    cardProfRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+    cardProfEmoji: { fontSize: 12, marginRight: 4 },
+    cardProf: { color: 'rgba(255,255,255,0.9)', fontWeight: '700', fontSize: 12, flex: 1 },
+    center: { paddingVertical: spacing.xxl, alignItems: 'center' },
+    empty: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+      paddingHorizontal: spacing.lg
+    },
+    emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
+    emptyTitle: { ...typography.subtitle, fontWeight: '900', color: c.text, marginBottom: spacing.xs },
+    emptyText: { ...typography.caption, color: c.textMuted, textAlign: 'center', lineHeight: 20 }
+  });

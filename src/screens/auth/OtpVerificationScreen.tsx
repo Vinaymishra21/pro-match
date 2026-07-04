@@ -1,10 +1,10 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthShell, BackButton, Eyebrow, NextFab, authText } from '../../components/auth/AuthKit';
+import { AuthShell, BackButton, Eyebrow, NextFab, useAuthText } from '../../components/auth/AuthKit';
 import { useAuth } from '../../hooks/useAuth';
-import { darkColors } from '../../theme/darkColors';
+import { ThemedStatusBar, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import type { AuthStackParamList } from '../../types';
 
@@ -14,6 +14,8 @@ const LEN = 6;
 
 export function OtpVerificationScreen({ navigation, route }: Props) {
   const { verifyOtp } = useAuth();
+  const styles = useThemedStyles(makeStyles);
+  const authText = useAuthText();
   const { countryCode, phoneNumber } = route.params;
   const fullPhone = `${countryCode}${phoneNumber}`;
   const [otp, setOtp] = useState('');
@@ -40,7 +42,7 @@ export function OtpVerificationScreen({ navigation, route }: Props) {
 
   return (
     <AuthShell>
-      <StatusBar style="light" />
+      <ThemedStatusBar />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
         <View>
           <BackButton onPress={() => navigation.goBack()} />
@@ -97,29 +99,31 @@ export function OtpVerificationScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'space-between' },
-  head: { marginTop: spacing.xl, marginBottom: spacing.xl },
-  phone: { color: darkColors.text, fontWeight: '800' },
-  cellsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.xs },
-  cell: {
-    flex: 1,
-    height: 60,
-    borderRadius: 14,
-    backgroundColor: darkColors.surface,
-    borderWidth: 1.5,
-    borderColor: darkColors.border,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  cellFilled: { borderColor: darkColors.primary, backgroundColor: 'rgba(232,65,90,0.12)' },
-  cellActive: { borderColor: darkColors.brandText },
-  cellText: { fontSize: 26, fontWeight: '800', color: darkColors.text },
-  hiddenInput: { position: 'absolute', opacity: 0, height: 1, width: 1 },
-  resend: { marginTop: spacing.lg, color: darkColors.textMuted, fontSize: 14, textAlign: 'center' },
-  resendLink: { color: darkColors.brandText, fontWeight: '800' },
-  footer: { gap: spacing.lg },
-  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  shield: { fontSize: 15 },
-  noteText: { flex: 1, fontSize: 13.5, lineHeight: 21, color: darkColors.textMuted }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    container: { flex: 1, justifyContent: 'space-between' },
+    head: { marginTop: spacing.xl, marginBottom: spacing.xl },
+    phone: { color: c.text, fontWeight: '800' },
+    cellsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.xs },
+    cell: {
+      flex: 1,
+      height: 60,
+      borderRadius: 14,
+      backgroundColor: c.surface,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    // Dark keeps the original 0.12 brand wash; light uses the palette's soft brand tint.
+    cellFilled: { borderColor: c.primary, backgroundColor: mode === 'dark' ? 'rgba(232,65,90,0.12)' : c.brandSoft },
+    cellActive: { borderColor: c.brandText },
+    cellText: { fontSize: 26, fontWeight: '800', color: c.text },
+    hiddenInput: { position: 'absolute', opacity: 0, height: 1, width: 1 },
+    resend: { marginTop: spacing.lg, color: c.textMuted, fontSize: 14, textAlign: 'center' },
+    resendLink: { color: c.brandText, fontWeight: '800' },
+    footer: { gap: spacing.lg },
+    noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+    shield: { fontSize: 15 },
+    noteText: { flex: 1, fontSize: 13.5, lineHeight: 21, color: c.textMuted }
+  });

@@ -1,7 +1,8 @@
 // @ts-nocheck
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useTheme, useThemedStyles } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -11,11 +12,15 @@ export function PromptField({
   title,
   hint,
   icon,
-  accentColor = colors.primary,
+  accentColor,
   value,
   onChangeText,
   placeholder
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  // Same default as before (colors.primary), resolved from the active theme.
+  const accent = accentColor ?? colors.primary;
   const scale = useRef(new Animated.Value(1)).current;
   const borderAnim = useRef(new Animated.Value(0)).current;
   const [isFocused, setIsFocused] = useState(false);
@@ -60,7 +65,7 @@ export function PromptField({
 
   const animatedBorderColor = borderAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.border, accentColor]
+    outputRange: [colors.border, accent]
   });
 
   function handleEmptyPress() {
@@ -74,24 +79,24 @@ export function PromptField({
   return (
     <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
       <Animated.View style={[styles.cardBorder, { borderColor: animatedBorderColor }]}>
-        <View style={[styles.accentStrip, { backgroundColor: accentColor }]} />
+        <View style={[styles.accentStrip, { backgroundColor: accent }]} />
 
         <View style={styles.inner}>
           <View style={styles.headerRow}>
             {icon ? (
-              <View style={[styles.iconCircle, { backgroundColor: accentColor + '18' }]}>
+              <View style={[styles.iconCircle, { backgroundColor: accent + '18' }]}>
                 <Text style={styles.iconEmoji}>{icon}</Text>
               </View>
             ) : null}
             <View style={styles.headerText}>
               <Text style={styles.title}>{title}</Text>
-              {hint ? <Text style={[styles.hint, { color: accentColor }]}>{hint}</Text> : null}
+              {hint ? <Text style={[styles.hint, { color: accent }]}>{hint}</Text> : null}
             </View>
           </View>
 
           {!filled && !isFocused ? (
-            <Pressable onPress={handleEmptyPress} style={[styles.emptyState, { borderColor: accentColor + '40' }]}>
-              <Text style={[styles.emptyPlus, { color: accentColor }]}>+</Text>
+            <Pressable onPress={handleEmptyPress} style={[styles.emptyState, { borderColor: accent + '40' }]}>
+              <Text style={[styles.emptyPlus, { color: accent }]}>+</Text>
               <Text style={styles.emptyLabel}>Tap to answer</Text>
             </Pressable>
           ) : null}
@@ -125,7 +130,7 @@ export function PromptField({
                       styles.progressBarFill,
                       {
                         width: `${progress * 100}%`,
-                        backgroundColor: progress > 0.9 ? '#F4A261' : accentColor
+                        backgroundColor: progress > 0.9 ? '#F4A261' : accent
                       }
                     ]}
                   />
@@ -147,10 +152,10 @@ export function PromptField({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
     marginBottom: spacing.md,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -158,7 +163,7 @@ const styles = StyleSheet.create({
   },
   cardBorder: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: 16,
     borderWidth: 1.5,
     overflow: 'hidden'
@@ -191,7 +196,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.body,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700',
     fontSize: 15
   },
@@ -209,7 +214,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderRadius: 12,
-    backgroundColor: colors.inputBg
+    backgroundColor: c.inputBg
   },
   emptyPlus: {
     fontSize: 22,
@@ -218,7 +223,7 @@ const styles = StyleSheet.create({
   },
   emptyLabel: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '600'
   },
   inputWrap: {
@@ -227,7 +232,7 @@ const styles = StyleSheet.create({
   },
   openQuote: {
     fontSize: 28,
-    color: colors.border,
+    color: c.border,
     fontWeight: '700',
     lineHeight: 34,
     marginRight: 4,
@@ -237,7 +242,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 72,
     textAlignVertical: 'top',
-    color: colors.text,
+    color: c.text,
     fontSize: 15,
     lineHeight: 22,
     paddingTop: 4,
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontSize: 11,
     fontWeight: '600'
   }

@@ -7,7 +7,7 @@ import { DiscoverScreen } from '../screens/main/DiscoverScreen';
 import { LikesScreen } from '../screens/main/LikesScreen';
 import { MatchesScreen } from '../screens/main/MatchesScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
-import { colorsDark as colors } from '../theme/colorsDark';
+import { useTheme } from '../theme/ThemeProvider';
 import type { MainTabParamList } from '../types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -21,6 +21,7 @@ const tabIcon = {
 
 export function MainTabNavigator() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   // Sit the tab bar above the Android gesture/nav bar (and iPhone home bar).
   const bottomPad = Math.max(insets.bottom, 8);
 

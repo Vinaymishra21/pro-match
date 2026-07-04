@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { FieldLabel, authText } from '../../components/auth/AuthKit';
+import { FieldLabel, useAuthText } from '../../components/auth/AuthKit';
 import { OnboardingScaffold } from './OnboardingScaffold';
 import { TOTAL_STEPS, useOnboarding } from './OnboardingContext';
 import { ageFromDob } from '../../utils/onboarding';
-import { darkColors } from '../../theme/darkColors';
+import { useTheme, useThemedStyles } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 
 // Builds a Date from D/M/Y only if it's a real calendar date (rejects 31 Feb etc).
@@ -20,6 +21,9 @@ function buildDate(d: string, m: string, y: string): Date | null {
 
 export function DobScreen({ navigation }: any) {
   const { draft, persist } = useOnboarding();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const authText = useAuthText();
   const initial = draft.dob ? new Date(draft.dob) : null;
   const [day, setDay] = useState(initial ? String(initial.getDate()) : '');
   const [month, setMonth] = useState(initial ? String(initial.getMonth() + 1) : '');
@@ -80,7 +84,7 @@ export function DobScreen({ navigation }: any) {
             if (v.length === 2) monthRef.current?.focus();
           }}
           placeholder="DD"
-          placeholderTextColor={darkColors.textFaint}
+          placeholderTextColor={colors.textFaint}
           keyboardType="number-pad"
           style={[styles.cell, styles.cellSm]}
           maxLength={2}
@@ -94,7 +98,7 @@ export function DobScreen({ navigation }: any) {
             if (v.length === 2) yearRef.current?.focus();
           }}
           placeholder="MM"
-          placeholderTextColor={darkColors.textFaint}
+          placeholderTextColor={colors.textFaint}
           keyboardType="number-pad"
           style={[styles.cell, styles.cellSm]}
           maxLength={2}
@@ -104,7 +108,7 @@ export function DobScreen({ navigation }: any) {
           value={year}
           onChangeText={(t) => setYear(t.replace(/\D/g, '').slice(0, 4))}
           placeholder="YYYY"
-          placeholderTextColor={darkColors.textFaint}
+          placeholderTextColor={colors.textFaint}
           keyboardType="number-pad"
           style={[styles.cell, styles.cellLg]}
           maxLength={4}
@@ -116,20 +120,21 @@ export function DobScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: spacing.sm },
-  cell: {
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    borderRadius: 16,
-    paddingVertical: 16,
-    color: darkColors.text,
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center'
-  },
-  cellSm: { width: 74 },
-  cellLg: { flex: 1 },
-  ageHint: { color: darkColors.brandText, fontWeight: '800', fontSize: 14, marginTop: spacing.md }
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    row: { flexDirection: 'row', gap: spacing.sm },
+    cell: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      paddingVertical: 16,
+      color: c.text,
+      fontSize: 20,
+      fontWeight: '800',
+      textAlign: 'center'
+    },
+    cellSm: { width: 74 },
+    cellLg: { flex: 1 },
+    ageHint: { color: c.brandText, fontWeight: '800', fontSize: 14, marginTop: spacing.md }
+  });

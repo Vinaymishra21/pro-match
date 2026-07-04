@@ -11,11 +11,11 @@ import {
   View,
   type TextInputProps
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
-import { darkColors } from '../../theme/darkColors';
+import { ThemedStatusBar, useTheme, useThemedStyles } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts } from '../../theme/typography';
 
@@ -50,6 +50,8 @@ export function OnboardingScaffold({
   scroll?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const topPad = Math.max(insets.top, Platform.OS === 'android' ? 28 : 0);
   const progress = Math.min(1, Math.max(0, step / total));
 
@@ -57,7 +59,7 @@ export function OnboardingScaffold({
 
   return (
     <DarkBackground>
-      <StatusBar style="light" />
+      <ThemedStatusBar />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={[styles.root, { paddingTop: topPad + spacing.sm }]}
@@ -98,7 +100,7 @@ export function OnboardingScaffold({
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
           <Pressable onPress={onNext} disabled={nextDisabled || loading}>
             <LinearGradient
-              colors={darkColors.brandGradient}
+              colors={colors.brandGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[styles.cta, nextDisabled ? styles.ctaDisabled : null]}
@@ -112,78 +114,82 @@ export function OnboardingScaffold({
   );
 }
 
-// Dark glass text input used across the steps.
+// Themed glass text input used across the steps.
 export function OnbInput(props: TextInputProps) {
-  return <TextInput placeholderTextColor={darkColors.textFaint} {...props} style={[styles.input, props.style]} />;
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  return <TextInput placeholderTextColor={colors.textFaint} {...props} style={[styles.input, props.style]} />;
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: spacing.lg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg },
-  iconBtn: { width: 44, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  backIcon: {
-    fontSize: 24,
-    lineHeight: 40,
-    color: darkColors.text,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false
-  },
-  progressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3, backgroundColor: darkColors.primary },
-  skipBtn: { width: 44, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
-  skipText: { fontFamily: fonts.sansBold, color: darkColors.textMuted, fontSize: 14, fontWeight: '700' },
-  body: { flex: 1 },
-  bodyContent: { paddingBottom: spacing.xl },
-  stepLabel: {
-    fontFamily: fonts.sansExtraBold,
-    color: darkColors.brandText,
-    fontWeight: '800',
-    fontSize: 11,
-    lineHeight: 15,
-    letterSpacing: 1.6
-  },
-  title: {
-    fontFamily: fonts.displayBold,
-    fontSize: 30,
-    fontWeight: '700',
-    color: darkColors.text,
-    letterSpacing: -0.5,
-    marginTop: 6,
-    lineHeight: 38
-  },
-  subtitle: {
-    fontFamily: fonts.sans,
-    color: darkColors.textMuted,
-    fontSize: 15,
-    letterSpacing: 0.1,
-    marginTop: spacing.sm,
-    lineHeight: 22
-  },
-  content: { marginTop: spacing.xl },
-  input: {
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 16,
-    color: darkColors.text,
-    fontSize: 16,
-    fontFamily: fonts.sans
-  },
-  footer: { paddingTop: spacing.sm },
-  cta: {
-    height: 56,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: darkColors.primary,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 8
-  },
-  ctaDisabled: { opacity: 0.4 },
-  ctaText: { fontFamily: fonts.sansExtraBold, color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 }
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    root: { flex: 1, paddingHorizontal: spacing.lg },
+    header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg },
+    iconBtn: { width: 44, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
+    backIcon: {
+      fontSize: 24,
+      lineHeight: 40,
+      color: c.text,
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false
+    },
+    // Track color == c.border (dark value is the same rgba(255,255,255,0.1) literal).
+    progressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: c.border, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 3, backgroundColor: c.primary },
+    skipBtn: { width: 44, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
+    skipText: { fontFamily: fonts.sansBold, color: c.textMuted, fontSize: 14, fontWeight: '700' },
+    body: { flex: 1 },
+    bodyContent: { paddingBottom: spacing.xl },
+    stepLabel: {
+      fontFamily: fonts.sansExtraBold,
+      color: c.brandText,
+      fontWeight: '800',
+      fontSize: 11,
+      lineHeight: 15,
+      letterSpacing: 1.6
+    },
+    title: {
+      fontFamily: fonts.displayBold,
+      fontSize: 30,
+      fontWeight: '700',
+      color: c.text,
+      letterSpacing: -0.5,
+      marginTop: 6,
+      lineHeight: 38
+    },
+    subtitle: {
+      fontFamily: fonts.sans,
+      color: c.textMuted,
+      fontSize: 15,
+      letterSpacing: 0.1,
+      marginTop: spacing.sm,
+      lineHeight: 22
+    },
+    content: { marginTop: spacing.xl },
+    input: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 16,
+      color: c.text,
+      fontSize: 16,
+      fontFamily: fonts.sans
+    },
+    footer: { paddingTop: spacing.sm },
+    cta: {
+      height: 56,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: c.primary,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.5,
+      shadowRadius: 20,
+      elevation: 8
+    },
+    ctaDisabled: { opacity: 0.4 },
+    ctaText: { fontFamily: fonts.sansExtraBold, color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 }
+  });

@@ -32,7 +32,8 @@ import { buildProfileForm, parseInterestInput } from '../../features/profile/pro
 import { useAuth } from '../../hooks/useAuth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { updateProfile } from '../../services/apiService';
-import { colorsDark as colors } from '../../theme/colorsDark';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { professionTheme } from '../../theme/professionTheme';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
@@ -40,6 +41,8 @@ import { fonts, typography } from '../../theme/typography';
 // Dark text input matching the new design (used in place of the shared AppInput,
 // which is light-themed and shared with Chat/Auth).
 function DarkInput({ value, onChangeText, placeholder, style, ...rest }) {
+  const { colors } = useTheme();
+  const inputStyles = useThemedStyles(makeInputStyles);
   return (
     <View style={[inputStyles.wrap, style?.minHeight ? { minHeight: style.minHeight } : null]}>
       <TextInput
@@ -54,23 +57,25 @@ function DarkInput({ value, onChangeText, placeholder, style, ...rest }) {
   );
 }
 
-const inputStyles = StyleSheet.create({
-  wrap: { marginBottom: spacing.sm },
-  input: {
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600'
-  }
-});
+const makeInputStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: { marginBottom: spacing.sm },
+    input: {
+      backgroundColor: c.inputBg,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 14,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 14,
+      color: c.text,
+      fontSize: 14,
+      fontWeight: '600'
+    }
+  });
 
 // Compact stepper-based age range picker. value = [] (no preference) or [min,max].
 function AgeRangePicker({ value, onChange }) {
+  const ageStyles = useThemedStyles(makeAgeStyles);
   const hasRange = Array.isArray(value) && value.length === 2;
   const min = hasRange ? value[0] : 22;
   const max = hasRange ? value[1] : 35;
@@ -116,39 +121,42 @@ function AgeRangePicker({ value, onChange }) {
   );
 }
 
-const ageStyles = StyleSheet.create({
-  enable: {
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    backgroundColor: 'rgba(232,65,90,0.12)'
-  },
-  enableText: { color: colors.secondary, fontWeight: '700', fontSize: 13 },
-  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
-  col: { alignItems: 'center' },
-  colLabel: { ...typography.caption, color: colors.textMuted, fontSize: 11, marginBottom: 4 },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  btn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  btnText: { fontSize: 18, fontWeight: '800', color: colors.text },
-  value: { fontSize: 16, fontWeight: '800', color: colors.text, minWidth: 26, textAlign: 'center' },
-  clear: { paddingBottom: 6, marginLeft: 'auto' },
-  clearText: { color: colors.textMuted, fontWeight: '700', fontSize: 12 }
-});
+const makeAgeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    enable: {
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      borderColor: c.primary,
+      borderRadius: 12,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      backgroundColor: 'rgba(232,65,90,0.12)'
+    },
+    enableText: { color: c.secondary, fontWeight: '700', fontSize: 13 },
+    wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
+    col: { alignItems: 'center' },
+    colLabel: { ...typography.caption, color: c.textMuted, fontSize: 11, marginBottom: 4 },
+    stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    btn: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: c.inputBg,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    btnText: { fontSize: 18, fontWeight: '800', color: c.text },
+    value: { fontSize: 16, fontWeight: '800', color: c.text, minWidth: 26, textAlign: 'center' },
+    clear: { paddingBottom: 6, marginLeft: 'auto' },
+    clearText: { color: c.textMuted, fontWeight: '700', fontSize: 12 }
+  });
 
 export function ProfileScreen() {
   const navigation = useNavigation<any>();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const topPad = Math.max(insets.top, Platform.OS === 'android' ? 24 : 0);
   const { user, token, updateLocalUser, signOut } = useAuth();
@@ -504,7 +512,7 @@ export function ProfileScreen() {
       <View style={[styles.stickySaveBar, { bottom: spacing.md + insets.bottom }]}>
         <Pressable onPress={handleSave} disabled={isSaving}>
           <LinearGradient
-            colors={['#E8415A', '#C0305F']}
+            colors={colors.brandGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.saveBtn, isSaving ? { opacity: 0.6 } : null]}
@@ -518,117 +526,121 @@ export function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, paddingHorizontal: spacing.lg },
-  saveBtn: {
-    height: 54,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#E8415A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    elevation: 8
-  },
-  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md
-  },
-  settingsBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.border
-  },
-  settingsIcon: { fontSize: 18, color: colors.text },
-  heading: {
-    ...typography.title,
-    fontFamily: fonts.displayBold,
-    fontWeight: '700',
-    color: colors.text
-  },
-  professionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4
-  },
-  professionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.secondary,
-    marginRight: 6
-  },
-  professionLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '600'
-  },
-  scrollContent: {
-    paddingBottom: 110
-  },
-  bioInput: {
-    minHeight: 100,
-    textAlignVertical: 'top'
-  },
-  fieldLabel: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-    marginTop: spacing.sm
-  },
-  // Extra breathing room when a label directly follows a chip group (chips
-  // have no bottom margin of their own, unlike inputs/dropdowns).
-  fieldLabelAfterChips: {
-    marginTop: spacing.lg
-  },
-  fieldHint: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontSize: 12,
-    marginBottom: spacing.xs
-  },
-  promptsSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    marginTop: spacing.xs
-  },
-  promptsSectionIcon: {
-    fontSize: 26,
-    marginRight: spacing.sm
-  },
-  promptsSectionTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    fontWeight: '800'
-  },
-  promptsSectionSub: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: 2
-  },
-  logout: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
-    color: '#FCA5A5',
-    textAlign: 'center',
-    fontWeight: '700',
-    fontSize: 15
-  },
-  stickySaveBar: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
-    bottom: spacing.md
-  }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    screen: { flex: 1, paddingHorizontal: spacing.lg },
+    saveBtn: {
+      height: 54,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#E8415A',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.45,
+      shadowRadius: 18,
+      elevation: 8
+    },
+    // White on the brand gradient — correct in both modes.
+    saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.md
+    },
+    settingsBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.inputBg,
+      borderWidth: 1,
+      borderColor: c.border
+    },
+    settingsIcon: { fontSize: 18, color: c.text },
+    heading: {
+      ...typography.title,
+      fontFamily: fonts.displayBold,
+      fontWeight: '700',
+      color: c.text
+    },
+    professionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4
+    },
+    professionDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: c.secondary,
+      marginRight: 6
+    },
+    professionLabel: {
+      ...typography.caption,
+      color: c.textMuted,
+      fontWeight: '600'
+    },
+    scrollContent: {
+      paddingBottom: 110
+    },
+    bioInput: {
+      minHeight: 100,
+      textAlignVertical: 'top'
+    },
+    fieldLabel: {
+      ...typography.caption,
+      color: c.text,
+      fontWeight: '700',
+      marginBottom: spacing.xs,
+      marginTop: spacing.sm
+    },
+    // Extra breathing room when a label directly follows a chip group (chips
+    // have no bottom margin of their own, unlike inputs/dropdowns).
+    fieldLabelAfterChips: {
+      marginTop: spacing.lg
+    },
+    fieldHint: {
+      ...typography.caption,
+      color: c.textMuted,
+      fontSize: 12,
+      marginBottom: spacing.xs
+    },
+    promptsSectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+      marginTop: spacing.xs
+    },
+    promptsSectionIcon: {
+      fontSize: 26,
+      marginRight: spacing.sm
+    },
+    promptsSectionTitle: {
+      ...typography.subtitle,
+      color: c.text,
+      fontWeight: '800'
+    },
+    promptsSectionSub: {
+      ...typography.caption,
+      color: c.textMuted,
+      marginTop: 2
+    },
+    // '#FCA5A5' predates the theme system; keep it byte-identical in dark,
+    // use the palette's AA-checked danger tone in light.
+    logout: {
+      marginTop: spacing.xl,
+      marginBottom: spacing.md,
+      color: mode === 'dark' ? '#FCA5A5' : c.danger,
+      textAlign: 'center',
+      fontWeight: '700',
+      fontSize: 15
+    },
+    stickySaveBar: {
+      position: 'absolute',
+      left: spacing.lg,
+      right: spacing.lg,
+      bottom: spacing.md
+    }
+  });

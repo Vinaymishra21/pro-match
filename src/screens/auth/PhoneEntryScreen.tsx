@@ -11,12 +11,12 @@ import {
   TextInput,
   View
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthShell, BackButton, Eyebrow, FieldLabel, NextFab, authText } from '../../components/auth/AuthKit';
+import { AuthShell, BackButton, Eyebrow, FieldLabel, NextFab, useAuthText } from '../../components/auth/AuthKit';
 import { COUNTRY_CODES, type CountryCodeOption } from '../../constants/countryCodes';
 import { useAuth } from '../../hooks/useAuth';
-import { darkColors } from '../../theme/darkColors';
+import { ThemedStatusBar, useTheme, useThemedStyles } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import type { AuthStackParamList } from '../../types';
 
@@ -24,6 +24,9 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'PhoneEntry'>;
 
 export function PhoneEntryScreen({ navigation }: Props) {
   const { requestOtp } = useAuth();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const authText = useAuthText();
   const [countryCode, setCountryCode] = useState<CountryCodeOption>({ code: '+91', country: 'India' });
   const [phoneNumber, setPhoneNumber] = useState('');
   const [query, setQuery] = useState('');
@@ -60,7 +63,7 @@ export function PhoneEntryScreen({ navigation }: Props) {
 
   return (
     <AuthShell>
-      <StatusBar style="light" />
+      <ThemedStatusBar />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 24}
@@ -89,7 +92,7 @@ export function PhoneEntryScreen({ navigation }: Props) {
                   onChangeText={(next) => setPhoneNumber(next.replace(/\D/g, ''))}
                   keyboardType="phone-pad"
                   placeholder="00000 00000"
-                  placeholderTextColor={darkColors.textFaint}
+                  placeholderTextColor={colors.textFaint}
                   style={styles.phoneInput}
                   returnKeyType="done"
                 />
@@ -124,7 +127,7 @@ export function PhoneEntryScreen({ navigation }: Props) {
               value={query}
               onChangeText={setQuery}
               placeholder="Search country or code"
-              placeholderTextColor={darkColors.textFaint}
+              placeholderTextColor={colors.textFaint}
               style={styles.searchInput}
               autoCapitalize="none"
               autoCorrect={false}
@@ -160,75 +163,76 @@ export function PhoneEntryScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  kb: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'space-between', paddingBottom: spacing.lg },
-  head: { marginTop: spacing.xl, marginBottom: spacing.xl },
-  inputRow: { flexDirection: 'row', gap: spacing.sm },
-  countryBtn: {
-    width: 120,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    justifyContent: 'center'
-  },
-  countryCode: { fontSize: 18, fontWeight: '800', color: darkColors.text },
-  countryName: { fontSize: 12, color: darkColors.textMuted, marginTop: 3 },
-  countryChevron: { position: 'absolute', top: 14, right: 12, fontSize: 14, color: darkColors.textMuted, includeFontPadding: false },
-  phoneWrap: { flex: 1 },
-  phoneInput: {
-    height: 70,
-    borderRadius: 16,
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    paddingHorizontal: 18,
-    fontSize: 22,
-    fontWeight: '700',
-    color: darkColors.text
-  },
-  footer: { paddingTop: spacing.xl, gap: spacing.lg },
-  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  lock: { fontSize: 15 },
-  noteText: { flex: 1, fontSize: 13.5, lineHeight: 21, color: darkColors.textMuted },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  modalSheet: {
-    height: '78%',
-    backgroundColor: darkColors.card,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm
-  },
-  modalHandle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: darkColors.border, marginBottom: spacing.md },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  modalTitle: { fontSize: 20, fontWeight: '800', color: darkColors.text },
-  modalClose: { fontSize: 14, fontWeight: '700', color: darkColors.brandText },
-  searchInput: {
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    paddingHorizontal: spacing.md,
-    fontSize: 16,
-    color: darkColors.text,
-    marginBottom: spacing.md
-  },
-  optRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: darkColors.border
-  },
-  optRowActive: { backgroundColor: darkColors.surface },
-  optCountry: { fontSize: 16, fontWeight: '700', color: darkColors.text },
-  optCode: { marginTop: 2, fontSize: 13, color: darkColors.textMuted },
-  optCheck: { fontSize: 18, fontWeight: '800', color: darkColors.primary }
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    kb: { flex: 1 },
+    scroll: { flexGrow: 1, justifyContent: 'space-between', paddingBottom: spacing.lg },
+    head: { marginTop: spacing.xl, marginBottom: spacing.xl },
+    inputRow: { flexDirection: 'row', gap: spacing.sm },
+    countryBtn: {
+      width: 120,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      justifyContent: 'center'
+    },
+    countryCode: { fontSize: 18, fontWeight: '800', color: c.text },
+    countryName: { fontSize: 12, color: c.textMuted, marginTop: 3 },
+    countryChevron: { position: 'absolute', top: 14, right: 12, fontSize: 14, color: c.textMuted, includeFontPadding: false },
+    phoneWrap: { flex: 1 },
+    phoneInput: {
+      height: 70,
+      borderRadius: 16,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingHorizontal: 18,
+      fontSize: 22,
+      fontWeight: '700',
+      color: c.text
+    },
+    footer: { paddingTop: spacing.xl, gap: spacing.lg },
+    noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+    lock: { fontSize: 15 },
+    noteText: { flex: 1, fontSize: 13.5, lineHeight: 21, color: c.textMuted },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+    modalSheet: {
+      height: '78%',
+      backgroundColor: c.card,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm
+    },
+    modalHandle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: c.border, marginBottom: spacing.md },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: c.text },
+    modalClose: { fontSize: 14, fontWeight: '700', color: c.brandText },
+    searchInput: {
+      height: 52,
+      borderRadius: 14,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingHorizontal: spacing.md,
+      fontSize: 16,
+      color: c.text,
+      marginBottom: spacing.md
+    },
+    optRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      paddingHorizontal: 6,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border
+    },
+    optRowActive: { backgroundColor: c.surface },
+    optCountry: { fontSize: 16, fontWeight: '700', color: c.text },
+    optCode: { marginTop: 2, fontSize: 13, color: c.textMuted },
+    optCheck: { fontSize: 18, fontWeight: '800', color: c.primary }
+  });

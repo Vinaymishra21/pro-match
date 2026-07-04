@@ -2,11 +2,14 @@
 import React, { useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ChipSelector } from './ChipSelector';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
 function Row({ label, value, icon }) {
+  const styles = useThemedStyles(makeStyles);
+
   if (!value) {
     return null;
   }
@@ -23,6 +26,9 @@ function Row({ label, value, icon }) {
 }
 
 function PromptCard({ prompt, answer, accentColor, icon }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   if (!answer) {
     return null;
   }
@@ -49,6 +55,8 @@ function PromptCard({ prompt, answer, accentColor, icon }) {
 }
 
 export function ProfilePreview({ form, profession, verified }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const mainPhoto = form.photos?.[0];
   const interests = Array.isArray(form.interests) ? form.interests : [];
   const gallery = Array.isArray(form.photos) ? form.photos.filter(Boolean).slice(1) : [];
@@ -169,15 +177,15 @@ export function ProfilePreview({ form, profession, verified }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors, mode: ThemeMode) => StyleSheet.create({
   root: {
     gap: spacing.md
   },
   heroCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 22,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -191,14 +199,14 @@ const styles = StyleSheet.create({
     height: 240,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     paddingHorizontal: spacing.lg
   },
   placeholderIcon: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.inputBg,
+    backgroundColor: c.inputBg,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.sm
@@ -208,7 +216,7 @@ const styles = StyleSheet.create({
   },
   heroPlaceholderText: {
     ...typography.body,
-    color: colors.textMuted,
+    color: c.textMuted,
     textAlign: 'center'
   },
   overlay: {
@@ -217,39 +225,39 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 28,
     fontWeight: '800',
-    color: colors.text
+    color: c.text
   },
   professionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     marginTop: spacing.xs,
-    backgroundColor: 'rgba(232,65,90,0.15)',
+    backgroundColor: c.brandSoft,
     borderRadius: 999,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4
   },
   professionText: {
     ...typography.caption,
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '700'
   },
   verifiedTick: {
     ...typography.caption,
-    color: colors.secondary,
+    color: c.secondary,
     fontWeight: '900'
   },
   headline: {
     ...typography.body,
-    color: colors.textMuted,
+    color: c.textMuted,
     marginTop: spacing.xs,
     fontStyle: 'italic'
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: spacing.lg,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -257,13 +265,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     ...typography.subtitle,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700',
     marginBottom: spacing.sm
   },
   body: {
     ...typography.body,
-    color: colors.textMuted,
+    color: c.textMuted,
     lineHeight: 24
   },
   row: {
@@ -272,7 +280,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F4FA'
+    // Dark keeps the original hardcoded pale separator; light uses the ink border.
+    borderBottomColor: mode === 'dark' ? '#F0F4FA' : c.border
   },
   rowLeft: {
     flexDirection: 'row',
@@ -284,19 +293,19 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     ...typography.caption,
-    color: colors.textMuted
+    color: c.textMuted
   },
   rowValue: {
     ...typography.caption,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700'
   },
   promptCard: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
@@ -327,7 +336,7 @@ const styles = StyleSheet.create({
   },
   promptQuestion: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -340,7 +349,7 @@ const styles = StyleSheet.create({
   },
   promptOpenQuote: {
     fontSize: 26,
-    color: colors.border,
+    color: c.border,
     fontWeight: '700',
     lineHeight: 30,
     marginRight: 4,
@@ -348,17 +357,17 @@ const styles = StyleSheet.create({
   },
   promptAnswer: {
     ...typography.body,
-    color: colors.text,
+    color: c.text,
     fontWeight: '500',
     lineHeight: 24,
     flex: 1
   },
   loveCard: {
-    backgroundColor: 'rgba(232,65,90,0.15)',
+    backgroundColor: c.brandSoft,
     borderRadius: 18,
     padding: spacing.lg,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -370,13 +379,13 @@ const styles = StyleSheet.create({
   },
   loveLabel: {
     ...typography.caption,
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '600',
     marginBottom: spacing.xs
   },
   loveValue: {
     ...typography.subtitle,
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '800'
   },
   galleryRow: {
@@ -407,7 +416,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md
   },
   modalCloseText: {
-    color: colors.white,
+    color: c.white,
     fontWeight: '700'
   }
 });

@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { FieldLabel, authText } from '../../components/auth/AuthKit';
+import { FieldLabel, useAuthText } from '../../components/auth/AuthKit';
 import { OnboardingScaffold, OnbInput } from './OnboardingScaffold';
 import { TOTAL_STEPS, useOnboarding } from './OnboardingContext';
-import { darkColors } from '../../theme/darkColors';
+import { useThemedStyles } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 
 const MAX = 500;
 
 export function AboutStepScreen({ navigation }: any) {
   const { draft, persist } = useOnboarding();
+  const styles = useThemedStyles(makeStyles);
+  const authText = useAuthText();
   const [bio, setBio] = useState(draft.bio);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -53,8 +56,9 @@ export function AboutStepScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  textarea: { minHeight: 130, textAlignVertical: 'top', paddingTop: 14 },
-  counterRow: { alignItems: 'flex-end', marginTop: 6 },
-  counter: { color: darkColors.textFaint, fontSize: 12, fontWeight: '600' }
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    textarea: { minHeight: 130, textAlignVertical: 'top', paddingTop: 14 },
+    counterRow: { alignItems: 'flex-end', marginTop: 6 },
+    counter: { color: c.textFaint, fontSize: 12, fontWeight: '600' }
+  });

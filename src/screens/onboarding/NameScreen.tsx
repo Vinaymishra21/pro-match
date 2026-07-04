@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Text } from 'react-native';
-import { FieldLabel, authText } from '../../components/auth/AuthKit';
+import { FieldLabel, useAuthText } from '../../components/auth/AuthKit';
 import { OnboardingScaffold, OnbInput } from './OnboardingScaffold';
 import { TOTAL_STEPS, useOnboarding } from './OnboardingContext';
 
 export function NameScreen({ navigation }: any) {
   const { draft, persist } = useOnboarding();
+  const authText = useAuthText();
   const [name, setName] = useState(draft.name);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');

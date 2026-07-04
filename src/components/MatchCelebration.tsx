@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { professionTheme } from '../theme/professionTheme';
-import { colorsDark as colors } from '../theme/colorsDark';
+import { useThemedStyles } from '../theme/ThemeProvider';
+import type { ThemeColors } from '../theme/themes';
 import { spacing } from '../theme/spacing';
 import { fonts, typography } from '../theme/typography';
 
@@ -25,6 +26,7 @@ export function MatchCelebration({
   onSendMessage: () => void;
   onKeepSwiping: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const theme = professionTheme(match.profession);
   const pop = useRef(new Animated.Value(0)).current;
   const title = useRef(new Animated.Value(0)).current;
@@ -89,6 +91,7 @@ export function MatchCelebration({
 }
 
 function Avatar({ photo, theme, flip }: { photo?: string; theme: ReturnType<typeof professionTheme>; flip?: boolean }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.avatar, { borderColor: '#fff', transform: [{ rotate: flip ? '-7deg' : '7deg' }] }]}>
       {photo ? (
@@ -104,7 +107,11 @@ function Avatar({ photo, theme, flip }: { photo?: string; theme: ReturnType<type
 
 const AV = Math.min(130, width * 0.34);
 
-const styles = StyleSheet.create({
+// The celebration is deliberately a dark, dramatic full-screen takeover in BOTH
+// modes (the near-opaque night scrim + white text stay as-is) — only the brand
+// heart reads from the palette, and c.primary is identical in light and dark.
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, zIndex: 100, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   kicker: { ...typography.eyebrow, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.sm },
   titlePill: { paddingHorizontal: 26, paddingVertical: 10, borderRadius: 999 },
@@ -134,11 +141,11 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginHorizontal: -14, zIndex: 2,
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6
   },
-  heart: { color: colors.primary, fontSize: 28 },
+  heart: { color: c.primary, fontSize: 28 },
   actions: { width: '100%', maxWidth: 360, gap: spacing.sm },
   primaryWrap: { borderRadius: 16, overflow: 'hidden' },
   primary: { paddingVertical: 16, alignItems: 'center', borderRadius: 16 },
   primaryText: { fontFamily: fonts.sansExtraBold, color: '#fff', fontWeight: '800', fontSize: 16, letterSpacing: 0.3 },
   secondary: { paddingVertical: 14, alignItems: 'center' },
   secondaryText: { fontFamily: fonts.sansBold, color: 'rgba(255,255,255,0.9)', fontWeight: '700', fontSize: 15, letterSpacing: 0.2 }
-});
+  });

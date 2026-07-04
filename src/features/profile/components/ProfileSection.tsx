@@ -1,11 +1,13 @@
 // @ts-nocheck
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, LayoutAnimation, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useThemedStyles } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
 export function ProfileSection({ title, subtitle, icon, children, collapsible = false, defaultExpanded = true }) {
+  const styles = useThemedStyles(makeStyles);
   const [expanded, setExpanded] = useState(defaultExpanded);
   const rotation = useRef(new Animated.Value(defaultExpanded ? 1 : 0)).current;
   const isOpen = collapsible ? expanded : true;
@@ -54,15 +56,15 @@ export function ProfileSection({ title, subtitle, icon, children, collapsible = 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   section: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 18,
     padding: spacing.md,
     marginBottom: spacing.md,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -91,27 +93,27 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.subtitle,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700'
   },
   subtitle: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     marginTop: 2
   },
   chevronCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.inputBg,
+    backgroundColor: c.inputBg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     justifyContent: 'center',
     alignItems: 'center'
   },
   chevron: {
     fontSize: 16,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '700',
     marginTop: 4
   },

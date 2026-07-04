@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { getReportReasons, reportUser } from '../services/apiService';
-import { colorsDark as colors } from '../theme/colorsDark';
+import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
+import type { ThemeColors } from '../theme/themes';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
@@ -39,6 +40,8 @@ type Props = {
 // Bottom-sheet to report a user: pick a reason, optional note, and choose
 // whether to also block them.
 export function ReportSheet({ visible, userId, name, onClose, onReported }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { token } = useAuth();
   const [reasons, setReasons] = useState<string[]>(FALLBACK_REASONS);
   const [reason, setReason] = useState('');
@@ -156,12 +159,12 @@ export function ReportSheet({ visible, userId, name, onClose, onReported }: Prop
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderTopWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: spacing.lg,
@@ -174,36 +177,36 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     marginBottom: spacing.md
   },
-  title: { ...typography.subtitle, color: colors.text, fontWeight: '900' },
-  sub: { ...typography.caption, color: colors.textMuted, marginTop: 2, marginBottom: spacing.md },
+  title: { ...typography.subtitle, color: c.text, fontWeight: '900' },
+  sub: { ...typography.caption, color: c.textMuted, marginTop: 2, marginBottom: spacing.md },
   scroll: { maxHeight: 380 },
   reason: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
     marginBottom: spacing.sm
   },
-  reasonActive: { borderColor: colors.primary, backgroundColor: 'rgba(232,65,90,0.15)' },
-  reasonText: { ...typography.body, color: colors.text, fontWeight: '600' },
-  reasonTextActive: { color: colors.primary, fontWeight: '800' },
-  reasonCheck: { color: colors.primary, fontWeight: '900', fontSize: 16 },
+  reasonActive: { borderColor: c.primary, backgroundColor: c.brandSoft },
+  reasonText: { ...typography.body, color: c.text, fontWeight: '600' },
+  reasonTextActive: { color: c.primary, fontWeight: '800' },
+  reasonCheck: { color: c.primary, fontWeight: '900', fontSize: 16 },
   note: {
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.inputBg,
+    borderColor: c.border,
+    backgroundColor: c.inputBg,
     borderRadius: 12,
     padding: spacing.md,
     minHeight: 70,
     textAlignVertical: 'top',
-    color: colors.text,
+    color: c.text,
     fontSize: 14,
     marginTop: spacing.xs,
     marginBottom: spacing.md
@@ -214,23 +217,23 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm
   },
-  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkboxTick: { color: colors.white, fontWeight: '900', fontSize: 14 },
-  blockLabel: { ...typography.body, color: colors.text, fontWeight: '600' },
+  checkboxOn: { backgroundColor: c.primary, borderColor: c.primary },
+  checkboxTick: { color: c.white, fontWeight: '900', fontSize: 14 },
+  blockLabel: { ...typography.body, color: c.text, fontWeight: '600' },
   submit: {
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
     borderRadius: 14,
     paddingVertical: spacing.md,
     alignItems: 'center',
     marginTop: spacing.sm
   },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: colors.white, fontWeight: '800', fontSize: 15 },
+  submitText: { color: c.white, fontWeight: '800', fontSize: 15 },
   cancel: { alignItems: 'center', paddingVertical: spacing.md },
-  cancelText: { ...typography.body, color: colors.textMuted, fontWeight: '700' }
+  cancelText: { ...typography.body, color: c.textMuted, fontWeight: '700' }
 });

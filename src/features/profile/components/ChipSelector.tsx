@@ -1,11 +1,13 @@
 // @ts-nocheck
 import React, { useCallback, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useThemedStyles } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
 function AnimatedChip({ option, selected, onPress, disabled }) {
+  const styles = useThemedStyles(makeStyles);
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(() => {
@@ -44,6 +46,8 @@ function AnimatedChip({ option, selected, onPress, disabled }) {
 }
 
 export function ChipSelector({ options, value, onChange, multi = false, disabled = false }) {
+  const styles = useThemedStyles(makeStyles);
+
   function isSelected(option) {
     if (multi) {
       return Array.isArray(value) && value.includes(option);
@@ -82,7 +86,7 @@ export function ChipSelector({ options, value, onChange, multi = false, disabled
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -92,16 +96,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 999,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
-    backgroundColor: colors.inputBg
+    backgroundColor: c.inputBg
   },
   chipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(232,65,90,0.15)',
-    shadowColor: colors.primary,
+    borderColor: c.primary,
+    backgroundColor: c.brandSoft,
+    shadowColor: c.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -111,16 +115,16 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
     marginRight: 6
   },
   label: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '600'
   },
   labelSelected: {
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '700'
   }
 });

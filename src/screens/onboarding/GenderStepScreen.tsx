@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FieldLabel, authText } from '../../components/auth/AuthKit';
+import { FieldLabel, useAuthText } from '../../components/auth/AuthKit';
 import { OnboardingScaffold } from './OnboardingScaffold';
 import { TOTAL_STEPS, useOnboarding } from './OnboardingContext';
 import { genderOptions } from '../../features/profile/constants/profileOptions';
-import { darkColors } from '../../theme/darkColors';
+import { useThemedStyles } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 
 function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable onPress={onPress} style={[styles.chip, on ? styles.chipOn : null]}>
       <Text style={[styles.chipText, on ? styles.chipTextOn : null]}>{label}</Text>
@@ -17,6 +19,8 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
 
 export function GenderStepScreen({ navigation }: any) {
   const { draft, persist } = useOnboarding();
+  const styles = useThemedStyles(makeStyles);
+  const authText = useAuthText();
   const [gender, setGender] = useState(draft.gender);
   const [pref, setPref] = useState<string[]>(draft.genderPreference || []);
   const [busy, setBusy] = useState(false);
@@ -70,17 +74,20 @@ export function GenderStepScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: {
-    borderWidth: 1.5,
-    borderColor: darkColors.border,
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: darkColors.surface
-  },
-  chipOn: { borderColor: darkColors.primary, backgroundColor: 'rgba(232,65,90,0.15)' },
-  chipText: { color: darkColors.textMuted, fontWeight: '700', fontSize: 14 },
-  chipTextOn: { color: darkColors.primary }
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    chip: {
+      borderWidth: 1.5,
+      borderColor: c.border,
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: c.surface
+    },
+    // 'rgba(232,65,90,0.15)' was exactly darkColors.brandSoft, so c.brandSoft
+    // keeps dark byte-identical.
+    chipOn: { borderColor: c.primary, backgroundColor: c.brandSoft },
+    chipText: { color: c.textMuted, fontWeight: '700', fontSize: 14 },
+    chipTextOn: { color: c.primary }
+  });

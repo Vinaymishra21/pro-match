@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { promptPool } from '../constants/profileOptions';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -10,6 +11,8 @@ const MAX_CHARS = 250;
 
 // Lets users pick up to 3 prompts from a pool and answer them.
 export function CustomPrompts({ value = [], onChange }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [picking, setPicking] = useState(false);
 
   const used = value.map((p) => p.prompt);
@@ -87,43 +90,45 @@ export function CustomPrompts({ value = [], onChange }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors, mode: ThemeMode) => StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 16,
     padding: spacing.md,
     marginBottom: spacing.sm
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  prompt: { ...typography.body, color: colors.text, fontWeight: '800', flex: 1, marginRight: spacing.sm },
-  remove: { fontSize: 22, color: colors.textMuted, fontWeight: '800', lineHeight: 22 },
+  prompt: { ...typography.body, color: c.text, fontWeight: '800', flex: 1, marginRight: spacing.sm },
+  remove: { fontSize: 22, color: c.textMuted, fontWeight: '800', lineHeight: 22 },
   input: {
     marginTop: spacing.sm,
     minHeight: 56,
     textAlignVertical: 'top',
-    color: colors.text,
+    color: c.text,
     fontSize: 15,
     lineHeight: 21
   },
-  count: { ...typography.caption, color: colors.textMuted, fontSize: 11, textAlign: 'right' },
+  count: { ...typography.caption, color: c.textMuted, fontSize: 11, textAlign: 'right' },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: colors.primary,
+    borderColor: c.primary,
     borderRadius: 14,
     paddingVertical: spacing.md,
-    backgroundColor: 'rgba(232,65,90,0.15)'
+    backgroundColor: c.brandSoft
   },
-  addPlus: { fontSize: 20, color: colors.primary, fontWeight: '800', marginRight: spacing.xs },
-  addLabel: { ...typography.caption, color: colors.primary, fontWeight: '800' },
+  addPlus: { fontSize: 20, color: c.primary, fontWeight: '800', marginRight: spacing.xs },
+  addLabel: { ...typography.caption, color: c.primary, fontWeight: '800' },
   backdrop: { flex: 1, backgroundColor: 'rgba(8,16,28,0.4)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: colors.surface,
+    // Dark keeps the original translucent glass sheet; light needs an opaque
+    // card so the sheet content stays readable over the dimmed backdrop.
+    backgroundColor: mode === 'dark' ? c.surface : c.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: spacing.lg,
@@ -136,19 +141,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     marginBottom: spacing.md
   },
-  sheetTitle: { ...typography.subtitle, color: colors.text, fontWeight: '800', marginBottom: spacing.sm },
+  sheetTitle: { ...typography.subtitle, color: c.text, fontWeight: '800', marginBottom: spacing.sm },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border
+    borderBottomColor: c.border
   },
-  optionText: { ...typography.body, color: colors.text, flex: 1, marginRight: spacing.sm },
-  optionAdd: { fontSize: 20, color: colors.primary, fontWeight: '800' },
-  empty: { ...typography.caption, color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.lg }
+  optionText: { ...typography.body, color: c.text, flex: 1, marginRight: spacing.sm },
+  optionAdd: { fontSize: 20, color: c.primary, fontWeight: '800' },
+  empty: { ...typography.caption, color: c.textMuted, textAlign: 'center', paddingVertical: spacing.lg }
 });

@@ -1,7 +1,8 @@
 // @ts-nocheck
 import React, { useCallback, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useTheme, useThemedStyles } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 
@@ -13,6 +14,8 @@ const LEVELS = [
 ];
 
 function LevelOption({ level, index, selected, onPress }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(() => {
@@ -54,6 +57,7 @@ function LevelOption({ level, index, selected, onPress }) {
 }
 
 export function ProfessionLoveMeter({ value, onChange }) {
+  const styles = useThemedStyles(makeStyles);
   const selectedIndex = LEVELS.findIndex((l) => l.label === value);
 
   return (
@@ -84,15 +88,15 @@ export function ProfessionLoveMeter({ value, onChange }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     padding: spacing.md,
     marginBottom: spacing.md,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -109,7 +113,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.body,
-    color: colors.text,
+    color: c.text,
     fontWeight: '700',
     fontSize: 15,
     flex: 1
@@ -117,14 +121,14 @@ const styles = StyleSheet.create({
   meterTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: c.border,
     overflow: 'hidden',
     marginBottom: spacing.md
   },
   meterFill: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.primary
+    backgroundColor: c.primary
   },
   grid: {
     flexDirection: 'row',
@@ -141,11 +145,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: colors.border
+    borderColor: c.border
   },
   optionSelected: {
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
+    borderColor: c.primary,
+    shadowColor: c.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -161,20 +165,20 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '600',
     textAlign: 'center',
     fontSize: 12
   },
   optionLabelSelected: {
-    color: colors.primary,
+    color: c.primary,
     fontWeight: '700'
   },
   selectedIndicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
     marginTop: 6
   }
 });

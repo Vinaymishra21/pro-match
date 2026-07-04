@@ -31,7 +31,8 @@ import { activateBoost, getDiscoverProfiles, swipeProfile, undoSwipe } from '../
 import { ApiError } from '../../services/apiClient';
 import type { FilterState } from '../../types';
 import { professionTheme } from '../../theme/professionTheme';
-import { colorsDark as colors } from '../../theme/colorsDark';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
 import type { BoostState, DiscoverProfile, MainTabParamList, RootStackParamList, UnlockState } from '../../types';
@@ -43,6 +44,8 @@ type Props = CompositeScreenProps<
 
 export function DiscoverScreen({ navigation }: Props) {
   const { token, user } = useAuth();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const myProfession = user?.profession || '';
 
@@ -547,7 +550,7 @@ export function DiscoverScreen({ navigation }: Props) {
             </Pressable>
             <Pressable onPress={handleSuperLike} disabled={submitting}>
               <LinearGradient
-                colors={['#FBBF24', '#F59E0B']}
+                colors={colors.goldGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.actionBtn, styles.superBtn]}
@@ -606,6 +609,7 @@ function distanceLabel(km: number) {
 }
 
 function ProfileCard({ profile }: { profile: DiscoverProfile }) {
+  const styles = useThemedStyles(makeStyles);
   const theme = professionTheme(profile.profession);
   const photo = profile.photos && profile.photos.length > 0 ? profile.photos[0] : null;
   const hasDistance = typeof profile.distanceKm === 'number';
@@ -651,196 +655,201 @@ function ProfileCard({ profile }: { profile: DiscoverProfile }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md
-  },
-  topLeft: { flex: 1, marginRight: spacing.sm },
-  brand: { fontFamily: fonts.displayBold, fontSize: 26, lineHeight: 32, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
-  subtitle: { ...typography.caption, color: colors.textMuted, fontWeight: '600', marginTop: 2 },
-  proBadge: {
-    backgroundColor: 'rgba(251,191,36,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.5)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6
-  },
-  proBadgeText: { fontWeight: '900', color: colors.gold, fontSize: 12 },
-  boostBtn: {
-    backgroundColor: 'rgba(139,92,246,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(139,92,246,0.55)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6
-  },
-  boostBtnActive: {
-    backgroundColor: 'rgba(251,191,36,0.18)',
-    borderColor: 'rgba(251,191,36,0.6)'
-  },
-  boostBtnText: { fontWeight: '900', color: '#C4B5FD', fontSize: 12 },
-  boostBtnTextActive: { color: colors.gold },
-  exploreCounter: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6
-  },
-  exploreCounterText: { fontWeight: '800', color: colors.text, fontSize: 12 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 0 },
-  filterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  filterIcon: { fontSize: 18, color: colors.text },
-  filterBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4
-  },
-  filterBadgeText: { color: colors.white, fontSize: 10, fontWeight: '900' },
-  chipRow: { gap: spacing.xs, paddingVertical: spacing.xs, paddingRight: spacing.lg },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9
-  },
-  chipActive: { borderWidth: 0 },
-  chipEmoji: { fontSize: 14, marginRight: 6 },
-  chipText: { fontWeight: '700', color: colors.textMuted, fontSize: 13 },
-  chipTextActive: { fontWeight: '800', color: colors.white, fontSize: 13 },
-  chipLock: { fontSize: 11, marginLeft: 6 },
-  cardArea: { flex: 1, marginTop: spacing.md, marginBottom: spacing.md },
-  swipeWrap: { flex: 1 },
-  tapHint: {
-    position: 'absolute',
-    top: spacing.md,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5
-  },
-  tapHintText: { color: 'rgba(255,255,255,0.95)', fontSize: 11, fontWeight: '700' },
-  stamp: {
-    position: 'absolute',
-    top: 28,
-    zIndex: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 4,
-    backgroundColor: 'rgba(255,255,255,0.85)'
-  },
-  stampLike: { right: 24, transform: [{ rotate: '14deg' }], borderColor: colors.secondary },
-  stampNope: { left: 24, transform: [{ rotate: '-14deg' }], borderColor: '#EF4444' },
-  stampText: { fontSize: 26, fontWeight: '900', letterSpacing: 1 },
-  card: {
-    flex: 1,
-    borderRadius: 28,
-    overflow: 'hidden',
-    backgroundColor: colors.card,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.5,
-    shadowRadius: 22,
-    elevation: 8
-  },
-  cardEmojiWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  cardBigEmoji: { fontSize: 120, opacity: 0.55 },
-  cardOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: spacing.lg,
-    paddingTop: spacing.xxl,
-    gap: 6
-  },
-  cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  cardName: { color: colors.white, fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
-  cardHeadline: { color: 'rgba(255,255,255,0.95)', fontSize: 15, fontWeight: '700' },
-  cardBio: { color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 20, marginTop: 2 },
-  cardLocation: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 },
-  cardDistance: { color: 'rgba(255,255,255,0.95)', fontWeight: '800' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  stateCard: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl
-  },
-  stateEmoji: { fontSize: 64, marginBottom: spacing.md },
-  stateTitle: { ...typography.subtitle, fontWeight: '900', color: colors.text, marginBottom: spacing.xs },
-  stateText: { ...typography.caption, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
-  refreshLink: { marginTop: spacing.md },
-  refreshLinkText: { color: colors.primary, fontWeight: '800' },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingBottom: spacing.md
-  },
-  undoBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(251,191,36,0.15)', borderWidth: 1, borderColor: 'rgba(251,191,36,0.5)' },
-  undoIcon: { fontSize: 22, color: colors.gold, fontWeight: '800' },
-  actionBtn: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6
-  },
-  passBtn: { backgroundColor: colors.surfaceStrong, borderWidth: 1, borderColor: colors.border },
-  passIcon: { fontSize: 28, color: colors.textMuted, fontWeight: '700' },
-  superBtn: { width: 56, height: 56, borderRadius: 28 },
-  superIcon: { fontSize: 26, color: colors.white, fontWeight: '900' },
-  boostedTag: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(139,92,246,0.9)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6
-  },
-  boostedTagText: { color: colors.white, fontWeight: '900', fontSize: 12 },
-  likeBtn: {},
-  likeIcon: { fontSize: 30, color: colors.white }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.md
+    },
+    topLeft: { flex: 1, marginRight: spacing.sm },
+    brand: { fontFamily: fonts.displayBold, fontSize: 26, lineHeight: 32, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
+    subtitle: { ...typography.caption, color: c.textMuted, fontWeight: '600', marginTop: 2 },
+    proBadge: {
+      backgroundColor: 'rgba(251,191,36,0.15)',
+      borderWidth: 1,
+      borderColor: 'rgba(251,191,36,0.5)',
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 6
+    },
+    proBadgeText: { fontWeight: '900', color: c.gold, fontSize: 12 },
+    boostBtn: {
+      backgroundColor: 'rgba(139,92,246,0.18)',
+      borderWidth: 1,
+      borderColor: 'rgba(139,92,246,0.55)',
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 6
+    },
+    boostBtnActive: {
+      backgroundColor: 'rgba(251,191,36,0.18)',
+      borderColor: 'rgba(251,191,36,0.6)'
+    },
+    // '#C4B5FD' is a pale violet made for the dark bg; deepen it on cream.
+    boostBtnText: { fontWeight: '900', color: mode === 'dark' ? '#C4B5FD' : '#6D28D9', fontSize: 12 },
+    boostBtnTextActive: { color: c.gold },
+    exploreCounter: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 6
+    },
+    exploreCounterText: { fontWeight: '800', color: c.text, fontSize: 12 },
+    topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 0 },
+    filterBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    filterIcon: { fontSize: 18, color: c.text },
+    filterBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 4
+    },
+    filterBadgeText: { color: c.white, fontSize: 10, fontWeight: '900' },
+    chipRow: { gap: spacing.xs, paddingVertical: spacing.xs, paddingRight: spacing.lg },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 9
+    },
+    chipActive: { borderWidth: 0 },
+    chipEmoji: { fontSize: 14, marginRight: 6 },
+    chipText: { fontWeight: '700', color: c.textMuted, fontSize: 13 },
+    // White on the profession gradient chip — correct in both modes.
+    chipTextActive: { fontWeight: '800', color: c.white, fontSize: 13 },
+    chipLock: { fontSize: 11, marginLeft: 6 },
+    cardArea: { flex: 1, marginTop: spacing.md, marginBottom: spacing.md },
+    swipeWrap: { flex: 1 },
+    // Hint pill + stamps sit ON the photo card — keep their scrims/whites as-is.
+    tapHint: {
+      position: 'absolute',
+      top: spacing.md,
+      alignSelf: 'center',
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 5
+    },
+    tapHintText: { color: 'rgba(255,255,255,0.95)', fontSize: 11, fontWeight: '700' },
+    stamp: {
+      position: 'absolute',
+      top: 28,
+      zIndex: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 12,
+      borderWidth: 4,
+      backgroundColor: 'rgba(255,255,255,0.85)'
+    },
+    stampLike: { right: 24, transform: [{ rotate: '14deg' }], borderColor: c.secondary },
+    stampNope: { left: 24, transform: [{ rotate: '-14deg' }], borderColor: '#EF4444' },
+    stampText: { fontSize: 26, fontWeight: '900', letterSpacing: 1 },
+    card: {
+      flex: 1,
+      borderRadius: 28,
+      overflow: 'hidden',
+      backgroundColor: c.card,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.5,
+      shadowRadius: 22,
+      elevation: 8
+    },
+    cardEmojiWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    cardBigEmoji: { fontSize: 120, opacity: 0.55 },
+    cardOverlay: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      padding: spacing.lg,
+      paddingTop: spacing.xxl,
+      gap: 6
+    },
+    cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+    // Card text sits on the photo's dark scrim — white in both modes.
+    cardName: { color: c.white, fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
+    cardHeadline: { color: 'rgba(255,255,255,0.95)', fontSize: 15, fontWeight: '700' },
+    cardBio: { color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 20, marginTop: 2 },
+    cardLocation: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 },
+    cardDistance: { color: 'rgba(255,255,255,0.95)', fontWeight: '800' },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    stateCard: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.surface,
+      borderRadius: 28,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: spacing.xl
+    },
+    stateEmoji: { fontSize: 64, marginBottom: spacing.md },
+    stateTitle: { ...typography.subtitle, fontWeight: '900', color: c.text, marginBottom: spacing.xs },
+    stateText: { ...typography.caption, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
+    refreshLink: { marginTop: spacing.md },
+    refreshLinkText: { color: c.primary, fontWeight: '800' },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingBottom: spacing.md
+    },
+    undoBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(251,191,36,0.15)', borderWidth: 1, borderColor: 'rgba(251,191,36,0.5)' },
+    undoIcon: { fontSize: 22, color: c.gold, fontWeight: '800' },
+    actionBtn: {
+      width: 66,
+      height: 66,
+      borderRadius: 33,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.4,
+      shadowRadius: 12,
+      elevation: 6
+    },
+    passBtn: { backgroundColor: c.surfaceStrong, borderWidth: 1, borderColor: c.border },
+    passIcon: { fontSize: 28, color: c.textMuted, fontWeight: '700' },
+    superBtn: { width: 56, height: 56, borderRadius: 28 },
+    superIcon: { fontSize: 26, color: c.white, fontWeight: '900' },
+    boostedTag: {
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(139,92,246,0.9)',
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 6
+    },
+    boostedTagText: { color: c.white, fontWeight: '900', fontSize: 12 },
+    likeBtn: {},
+    likeIcon: { fontSize: 30, color: c.white }
+  });

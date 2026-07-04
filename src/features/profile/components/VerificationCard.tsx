@@ -16,7 +16,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../hooks/useAuth';
 import { requestProfessionVerification, uploadPhoto } from '../../../services/apiService';
 import { ApiError } from '../../../services/apiClient';
-import { colorsDark as colors } from '../../../theme/colorsDark';
+import { useTheme, useThemedStyles } from '../../../theme/ThemeProvider';
+import type { ThemeColors } from '../../../theme/themes';
 import { fonts } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
@@ -26,6 +27,8 @@ import { typography } from '../../../theme/typography';
 // uploaded proof document). This card requests it and reflects the state
 // (none / pending / verified).
 export function VerificationCard({ profession }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { user, token, updateLocalUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [linkedin, setLinkedin] = useState('');
@@ -220,9 +223,9 @@ export function VerificationCard({ profession }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
     borderColor: '#F5C56B',
     borderRadius: 18,
@@ -241,15 +244,15 @@ const styles = StyleSheet.create({
   },
   shield: { fontSize: 22 },
   textWrap: { flex: 1 },
-  title: { ...typography.body, fontFamily: fonts.sansExtraBold, color: colors.text },
-  sub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  title: { ...typography.body, fontFamily: fonts.sansExtraBold, color: c.text },
+  sub: { ...typography.caption, color: c.textMuted, marginTop: 2 },
   cta: {
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
     borderRadius: 12,
     paddingVertical: spacing.sm + 2,
     alignItems: 'center'
   },
-  ctaText: { fontFamily: fonts.sansExtraBold, color: colors.white, fontSize: 14 },
+  ctaText: { fontFamily: fonts.sansExtraBold, color: c.white, fontSize: 14 },
 
   // Verified (blue tick)
   verifiedCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, padding: spacing.md, marginBottom: spacing.md },
@@ -264,15 +267,15 @@ const styles = StyleSheet.create({
   },
   verifiedCheck: { color: '#1E5FD8', fontSize: 24, fontWeight: '900' },
   verifiedTextWrap: { flex: 1 },
-  verifiedTitle: { ...typography.body, fontFamily: fonts.sansExtraBold, color: colors.white },
+  verifiedTitle: { ...typography.body, fontFamily: fonts.sansExtraBold, color: c.white },
   verifiedSub: { ...typography.caption, color: 'rgba(255,255,255,0.92)', marginTop: 2 },
 
   // Modal sheet
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderTopWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: spacing.lg,
@@ -280,40 +283,40 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     maxHeight: '88%'
   },
-  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, marginBottom: spacing.md },
-  sheetTitle: { ...typography.subtitle, fontFamily: fonts.sansExtraBold, color: colors.text },
-  sheetSub: { ...typography.caption, color: colors.textMuted, marginTop: 4, marginBottom: spacing.md, lineHeight: 19 },
-  label: { fontFamily: fonts.sansBold, color: colors.textMuted, fontSize: 12.5, letterSpacing: 0.3, textTransform: 'uppercase', marginTop: spacing.md, marginBottom: spacing.sm },
-  hint: { ...typography.caption, color: colors.textMuted, marginTop: -spacing.xs, marginBottom: spacing.sm },
+  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.border, marginBottom: spacing.md },
+  sheetTitle: { ...typography.subtitle, fontFamily: fonts.sansExtraBold, color: c.text },
+  sheetSub: { ...typography.caption, color: c.textMuted, marginTop: 4, marginBottom: spacing.md, lineHeight: 19 },
+  label: { fontFamily: fonts.sansBold, color: c.textMuted, fontSize: 12.5, letterSpacing: 0.3, textTransform: 'uppercase', marginTop: spacing.md, marginBottom: spacing.sm },
+  hint: { ...typography.caption, color: c.textMuted, marginTop: -spacing.xs, marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.inputBg,
+    backgroundColor: c.inputBg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
-    color: colors.text,
+    color: c.text,
     fontSize: 15,
     fontFamily: fonts.sans
   },
   noteInput: { minHeight: 72, textAlignVertical: 'top', paddingTop: 12 },
   uploadBtn: {
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderStyle: 'dashed',
     borderRadius: 14,
     paddingVertical: 22,
     alignItems: 'center',
-    backgroundColor: colors.surface
+    backgroundColor: c.surface
   },
-  uploadText: { fontFamily: fonts.sansBold, color: colors.text, fontSize: 14 },
+  uploadText: { fontFamily: fonts.sansBold, color: c.text, fontSize: 14 },
   docPreviewWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  docPreview: { width: 84, height: 84, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
-  docReplace: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  docReplaceText: { fontFamily: fonts.sansBold, color: colors.text, fontSize: 13 },
+  docPreview: { width: 84, height: 84, borderRadius: 12, borderWidth: 1, borderColor: c.border },
+  docReplace: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: c.border, backgroundColor: c.surface },
+  docReplaceText: { fontFamily: fonts.sansBold, color: c.text, fontSize: 13 },
   submit: { height: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   submitText: { fontFamily: fonts.sansExtraBold, color: '#fff', fontSize: 15 },
-  reqHint: { ...typography.caption, color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm },
+  reqHint: { ...typography.caption, color: c.textMuted, textAlign: 'center', marginTop: spacing.sm },
   cancel: { alignItems: 'center', paddingVertical: spacing.md, marginTop: 2 },
-  cancelText: { fontFamily: fonts.sansBold, color: colors.textMuted, fontSize: 14 }
+  cancelText: { fontFamily: fonts.sansBold, color: c.textMuted, fontSize: 14 }
 });

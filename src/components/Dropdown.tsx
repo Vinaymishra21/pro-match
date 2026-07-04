@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colorsDark as colors } from '../theme/colorsDark';
+import { useThemedStyles } from '../theme/ThemeProvider';
+import type { ThemeColors } from '../theme/themes';
 import { spacing } from '../theme/spacing';
 import { fonts, typography } from '../theme/typography';
 
@@ -13,6 +14,7 @@ type DropdownProps = {
 
 // A simple, on-brand single-select dropdown rendered as a bottom sheet.
 export function Dropdown({ value, options, placeholder = 'Select…', onChange }: DropdownProps) {
+  const styles = useThemedStyles(makeStyles);
   const [open, setOpen] = useState(false);
 
   return (
@@ -53,27 +55,27 @@ export function Dropdown({ value, options, placeholder = 'Select…', onChange }
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.inputBg,
+    backgroundColor: c.inputBg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
     marginBottom: spacing.md
   },
-  fieldText: { ...typography.body, color: colors.text, fontWeight: '600' },
-  placeholder: { color: colors.textMuted, fontWeight: '400' },
-  chevron: { color: colors.textMuted, fontSize: 16 },
+  fieldText: { ...typography.body, color: c.text, fontWeight: '600' },
+  placeholder: { color: c.textMuted, fontWeight: '400' },
+  chevron: { color: c.textMuted, fontSize: 16 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderTopWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: spacing.lg,
@@ -86,7 +88,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     marginBottom: spacing.md
   },
   option: {
@@ -97,8 +99,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: 12
   },
-  optionActive: { backgroundColor: 'rgba(232,65,90,0.15)' },
-  optionText: { ...typography.body, fontFamily: fonts.sansSemiBold, color: colors.text },
-  optionTextActive: { color: colors.primary, fontFamily: fonts.sansExtraBold },
-  check: { color: colors.primary, fontWeight: '900', fontSize: 16 }
+  optionActive: { backgroundColor: c.brandSoft },
+  optionText: { ...typography.body, fontFamily: fonts.sansSemiBold, color: c.text },
+  optionTextActive: { color: c.primary, fontFamily: fonts.sansExtraBold },
+  check: { color: c.primary, fontWeight: '900', fontSize: 16 }
 });

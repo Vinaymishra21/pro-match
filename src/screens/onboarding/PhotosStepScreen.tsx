@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Text } from 'react-native';
-import { authText } from '../../components/auth/AuthKit';
+import { useAuthText } from '../../components/auth/AuthKit';
 import { OnboardingScaffold } from './OnboardingScaffold';
 import { TOTAL_STEPS, useOnboarding } from './OnboardingContext';
 import { ProfilePhotoGallery } from '../../features/profile/components/ProfilePhotoGallery';
@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 export function PhotosStepScreen({ navigation }: any) {
   const { draft, persist } = useOnboarding();
   const { token } = useAuth();
+  const authText = useAuthText();
   const [photos, setPhotos] = useState<string[]>(draft.photos || []);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');

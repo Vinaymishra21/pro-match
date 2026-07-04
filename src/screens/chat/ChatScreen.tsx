@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
@@ -9,8 +8,8 @@ import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMessages, sendMessage, unmatch } from '../../services/apiService';
 import { getSocket } from '../../services/socket';
-import { colorsDark as colors } from '../../theme/colorsDark';
-import { darkColors } from '../../theme/darkColors';
+import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import type { MessageRecord, RootStackParamList } from '../../types';
@@ -26,6 +25,8 @@ function formatTime(iso?: string) {
 
 export function ChatScreen({ route, navigation }: Props) {
   const { token, user } = useAuth();
+  const { colors, mode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { matchId, matchName, matchUserId } = route.params;
   const [messages, setMessages] = useState<MessageRecord[]>([]);
@@ -148,7 +149,7 @@ export function ChatScreen({ route, navigation }: Props) {
 
   return (
     <DarkBackground orbColor="rgba(232,65,90,0.18)">
-      <StatusBar style="light" />
+      <ThemedStatusBar />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={[styles.container, { paddingTop: insets.top + spacing.xs, paddingBottom: insets.bottom + spacing.xs }]}
@@ -187,7 +188,7 @@ export function ChatScreen({ route, navigation }: Props) {
               <View style={[styles.bubbleRow, mine ? styles.bubbleRowMine : styles.bubbleRowOther]}>
                 {mine ? (
                   <LinearGradient
-                    colors={darkColors.brandGradient}
+                    colors={colors.brandGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={[styles.bubble, styles.bubbleMine]}
@@ -221,7 +222,15 @@ export function ChatScreen({ route, navigation }: Props) {
           />
           <Pressable onPress={handleSend} disabled={!canSend} style={styles.sendWrap}>
             <LinearGradient
-              colors={canSend ? darkColors.brandGradient : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']}
+              // Disabled state: the white wash predates the theme system — keep it
+              // byte-identical in dark, use the ink wash on cream.
+              colors={
+                canSend
+                  ? colors.brandGradient
+                  : mode === 'dark'
+                  ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']
+                  : [colors.surfaceStrong, colors.surfaceStrong]
+              }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.sendBtn}
@@ -245,161 +254,166 @@ export function ChatScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.lg
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border
-  },
-  backChevron: {
-    fontSize: 28,
-    lineHeight: 38,
-    color: colors.text,
-    fontWeight: '600',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false
-  },
-  headerCenter: { flex: 1 },
-  heading: {
-    ...typography.subtitle,
-    color: colors.text,
-    fontWeight: '900'
-  },
-  headerSub: {
-    fontSize: 12,
-    color: colors.textMuted,
-    fontWeight: '600',
-    marginTop: 1
-  },
-  menuBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border
-  },
-  menuDots: {
-    fontSize: 22,
-    lineHeight: 38,
-    color: colors.text,
-    fontWeight: '800',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false
-  },
-  messageList: {
-    paddingBottom: spacing.md,
-    flexGrow: 1
-  },
-  emptyWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xxl
-  },
-  emptyEmoji: { fontSize: 44, marginBottom: spacing.sm },
-  emptyHint: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center'
-  },
-  bubbleRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm
-  },
-  bubbleRowMine: { justifyContent: 'flex-end' },
-  bubbleRowOther: { justifyContent: 'flex-start' },
-  bubble: {
-    maxWidth: '82%',
-    borderRadius: 20,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm
-  },
-  bubbleMine: {
-    borderBottomRightRadius: 6
-  },
-  bubbleOther: {
-    backgroundColor: colors.surfaceStrong,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderBottomLeftRadius: 6
-  },
-  bubbleText: {
-    color: colors.text,
-    fontSize: 15,
-    lineHeight: 20
-  },
-  bubbleTextMine: {
-    color: '#FFFFFF'
-  },
-  timestamp: {
-    ...typography.caption,
-    fontSize: 10,
-    color: colors.textMuted,
-    marginTop: 4,
-    alignSelf: 'flex-end'
-  },
-  timestampMine: {
-    color: 'rgba(255,255,255,0.75)'
-  },
-  composer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
-    paddingTop: spacing.sm
-  },
-  composerInput: {
-    flex: 1,
-    minHeight: 48,
-    maxHeight: 120,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    paddingHorizontal: spacing.md,
-    paddingTop: 12,
-    paddingBottom: 12,
-    color: colors.text,
-    fontSize: 15
-  },
-  sendWrap: { marginBottom: 2 },
-  sendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  sendIcon: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '900',
-    marginLeft: 2
-  },
-  sendIconOff: {
-    color: colors.textMuted
-  },
-  error: {
-    color: '#FCA5A5',
-    marginBottom: spacing.sm
-  }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: spacing.lg
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.md
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border
+    },
+    backChevron: {
+      fontSize: 28,
+      lineHeight: 38,
+      color: c.text,
+      fontWeight: '600',
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false
+    },
+    headerCenter: { flex: 1 },
+    heading: {
+      ...typography.subtitle,
+      color: c.text,
+      fontWeight: '900'
+    },
+    headerSub: {
+      fontSize: 12,
+      color: c.textMuted,
+      fontWeight: '600',
+      marginTop: 1
+    },
+    menuBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border
+    },
+    menuDots: {
+      fontSize: 22,
+      lineHeight: 38,
+      color: c.text,
+      fontWeight: '800',
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false
+    },
+    messageList: {
+      paddingBottom: spacing.md,
+      flexGrow: 1
+    },
+    emptyWrap: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.xxl
+    },
+    emptyEmoji: { fontSize: 44, marginBottom: spacing.sm },
+    emptyHint: {
+      ...typography.caption,
+      color: c.textMuted,
+      textAlign: 'center'
+    },
+    bubbleRow: {
+      flexDirection: 'row',
+      marginBottom: spacing.sm
+    },
+    bubbleRowMine: { justifyContent: 'flex-end' },
+    bubbleRowOther: { justifyContent: 'flex-start' },
+    bubble: {
+      maxWidth: '82%',
+      borderRadius: 20,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm
+    },
+    bubbleMine: {
+      borderBottomRightRadius: 6
+    },
+    bubbleOther: {
+      backgroundColor: c.surfaceStrong,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderBottomLeftRadius: 6
+    },
+    bubbleText: {
+      color: c.text,
+      fontSize: 15,
+      lineHeight: 20
+    },
+    // My bubble is the brand gradient in both modes — white text stays.
+    bubbleTextMine: {
+      color: '#FFFFFF'
+    },
+    timestamp: {
+      ...typography.caption,
+      fontSize: 10,
+      color: c.textMuted,
+      marginTop: 4,
+      alignSelf: 'flex-end'
+    },
+    timestampMine: {
+      color: 'rgba(255,255,255,0.75)'
+    },
+    composer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: spacing.sm,
+      paddingTop: spacing.sm
+    },
+    composerInput: {
+      flex: 1,
+      minHeight: 48,
+      maxHeight: 120,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 24,
+      paddingHorizontal: spacing.md,
+      paddingTop: 12,
+      paddingBottom: 12,
+      color: c.text,
+      fontSize: 15
+    },
+    sendWrap: { marginBottom: 2 },
+    sendBtn: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    // White on the brand-gradient send button — correct in both modes.
+    sendIcon: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: '900',
+      marginLeft: 2
+    },
+    sendIconOff: {
+      color: c.textMuted
+    },
+    // '#FCA5A5' predates the theme system; keep it byte-identical in dark,
+    // use the palette's AA-checked danger tone in light.
+    error: {
+      color: mode === 'dark' ? '#FCA5A5' : c.danger,
+      marginBottom: spacing.sm
+    }
+  });

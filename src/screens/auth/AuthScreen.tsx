@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthShell, BackButton, Eyebrow, GradientButton, authText } from '../../components/auth/AuthKit';
+import { AuthShell, BackButton, Eyebrow, GradientButton, useAuthText } from '../../components/auth/AuthKit';
 import { useAuth } from '../../hooks/useAuth';
-import { darkColors } from '../../theme/darkColors';
+import { ThemedStatusBar, useTheme, useThemedStyles } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import type { AuthMethod, AuthMode, AuthStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Auth'>;
 
 function DarkField({ value, onChangeText, placeholder, ...rest }: any) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <TextInput
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={darkColors.textFaint}
+      placeholderTextColor={colors.textFaint}
       style={styles.input}
       {...rest}
     />
@@ -25,6 +27,8 @@ function DarkField({ value, onChangeText, placeholder, ...rest }: any) {
 
 export function AuthScreen({ route, navigation }: Props) {
   const { signIn, signUp } = useAuth();
+  const styles = useThemedStyles(makeStyles);
+  const authText = useAuthText();
   const [mode, setMode] = useState<AuthMode>(route.params?.initialMode ?? 'login');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('email');
   const [name, setName] = useState('');
@@ -56,7 +60,7 @@ export function AuthScreen({ route, navigation }: Props) {
 
   return (
     <AuthShell>
-      <StatusBar style="light" />
+      <ThemedStatusBar />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
           <BackButton onPress={() => navigation.goBack()} />
@@ -109,35 +113,36 @@ export function AuthScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  head: { marginTop: spacing.xl, marginBottom: spacing.lg },
-  toggle: {
-    flexDirection: 'row',
-    backgroundColor: darkColors.surface,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    padding: 4,
-    marginBottom: spacing.lg
-  },
-  tab: { flex: 1, borderRadius: 999, paddingVertical: 11, alignItems: 'center' },
-  tabActive: { backgroundColor: darkColors.primary },
-  tabLabel: { color: darkColors.textMuted, fontWeight: '700', fontSize: 14 },
-  tabLabelActive: { color: '#fff' },
-  fields: { gap: spacing.sm },
-  input: {
-    backgroundColor: darkColors.surface,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    borderRadius: 14,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 15,
-    color: darkColors.text,
-    fontSize: 15,
-    fontWeight: '600'
-  },
-  phoneHint: { color: darkColors.textMuted, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
-  switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
-  switchText: { color: darkColors.textMuted, fontSize: 14 },
-  switchAction: { color: darkColors.brandText, fontSize: 14, fontWeight: '800' }
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    head: { marginTop: spacing.xl, marginBottom: spacing.lg },
+    toggle: {
+      flexDirection: 'row',
+      backgroundColor: c.surface,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 4,
+      marginBottom: spacing.lg
+    },
+    tab: { flex: 1, borderRadius: 999, paddingVertical: 11, alignItems: 'center' },
+    tabActive: { backgroundColor: c.primary },
+    tabLabel: { color: c.textMuted, fontWeight: '700', fontSize: 14 },
+    tabLabelActive: { color: '#fff' },
+    fields: { gap: spacing.sm },
+    input: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 14,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 15,
+      color: c.text,
+      fontSize: 15,
+      fontWeight: '600'
+    },
+    phoneHint: { color: c.textMuted, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
+    switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
+    switchText: { color: c.textMuted, fontSize: 14 },
+    switchAction: { color: c.brandText, fontSize: 14, fontWeight: '800' }
+  });

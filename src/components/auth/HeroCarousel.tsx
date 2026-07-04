@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { darkColors } from '../../theme/darkColors';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
+import type { ThemeColors } from '../../theme/themes';
 
 // Curated remote heroes (swap for your own branded images later). Portrait,
 // warm/romantic, work well under a dark scrim.
@@ -13,9 +14,15 @@ export const HERO_IMAGES = [
   'https://images.unsplash.com/photo-1492288991661-058aa541ff43?w=900&q=80' // candid pair
 ];
 
+// Scrim gradients: the screen background at rising opacity so foreground text
+// stays readable over any photo. Dark values are the original literals
+// (darkColors.bg at .55/.78/.96); light mirrors them with the cream bg.
+const SCRIM_DARK = ['rgba(14,11,20,0.55)', 'rgba(14,11,20,0.78)', 'rgba(14,11,20,0.96)'] as const;
+const SCRIM_LIGHT = ['rgba(250,246,240,0.55)', 'rgba(250,246,240,0.78)', 'rgba(250,246,240,0.96)'] as const;
+
 // A full-bleed background carousel: each image cross-fades in while slowly
 // zooming (Ken Burns), giving a premium "alive" feel without video weight.
-// A dark gradient scrim sits on top so foreground text stays readable.
+// A theme-matched gradient scrim sits on top so foreground text stays readable.
 export function HeroCarousel({
   images = HERO_IMAGES,
   interval = 5000
@@ -23,6 +30,8 @@ export function HeroCarousel({
   images?: string[];
   interval?: number;
 }) {
+  const { mode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [index, setIndex] = useState(0);
   const fade = useRef(new Animated.Value(1)).current;
   const zoom = useRef(new Animated.Value(0)).current;
@@ -59,9 +68,9 @@ export function HeroCarousel({
         resizeMode="cover"
         blurRadius={0}
       />
-      {/* Dark scrim — keeps the brand dark and text readable over any photo */}
+      {/* Scrim — keeps the backdrop on-brand and text readable over any photo */}
       <LinearGradient
-        colors={['rgba(14,11,20,0.55)', 'rgba(14,11,20,0.78)', 'rgba(14,11,20,0.96)']}
+        colors={mode === 'dark' ? SCRIM_DARK : SCRIM_LIGHT}
         locations={[0, 0.55, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -75,9 +84,15 @@ export function HeroCarousel({
   );
 }
 
-const styles = StyleSheet.create({
-  imgBase: { ...StyleSheet.absoluteFillObject, backgroundColor: darkColors.card },
-  dots: { position: 'absolute', top: 14, alignSelf: 'center', flexDirection: 'row', gap: 6, zIndex: 5 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
-  dotActive: { width: 18, backgroundColor: '#fff' }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    imgBase: { ...StyleSheet.absoluteFillObject, backgroundColor: c.card },
+    dots: { position: 'absolute', top: 14, alignSelf: 'center', flexDirection: 'row', gap: 6, zIndex: 5 },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(35,26,47,0.35)'
+    },
+    dotActive: { width: 18, backgroundColor: mode === 'dark' ? '#fff' : c.text }
+  });
