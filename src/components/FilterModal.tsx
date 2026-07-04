@@ -3,6 +3,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   Animated,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,13 +25,17 @@ const AGE_MIN = 18;
 const AGE_MAX = 60;
 const HEIGHT_MIN = 150; // cm
 const HEIGHT_MAX = 200; // cm
+const DISTANCE_MIN = 5; // km
+const DISTANCE_STEP = 5; // km
+// Slider max doubles as the "Any distance" state — no radius filter is sent.
+const DISTANCE_ANY_KM = 500;
 const LOOKING_FOR_OPTIONS = lookingForOptions;
 const GENDER_OPTIONS = genderOptions;
 
 const DEFAULT_FILTERS = {
   ageRange: [22, 35],
   heightRange: [HEIGHT_MIN, HEIGHT_MAX],
-  distance: '25 km',
+  distance: DISTANCE_ANY_KM, // km; DISTANCE_ANY_KM = any distance
   lookingFor: [],
   gender: [], // multi-select; empty = everyone
   religions: [],
@@ -39,7 +44,7 @@ const DEFAULT_FILTERS = {
   verifiedOnly: false
 };
 
-export { DEFAULT_FILTERS };
+export { DEFAULT_FILTERS, DISTANCE_ANY_KM };
 
 function SectionHeader({ title, subtitle }) {
   return (
@@ -144,6 +149,68 @@ function RangeStepper({ range, onChange, bound, step = 1, unit = '', minLabel, m
   );
 }
 
+// Single-value drag slider for the distance radius. Drag anywhere on the
+// track (or the thumb) — moves relative to where the value was when the
+// gesture started, snapping to DISTANCE_STEP. Top end = "Any distance".
+function DistanceSlider({ value, onChange }) {
+  const [trackWidth, setTrackWidth] = useState(0);
+  const trackWidthRef = useRef(0);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const startValueRef = useRef(value);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        startValueRef.current = valueRef.current;
+      },
+      onPanResponderMove: (_e, gesture) => {
+        const width = trackWidthRef.current;
+        if (!width) return;
+        const raw = startValueRef.current + (gesture.dx / width) * (DISTANCE_ANY_KM - DISTANCE_MIN);
+        const snapped = Math.round(raw / DISTANCE_STEP) * DISTANCE_STEP;
+        const next = Math.max(DISTANCE_MIN, Math.min(DISTANCE_ANY_KM, snapped));
+        if (next !== valueRef.current) onChangeRef.current(next);
+      },
+      // Don't let the surrounding ScrollView steal the gesture mid-drag.
+      onPanResponderTerminationRequest: () => false
+    })
+  ).current;
+
+  const isAny = value >= DISTANCE_ANY_KM;
+  const pct = (value - DISTANCE_MIN) / (DISTANCE_ANY_KM - DISTANCE_MIN);
+  const thumbLeft = trackWidth > 0 ? pct * (trackWidth - SLIDER_THUMB) : 0;
+
+  return (
+    <View>
+      <View style={styles.ageDisplay}>
+        <Text style={styles.ageValue}>{isAny ? 'Any distance' : `${value} km`}</Text>
+      </View>
+      <View
+        style={styles.sliderHitArea}
+        {...panResponder.panHandlers}
+        onLayout={(e) => {
+          trackWidthRef.current = e.nativeEvent.layout.width;
+          setTrackWidth(e.nativeEvent.layout.width);
+        }}
+      >
+        <View style={styles.sliderTrack}>
+          <View style={[styles.sliderFill, { width: `${pct * 100}%` }]} />
+        </View>
+        <View style={[styles.sliderThumb, { left: thumbLeft }]} />
+      </View>
+      <View style={styles.sliderScale}>
+        <Text style={styles.sliderScaleText}>{DISTANCE_MIN} km</Text>
+        <Text style={styles.sliderScaleText}>Any</Text>
+      </View>
+    </View>
+  );
+}
+
 function ToggleRow({ label, description, value, onToggle }) {
   return (
     <Pressable style={styles.toggleRow} onPress={onToggle}>
@@ -159,7 +226,12 @@ function ToggleRow({ label, description, value, onToggle }) {
 }
 
 export function FilterModal({ visible, onClose, filters: externalFilters, onApply }) {
-  const [filters, setFilters] = useState(externalFilters || DEFAULT_FILTERS);
+  const [filters, setFilters] = useState(() => {
+    const initial = { ...DEFAULT_FILTERS, ...(externalFilters || {}) };
+    // Older saved filters stored distance as a display string ('25 km').
+    if (typeof initial.distance !== 'number') initial.distance = DEFAULT_FILTERS.distance;
+    return initial;
+  });
 
   function update(key, value) {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -219,6 +291,15 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
             description="Show only people who verified their profession"
             value={filters.verifiedOnly}
             onToggle={() => update('verifiedOnly', !filters.verifiedOnly)}
+          />
+
+          <View style={styles.divider} />
+
+          {/* Distance */}
+          <SectionHeader title="Maximum distance" subtitle="Only see people within this radius" />
+          <DistanceSlider
+            value={filters.distance}
+            onChange={(val) => update('distance', val)}
           />
 
           <View style={styles.divider} />
@@ -310,6 +391,8 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
 }
 
 FilterModal.DEFAULT_FILTERS = DEFAULT_FILTERS;
+
+const SLIDER_THUMB = 26;
 
 const styles = StyleSheet.create({
   modal: {
@@ -479,6 +562,47 @@ const styles = StyleSheet.create({
     color: colors.text,
     minWidth: 28,
     textAlign: 'center'
+  },
+  sliderHitArea: {
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs
+  },
+  sliderTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    overflow: 'hidden'
+  },
+  sliderFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: colors.primary
+  },
+  sliderThumb: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -SLIDER_THUMB / 2,
+    width: SLIDER_THUMB,
+    height: SLIDER_THUMB,
+    borderRadius: SLIDER_THUMB / 2,
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  sliderScale: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs
+  },
+  sliderScaleText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600'
   },
   toggleRow: {
     flexDirection: 'row',

@@ -10,6 +10,8 @@ export type OnboardingDraft = {
   dob: string; // ISO date string
   profession: string;
   photos: string[];
+  location: string; // friendly city label, e.g. "New Delhi, Delhi"
+  coordinates?: [number, number]; // [lng, lat] — GPS fix; absent if typed manually
   gender: string;
   genderPreference: string[];
   bio: string;
@@ -23,7 +25,7 @@ type OnboardingContextValue = {
 };
 
 // Total steps in the wizard (used for the progress bar).
-export const TOTAL_STEPS = 7;
+export const TOTAL_STEPS = 8;
 
 const Ctx = createContext<OnboardingContextValue | null>(null);
 
@@ -34,6 +36,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     dob: user?.dob || '',
     profession: user?.profession || '',
     photos: user?.photos || [],
+    location: user?.location || '',
+    coordinates: undefined, // raw coords are never returned by the API
     gender: user?.gender || '',
     genderPreference: user?.genderPreference || [],
     bio: user?.bio || ''
@@ -54,6 +58,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     if (patch.name !== undefined) profilePatch.name = patch.name;
     if (patch.dob !== undefined) profilePatch.dob = patch.dob;
     if (patch.photos !== undefined) profilePatch.photos = patch.photos;
+    if (patch.location !== undefined) profilePatch.location = patch.location;
+    if (patch.coordinates !== undefined) profilePatch.coordinates = patch.coordinates;
     if (patch.gender !== undefined) profilePatch.gender = patch.gender;
     if (patch.genderPreference !== undefined) profilePatch.genderPreference = patch.genderPreference;
     if (patch.bio !== undefined) profilePatch.bio = patch.bio;

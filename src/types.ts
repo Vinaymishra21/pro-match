@@ -51,6 +51,9 @@ export interface ProfileForm {
   dob?: string;
   bio: string;
   location: string;
+  /** [lng, lat] — write-only: sent to the backend, never returned to clients. */
+  coordinates?: [number, number];
+  maxDistanceKm?: number;
   gender: string;
   genderPreference: string[];
   agePreference: number[];
@@ -85,7 +88,8 @@ export interface ProfileCompletion {
 export interface FilterState {
   ageRange: [number, number];
   heightRange: [number, number]; // in cm
-  distance: string;
+  /** Max distance in km; DISTANCE_ANY_KM (slider max) = no distance filter. */
+  distance: number;
   lookingFor: string[];
   gender: string[];
   religions: string[];
@@ -97,6 +101,8 @@ export interface FilterState {
 export interface DiscoverProfile extends User {
   id: string;
   boosted?: boolean;
+  /** Distance from the viewer in km; null/undefined = unknown. */
+  distanceKm?: number | null;
 }
 
 export interface BoostState {

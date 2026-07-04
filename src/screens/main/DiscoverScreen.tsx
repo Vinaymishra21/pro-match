@@ -22,7 +22,7 @@ import { DarkBackground } from '../../components/DarkBackground';
 import { ProfessionBadge } from '../../components/ProfessionBadge';
 import { VerifiedTick } from '../../components/VerifiedTick';
 import { GradientButton } from '../../components/GradientButton';
-import { DEFAULT_FILTERS, FilterModal } from '../../components/FilterModal';
+import { DEFAULT_FILTERS, DISTANCE_ANY_KM, FilterModal } from '../../components/FilterModal';
 import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { PROFESSIONS } from '../../constants/professions';
@@ -84,7 +84,8 @@ export function DiscoverScreen({ navigation }: Props) {
     (filters.languages.length > 0 ? 1 : 0) +
     (filters.verifiedOnly ? 1 : 0) +
     (filters.ageRange[0] !== 22 || filters.ageRange[1] !== 35 ? 1 : 0) +
-    (filters.heightRange[0] !== 150 || filters.heightRange[1] !== 200 ? 1 : 0);
+    (filters.heightRange[0] !== 150 || filters.heightRange[1] !== 200 ? 1 : 0) +
+    (typeof filters.distance === 'number' && filters.distance < DISTANCE_ANY_KM ? 1 : 0);
 
   const load = useCallback(
     async (profession: string, activeFilters: FilterState) => {
@@ -96,11 +97,15 @@ export function DiscoverScreen({ navigation }: Props) {
         // otherwise we'd exclude profiles that simply haven't set a height.
         const heightNarrowed =
           activeFilters.heightRange[0] !== 150 || activeFilters.heightRange[1] !== 200;
+        // Only send a radius when narrowed below the "Any distance" top end.
+        const distanceNarrowed =
+          typeof activeFilters.distance === 'number' && activeFilters.distance < DISTANCE_ANY_KM;
         const res = await getDiscoverProfiles(token, profession || undefined, {
           minAge: activeFilters.ageRange[0],
           maxAge: activeFilters.ageRange[1],
           minHeightCm: heightNarrowed ? activeFilters.heightRange[0] : undefined,
           maxHeightCm: heightNarrowed ? activeFilters.heightRange[1] : undefined,
+          maxDistanceKm: distanceNarrowed ? activeFilters.distance : undefined,
           genders: activeFilters.gender,
           lookingFor: activeFilters.lookingFor,
           religions: activeFilters.religions,
@@ -595,9 +600,15 @@ export function DiscoverScreen({ navigation }: Props) {
   );
 }
 
+// "2 km away" / "<1 km away" — shown when the backend computed a distance.
+function distanceLabel(km: number) {
+  return km < 1 ? '<1 km away' : `${Math.round(km)} km away`;
+}
+
 function ProfileCard({ profile }: { profile: DiscoverProfile }) {
   const theme = professionTheme(profile.profession);
   const photo = profile.photos && profile.photos.length > 0 ? profile.photos[0] : null;
+  const hasDistance = typeof profile.distanceKm === 'number';
 
   return (
     <View style={styles.card}>
@@ -626,7 +637,15 @@ function ProfileCard({ profile }: { profile: DiscoverProfile }) {
             {profile.bio}
           </Text>
         ) : null}
-        {profile.location ? <Text style={styles.cardLocation}>📍 {profile.location}</Text> : null}
+        {profile.location || hasDistance ? (
+          <Text style={styles.cardLocation} numberOfLines={1}>
+            📍 {profile.location ? profile.location : ''}
+            {profile.location && hasDistance ? ' · ' : ''}
+            {hasDistance ? (
+              <Text style={styles.cardDistance}>{distanceLabel(profile.distanceKm as number)}</Text>
+            ) : null}
+          </Text>
+        ) : null}
       </LinearGradient>
     </View>
   );
@@ -768,6 +787,7 @@ const styles = StyleSheet.create({
   cardHeadline: { color: 'rgba(255,255,255,0.95)', fontSize: 15, fontWeight: '700' },
   cardBio: { color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 20, marginTop: 2 },
   cardLocation: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 },
+  cardDistance: { color: 'rgba(255,255,255,0.95)', fontWeight: '800' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   stateCard: {
     flex: 1,

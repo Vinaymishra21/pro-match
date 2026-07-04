@@ -41,7 +41,7 @@ export function GenderStepScreen({ navigation }: any) {
 
   return (
     <OnboardingScaffold
-      step={5}
+      step={6}
       total={TOTAL_STEPS}
       title="You & who you'd like to meet"
       subtitle="This powers your matches. You can change it anytime — or skip for now."

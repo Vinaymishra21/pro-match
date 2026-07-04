@@ -28,7 +28,7 @@ export function AboutStepScreen({ navigation }: any) {
 
   return (
     <OnboardingScaffold
-      step={6}
+      step={7}
       total={TOTAL_STEPS}
       title="Write a short bio"
       subtitle="A line or two about you — what you're into, what a good match looks like. You can skip and add it later."

@@ -183,6 +183,7 @@ export type DiscoverFilters = {
   maxAge?: number;
   minHeightCm?: number;
   maxHeightCm?: number;
+  maxDistanceKm?: number;
   genders?: string[];
   lookingFor?: string[];
   religions?: string[];
@@ -197,6 +198,7 @@ export function getDiscoverProfiles(token: string, profession?: string, filters?
   if (filters?.maxAge) params.set('maxAge', String(filters.maxAge));
   if (filters?.minHeightCm) params.set('minHeightCm', String(filters.minHeightCm));
   if (filters?.maxHeightCm) params.set('maxHeightCm', String(filters.maxHeightCm));
+  if (filters?.maxDistanceKm) params.set('maxDistanceKm', String(filters.maxDistanceKm));
   if (filters?.genders?.length) params.set('genders', filters.genders.join(','));
   if (filters?.lookingFor?.length) params.set('lookingFor', filters.lookingFor.join(','));
   if (filters?.religions?.length) params.set('religions', filters.religions.join(','));

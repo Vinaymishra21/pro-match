@@ -20,7 +20,7 @@ export function PhotosStepScreen({ navigation }: any) {
       setBusy(true);
       setErr('');
       await persist({ photos });
-      navigation.navigate('Gender');
+      navigation.navigate('Location');
     } catch (e) {
       setErr((e as Error).message);
     } finally {

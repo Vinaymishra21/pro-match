@@ -10,12 +10,19 @@
     ],
     "plugins": [
       "expo-notifications",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pro Match uses your location to show you people nearby."
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow Pro Match to access your photos so you can upload profile pictures."
+        "NSPhotoLibraryUsageDescription": "Allow Pro Match to access your photos so you can upload profile pictures.",
+        "NSLocationWhenInUseUsageDescription": "Pro Match uses your location to show you people nearby."
       }
     },
     "android": {
@@ -25,9 +32,16 @@
       "permissions": [
         "INTERNET",
         "READ_MEDIA_IMAGES",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
       ]
     },
-    "web": {}
+    "web": {},
+    "extra": {
+      "eas": {
+        "projectId": "680d32b3-a5e2-4527-a864-117d7c83deaa"
+      }
+    }
   }
 }
