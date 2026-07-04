@@ -64,14 +64,29 @@ const LOOKING_FOR = ['Long-term relationship', 'Short-term dating', 'Life partne
 const HEIGHTS = ['5\'6" (168 cm)', '5\'9" (175 cm)', '5\'4" (163 cm)', '6\'0" (183 cm)'];
 const RELIGIONS = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Spiritual', 'Agnostic'];
 
+// City centroids as [lng, lat] — SAME order/index basis (idx % 5) as the
+// `location` labels below, so each user's geo point matches their city label.
+const CITIES = ['Bengaluru', 'Mumbai', 'Pune', 'Delhi', 'Hyderabad'];
+const CITY_COORDS = [
+  [77.5946, 12.9716], // Bengaluru
+  [72.8777, 19.076], // Mumbai
+  [73.8567, 18.5204], // Pune
+  [77.209, 28.6139], // Delhi
+  [78.4867, 17.385] // Hyderabad
+];
+// Small jitter (±~0.05°, roughly ±5 km) so seeded distances vary within a city.
+const jitter = () => (Math.random() - 0.5) * 0.1;
+
 function buildUser(name, profession, idx) {
   const gender = GENDERS[idx % GENDERS.length];
+  const [cityLng, cityLat] = CITY_COORDS[idx % 5];
   return {
     name,
     phone: `+9100001${String(1000 + pCount).padStart(5, '0')}`,
     profession,
     age: 24 + (idx % 10),
-    location: ['Bengaluru', 'Mumbai', 'Pune', 'Delhi', 'Hyderabad'][idx % 5] + ', India',
+    location: CITIES[idx % 5] + ', India',
+    geo: { type: 'Point', coordinates: [cityLng + jitter(), cityLat + jitter()] },
     headline: HEADLINES[idx % HEADLINES.length],
     bio: BIOS[idx % BIOS.length],
     gender,
@@ -116,6 +131,9 @@ async function main() {
       profession: DEV_PROFESSION,
       age: 28,
       location: 'Bengaluru, India',
+      // Bengaluru centroid, matching the location label — makes the dev deck
+      // demonstrate nearest-first ordering (Bengaluru profiles up top).
+      geo: { type: 'Point', coordinates: [77.5946, 12.9716] },
       headline: 'Reviewing the PRISM design ✦',
       bio: 'This is the demo account.',
       photos: [nextPhoto()],

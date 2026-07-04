@@ -114,6 +114,10 @@ async function updateProfile(req, res) {
     agePreference,
     lookingFor,
     maxDistance,
+    maxDistanceKm,
+    coordinates,
+    lat,
+    lng,
     height,
     languages,
     religion,
@@ -220,6 +224,36 @@ async function updateProfile(req, res) {
       user[key] = value.trim();
     }
   });
+
+  // GPS coordinates → GeoJSON point (powers nearest-first discovery). Accepts
+  // either `coordinates: [lng, lat]` or separate `lat` + `lng` numbers.
+  // Absent/invalid values leave the stored point untouched (we never wipe geo
+  // on a partial profile update).
+  let lngLat = null;
+  if (Array.isArray(coordinates) && coordinates.length === 2) {
+    lngLat = [coordinates[0], coordinates[1]];
+  } else if (lat !== undefined || lng !== undefined) {
+    lngLat = [lng, lat];
+  }
+  if (
+    lngLat &&
+    Number.isFinite(lngLat[0]) &&
+    Number.isFinite(lngLat[1]) &&
+    lngLat[0] >= -180 &&
+    lngLat[0] <= 180 &&
+    lngLat[1] >= -90 &&
+    lngLat[1] <= 90
+  ) {
+    user.geo = { type: 'Point', coordinates: [lngLat[0], lngLat[1]] };
+  }
+
+  // Numeric max-distance radius (km) for discovery. Explicit null clears the
+  // cap (nearby-first with no radius limit); otherwise require a sane number.
+  if (maxDistanceKm === null) {
+    user.maxDistanceKm = null;
+  } else if (typeof maxDistanceKm === 'number' && Number.isFinite(maxDistanceKm) && maxDistanceKm >= 1) {
+    user.maxDistanceKm = maxDistanceKm;
+  }
 
   if (Array.isArray(genderPreference)) {
     user.genderPreference = genderPreference

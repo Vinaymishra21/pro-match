@@ -1,3 +1,4 @@
+const { Types } = require('mongoose');
 const { User, Swipe } = require('../models');
 const { publicProfile } = require('../utils/auth');
 const {
@@ -56,8 +57,16 @@ async function getDiscover(req, res) {
   const excludeIds = [...new Set([...swipedIds.map(String), ...blockedByMe, ...blockedMeIds])];
 
   // --- Build the query: profession (core USP) + optional filters ---------
+  // _id values are cast to ObjectId up front: `find()` would cast strings
+  // automatically, but the $geoNear aggregation below bypasses Mongoose
+  // casting entirely — string ids there would silently exclude nobody.
+  const meObjectId = new Types.ObjectId(String(me.id));
+  const excludeObjectIds = excludeIds
+    .filter((id) => Types.ObjectId.isValid(id))
+    .map((id) => new Types.ObjectId(id));
+
   const query = {
-    _id: { $ne: me.id, $nin: excludeIds },
+    _id: { $ne: meObjectId, $nin: excludeObjectIds },
     profession: requested,
     // Never surface deactivated, banned, or shadow-banned accounts.
     isDeactivated: { $ne: true },
@@ -119,41 +128,105 @@ async function getDiscover(req, res) {
     query.professionVerified = true;
   }
 
-  let candidates = await User.find(query);
-
-  // Height range filter (heights are stored as strings like 5'9" (175 cm) —
-  // parse the cm value out and compare). Done in JS since it's a derived value.
+  // --- JS post-filters (shared by every fetch path below) ----------------
+  // They read plain fields, so they work on Mongoose docs and on the plain
+  // objects that come back from the aggregation pipeline alike.
   const minCm = parseInt(req.query.minHeightCm, 10);
   const maxCm = parseInt(req.query.maxHeightCm, 10);
-  if (!Number.isNaN(minCm) || !Number.isNaN(maxCm)) {
-    candidates = candidates.filter((u) => {
-      const match = /\((\d+)\s*cm\)/.exec(u.height || '');
-      if (!match) return false; // no height set → excluded when filtering on height
-      const cm = parseInt(match[1], 10);
-      if (!Number.isNaN(minCm) && cm < minCm) return false;
-      if (!Number.isNaN(maxCm) && cm > maxCm) return false;
-      return true;
-    });
-  }
+  const applyJsFilters = (list) => {
+    let out = list;
 
-  // --- Mutual gender preference (profession AND gender) ------------------
-  // Only show people whose own genderPreference includes my gender (or who are
-  // open to everyone). This makes matching two-sided, not just my filter.
-  if (me.gender) {
-    candidates = candidates.filter(
-      (u) => !u.genderPreference || u.genderPreference.length === 0 || u.genderPreference.includes(me.gender)
-    );
+    // Height range filter (heights are stored as strings like 5'9" (175 cm) —
+    // parse the cm value out and compare). Done in JS since it's a derived value.
+    if (!Number.isNaN(minCm) || !Number.isNaN(maxCm)) {
+      out = out.filter((u) => {
+        const match = /\((\d+)\s*cm\)/.exec(u.height || '');
+        if (!match) return false; // no height set → excluded when filtering on height
+        const cm = parseInt(match[1], 10);
+        if (!Number.isNaN(minCm) && cm < minCm) return false;
+        if (!Number.isNaN(maxCm) && cm > maxCm) return false;
+        return true;
+      });
+    }
+
+    // --- Mutual gender preference (profession AND gender) ------------------
+    // Only show people whose own genderPreference includes my gender (or who are
+    // open to everyone). This makes matching two-sided, not just my filter.
+    if (me.gender) {
+      out = out.filter(
+        (u) => !u.genderPreference || u.genderPreference.length === 0 || u.genderPreference.includes(me.gender)
+      );
+    }
+
+    return out;
+  };
+
+  // --- Distance: nearest-first deck + optional radius cap ----------------
+  // Client contract: GET /discover?...&maxDistanceKm=<number> (kilometers).
+  // The query param (filter slider) wins over the user's saved preference
+  // (me.maxDistanceKm); null/absent = no hard cap, just nearest-first sorting.
+  let radiusKm = Number(req.query.maxDistanceKm) || me.maxDistanceKm || null;
+  if (!Number.isFinite(radiusKm) || radiusKm <= 0) radiusKm = null;
+
+  const hasGeo = me.geo?.coordinates?.length === 2;
+
+  let candidates;
+
+  if (hasGeo) {
+    // Requester has coordinates → $geoNear returns candidates sorted by
+    // distance ASC (as plain objects, each with distanceMeters). It applies
+    // the exact same `query` filters via its `query` option.
+    const geoStage = {
+      $geoNear: {
+        near: { type: 'Point', coordinates: [me.geo.coordinates[0], me.geo.coordinates[1]] },
+        distanceField: 'distanceMeters',
+        spherical: true,
+        key: 'geo',
+        query,
+        ...(radiusKm ? { maxDistance: radiusKm * 1000 } : {})
+      }
+    };
+    const geoResults = await User.aggregate([geoStage]);
+    const geoCandidates = applyJsFilters(geoResults).map((u) => ({
+      ...u,
+      // Aggregation returns raw docs: no `id` virtual — map _id so the public
+      // profile shape stays identical to the find() path.
+      id: String(u._id),
+      distanceKm: Math.round((u.distanceMeters / 1000) * 10) / 10
+    }));
+
+    // Transition fallback: $geoNear only ever returns docs that HAVE geo, so
+    // users who haven't shared coordinates yet would silently vanish. Fetch
+    // them too and append AFTER all distance-sorted results (distance unknown).
+    const geoIds = geoResults.map((c) => c._id);
+    const nonGeoQuery = {
+      ...query,
+      _id: { $ne: meObjectId, $nin: [...excludeObjectIds, ...geoIds] },
+      geo: { $exists: false }
+    };
+    const nonGeo = applyJsFilters(await User.find(nonGeoQuery));
+
+    candidates = { geo: geoCandidates, tail: nonGeo };
+  } else {
+    // Requester has no location → previous behavior, nobody gets a distance.
+    candidates = { geo: null, tail: applyJsFilters(await User.find(query)) };
   }
 
   // Boost/Spotlight: people with an active boost float to the front of the deck.
-  // Stable within each group (boosted vs not), so existing ordering is otherwise
-  // preserved. Sort on the raw docs before projecting away boostExpiresAt.
+  // Stable within each group (boosted vs not), so existing ordering — distance
+  // ASC for geo results — is otherwise preserved. The non-geo tail is sorted
+  // the same way but always stays after the geo block.
   const now = Date.now();
   const isBoosted = (u) => u.boostExpiresAt && new Date(u.boostExpiresAt).getTime() > now;
-  candidates.sort((a, b) => Number(isBoosted(b)) - Number(isBoosted(a)));
+  const boostSort = (list) => list.sort((a, b) => Number(isBoosted(b)) - Number(isBoosted(a)));
+  candidates = [...(candidates.geo ? boostSort(candidates.geo) : []), ...boostSort(candidates.tail)];
 
   return res.json({
-    profiles: candidates.map((u) => ({ ...publicProfile(u), boosted: isBoosted(u) })),
+    profiles: candidates.map((u) => ({
+      ...publicProfile(u),
+      boosted: isBoosted(u),
+      distanceKm: u.distanceKm ?? null
+    })),
     profession: requested,
     isOwnProfession: requested === me.profession,
     unlock: getWeeklyUnlockState(me),

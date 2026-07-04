@@ -34,8 +34,26 @@ const userSchema = new Schema(
     // Age range this user wants to see [min, max]. Empty = no preference.
     agePreference: { type: [Number], default: [] },
     lookingFor: { type: String, default: '' },
-    // Max distance preference label (display/filter only; no geo yet).
+    // Max distance preference label (legacy display string, kept for back-compat).
     maxDistance: { type: String, default: '' },
+    // Real max-distance radius in kilometers for discovery. null = no hard cap
+    // (deck is simply sorted nearest-first).
+    maxDistanceKm: { type: Number, default: null },
+    // Precise GPS position as a GeoJSON Point ([lng, lat]) for nearest-first
+    // discovery. The whole subdocument defaults to undefined — NOT {} or [0,0] —
+    // so location-less users carry no geo field at all and are safely skipped by
+    // the 2dsphere index (a doc with a malformed/empty point would break index
+    // inserts; a missing field is simply not indexed).
+    geo: {
+      type: new Schema(
+        {
+          type: { type: String, enum: ['Point'], default: 'Point' },
+          coordinates: { type: [Number], default: undefined } // [lng, lat]
+        },
+        { _id: false }
+      ),
+      default: undefined
+    },
 
     // Additional profile facts.
     height: { type: String, default: '' }, // e.g. "5'9\" (175 cm)"
@@ -141,5 +159,10 @@ const userSchema = new Schema(
   },
   { timestamps: true, toJSON, toObject: toJSON }
 );
+
+// Geospatial index for $geoNear discovery. 2dsphere skips documents that lack
+// the geo field entirely (see the `geo` default above), so users without
+// coordinates neither break the index nor appear at [0,0].
+userSchema.index({ geo: '2dsphere' });
 
 module.exports = mongoose.model('User', userSchema);
