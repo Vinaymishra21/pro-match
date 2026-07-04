@@ -1,0 +1,39 @@
+# Render Blueprint for the Pro Match BACKEND (Node/Express in ./backend).
+#
+# IMPORTANT: the repo ROOT is the React Native/Expo app. `rootDir: backend`
+# makes Render build & run ONLY the backend — no `expo`, no app TypeScript, so
+# the ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING error goes away.
+#
+# Use it via Render dashboard → New → Blueprint → pick this repo. (Or just set
+# the same fields on your existing service — see the checklist in chat.)
+services:
+  - type: web
+    name: pro-match-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    region: singapore          # closest free region to India; change if you like
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20.18.0"
+      - key: NODE_ENV
+        value: production
+      # Render generates a strong random secret once (fails-fast env check is happy).
+      - key: JWT_SECRET
+        generateValue: true
+      # Set these in the dashboard (not committed):
+      - key: MONGODB_URI
+        sync: false            # ← paste your MongoDB Atlas connection string
+      # Keep auth OTP + payments stubbed for now (no SMS/Razorpay keys yet):
+      - key: AUTH_DEV_MODE
+        value: "true"
+      - key: BILLING_DEV_MODE
+        value: "true"
+      # Optional: your public API URL, so uploaded-image links are absolute.
+      # If omitted, the server derives it from the request host (works on Render).
+      - key: PUBLIC_BASE_URL
+        sync: false

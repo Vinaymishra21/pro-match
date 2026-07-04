@@ -10,6 +10,9 @@
     "seed:admin": "node src/seedAdmin.js",
     "dev:seeded": "node src/seed.js && nodemon src/server.js"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
