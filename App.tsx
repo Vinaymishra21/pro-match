@@ -1,5 +1,4 @@
 import React from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
@@ -17,10 +16,13 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { SplashScreen } from './src/screens/auth/SplashScreen';
-import { appTheme } from './src/theme/theme';
+import { navThemeDark, navThemeLight } from './src/theme/theme';
+import { ThemedStatusBar, ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 import { AuthProvider } from './src/context/AuthContext';
 
-export default function App() {
+function ThemedApp() {
+  const { mode } = useTheme();
+
   // Brand typography: Fraunces (editorial serif display) + Plus Jakarta Sans
   // (geometric UI sans). Family names must match `fonts` in src/theme/typography.ts.
   const [fontsLoaded, fontError] = useFonts({
@@ -37,21 +39,25 @@ export default function App() {
   // Hold on the branded splash while fonts stream in; if loading fails we
   // continue anyway (system fonts render as a graceful fallback).
   if (!fontsLoaded && !fontError) {
-    return (
-      <SafeAreaProvider>
-        <SplashScreen />
-      </SafeAreaProvider>
-    );
+    return <SplashScreen />;
   }
 
   return (
+    <AuthProvider>
+      <NavigationContainer theme={mode === 'dark' ? navThemeDark : navThemeLight}>
+        <ThemedStatusBar />
+        <RootNavigator />
+      </NavigationContainer>
+    </AuthProvider>
+  );
+}
+
+export default function App() {
+  return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationContainer theme={appTheme}>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </NavigationContainer>
-      </AuthProvider>
+      <ThemeProvider>
+        <ThemedApp />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
