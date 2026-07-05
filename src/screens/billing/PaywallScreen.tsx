@@ -12,16 +12,42 @@ import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode } from '../.
 import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
-import type { BillingCatalog, CreditPack, RootStackParamList } from '../../types';
+import type { BillingCatalog, CreditPack, ProPlan, RootStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Paywall'>;
 
-const PRO_PERKS = [
-  { icon: '👀', text: 'See everyone who likes you — instantly unblurred' },
-  { icon: '🌐', text: 'Explore unlimited professions, not just 1 a week' },
-  { icon: '💬', text: 'Chat with cross-profession matches' },
-  { icon: '🚀', text: 'Priority placement in your profession deck' }
-];
+type Perk = { icon: string; text: string };
+
+// Every perk maps to a real Pro entitlement (backend/src/config/monetization.js).
+// Super Like / Boost counts come from the live catalog so the copy can never
+// drift from what the server actually grants.
+function buildProPerks(catalog: BillingCatalog): Perk[] {
+  const perks: Perk[] = [
+    { icon: '👀', text: 'See everyone who likes you — instantly unblurred' },
+    {
+      icon: '⭐',
+      text:
+        catalog.superLike && catalog.superLike.proWeekly > 0
+          ? `${catalog.superLike.proWeekly} Super Likes every week — get noticed first`
+          : 'More Super Likes every week — get noticed first'
+    }
+  ];
+  if (catalog.boost && catalog.boost.proWeekly > 0) {
+    perks.push({
+      icon: '🚀',
+      text: `Free weekly Boost — ${catalog.boost.durationMinutes} min at the front of the deck`
+    });
+  }
+  perks.push(
+    { icon: '🌐', text: 'Explore unlimited professions, not just 1 a week' },
+    { icon: '💬', text: 'Chat with your cross-profession matches' },
+    { icon: '↩', text: 'Unlimited rewinds — undo any swipe' }
+  );
+  return perks;
+}
+
+// Price of a plan expressed per week, for like-for-like comparison.
+const perWeekOf = (p: ProPlan) => (p.priceInr * 7) / p.periodDays;
 
 export function PaywallScreen({ navigation, route }: Props) {
   const focus = route.params?.focus ?? 'pro';
@@ -80,6 +106,11 @@ export function PaywallScreen({ navigation, route }: Props) {
 
   const activePlan = catalog?.proPlans.find((p) => p.id === selectedPlan) || null;
 
+  // The most expensive per-week rate in the catalog (normally the shortest
+  // plan) — the baseline every "Save X%" is measured against.
+  const baselinePerWeek =
+    catalog && catalog.proPlans.length > 0 ? Math.max(...catalog.proPlans.map(perWeekOf)) : 0;
+
   return (
     <DarkBackground orbColor="rgba(251,191,36,0.22)">
       <ThemedStatusBar />
@@ -95,7 +126,9 @@ export function PaywallScreen({ navigation, route }: Props) {
         <View style={styles.hero}>
           <Text style={styles.crown}>⭐</Text>
           <Text style={styles.heroTitle}>Pro Match Pro</Text>
-          <Text style={styles.heroSub}>Unlock the full spectrum of connections.</Text>
+          <Text style={styles.heroSub}>
+            See who already likes you, stand out with Super Likes, and date across every profession.
+          </Text>
         </View>
 
         {loading || !catalog ? (
@@ -111,26 +144,25 @@ export function PaywallScreen({ navigation, route }: Props) {
               end={{ x: 1, y: 1 }}
               style={[styles.proCard, focus === 'pro' ? styles.focused : null]}
             >
-              <Text style={styles.proName}>Pro Match Pro</Text>
+              <Text style={styles.proName}>EVERYTHING IN PRO</Text>
 
               <View style={styles.perks}>
-                {PRO_PERKS.map((p) => (
+                {buildProPerks(catalog).map((p) => (
                   <View key={p.text} style={styles.perkRow}>
                     <Text style={styles.perkIcon}>{p.icon}</Text>
                     <Text style={styles.perkText}>{p.text}</Text>
                   </View>
                 ))}
-                <View style={styles.perkRow}>
-                  <Text style={styles.perkIcon}>↩</Text>
-                  <Text style={styles.perkText}>Unlimited rewinds (undo swipes)</Text>
-                </View>
               </View>
 
-              {/* Plan selector */}
+              {/* Plan selector. Savings are derived from the catalog: each plan's
+                  per-week rate vs the most expensive per-week plan (the shortest). */}
               <View style={styles.planRow}>
                 {catalog.proPlans.map((plan) => {
                   const active = plan.id === selectedPlan;
-                  const perWeek = plan.priceInr / (plan.periodDays / 7);
+                  const perWeek = perWeekOf(plan);
+                  const savings =
+                    baselinePerWeek > 0 ? Math.round((1 - perWeek / baselinePerWeek) * 100) : 0;
                   return (
                     <Pressable
                       key={plan.id}
@@ -139,12 +171,22 @@ export function PaywallScreen({ navigation, route }: Props) {
                     >
                       {plan.popular ? (
                         <View style={styles.popularTag}>
-                          <Text style={styles.popularText}>BEST VALUE</Text>
+                          <Text style={styles.popularText}>MOST POPULAR</Text>
+                        </View>
+                      ) : null}
+                      {active ? (
+                        <View style={styles.planCheck}>
+                          <Text style={styles.planCheckText}>✓</Text>
                         </View>
                       ) : null}
                       <Text style={styles.planLabel}>{plan.label}</Text>
                       <Text style={styles.planPrice}>₹{plan.priceInr}</Text>
                       <Text style={styles.planPer}>≈ ₹{Math.round(perWeek)}/week</Text>
+                      {savings >= 5 ? (
+                        <View style={styles.savePill}>
+                          <Text style={styles.saveText}>SAVE {savings}%</Text>
+                        </View>
+                      ) : null}
                     </Pressable>
                   );
                 })}
@@ -163,14 +205,18 @@ export function PaywallScreen({ navigation, route }: Props) {
                 colors={['#1F2937', '#374151']}
                 style={{ marginTop: spacing.md }}
               />
+              {/* Pro is a fixed period (grantPro stacks days) — nothing recurring. */}
+              <Text style={styles.ctaNote}>One-time payment · no auto-renewal</Text>
             </LinearGradient>
 
             {/* CREDITS */}
             <View style={[styles.creditsHeader, focus === 'credits' ? styles.focusedText : null]}>
-              <Text style={styles.sectionTitle}>Or buy credits 🪙</Text>
+              <Text style={styles.sectionTitle}>Or pay as you go 🪙</Text>
               <Text style={styles.sectionSub}>
-                Reveal one person who likes you for {Math.round(10)} credits. 1 credit = ₹
-                {catalog.creditValueInr}.
+                No subscription — credits work anytime. Reveal a like for 10
+                {catalog.superLike ? `, a Super Like for ${catalog.superLike.costCredits}` : ''}
+                {catalog.boost ? `, a Boost for ${catalog.boost.costCredits}` : ''} credits. 1 credit
+                = ₹{catalog.creditValueInr}.
               </Text>
             </View>
 
@@ -242,7 +288,13 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       color: c.text,
       letterSpacing: -0.5
     },
-    heroSub: { ...typography.tagline, color: c.textMuted, marginTop: 4, textAlign: 'center' },
+    heroSub: {
+      ...typography.tagline,
+      color: c.textMuted,
+      marginTop: 4,
+      textAlign: 'center',
+      paddingHorizontal: spacing.md
+    },
     center: { paddingVertical: spacing.xxl, alignItems: 'center' },
     // Gold card keeps its own on-gradient palette (dark-amber text, gold glow).
     proCard: {
@@ -258,7 +310,9 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     // A white focus ring is invisible against the cream bg — use ink in light.
     focused: { borderWidth: 2, borderColor: mode === 'dark' ? '#FFFFFF' : c.text },
     focusedText: {},
-    proName: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 30, fontWeight: '700', color: '#2A1C00', letterSpacing: -0.3 },
+    // Small-caps eyebrow — the hero directly above already carries the product
+    // name, so the card frames the perk list instead of repeating it.
+    proName: { fontSize: 13, fontWeight: '900', color: '#5C4500', letterSpacing: 1.6 },
     planRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
     planCard: {
       flex: 1,
@@ -269,7 +323,28 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       borderColor: 'transparent',
       alignItems: 'center'
     },
-    planCardActive: { backgroundColor: '#FFFFFF', borderColor: '#1F2937' },
+    planCardActive: {
+      backgroundColor: '#FFFFFF',
+      borderColor: '#1F2937',
+      shadowColor: '#2A1C00',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.18,
+      shadowRadius: 8,
+      elevation: 3
+    },
+    // Selected-plan checkmark, corner of the card.
+    planCheck: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: '#1F2937',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    planCheckText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900' },
     popularTag: {
       position: 'absolute',
       top: -10,
@@ -282,10 +357,27 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     planLabel: { fontSize: 13, fontWeight: '800', color: '#5C4500', marginTop: 2 },
     planPrice: { fontSize: 24, fontWeight: '900', color: '#2A1C00', marginTop: 4 },
     planPer: { fontSize: 11, fontWeight: '700', color: '#7A6020', marginTop: 2 },
+    // Savings vs the priciest per-week plan (computed from the catalog).
+    savePill: {
+      marginTop: 6,
+      backgroundColor: 'rgba(4,120,87,0.14)',
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 2
+    },
+    saveText: { color: '#047857', fontSize: 10, fontWeight: '900', letterSpacing: 0.4 },
+    ctaNote: {
+      marginTop: spacing.sm,
+      textAlign: 'center',
+      color: '#5C4500',
+      fontSize: 11,
+      fontWeight: '700'
+    },
     perks: { marginTop: spacing.md, gap: spacing.sm },
-    perkRow: { flexDirection: 'row', alignItems: 'center' },
-    perkIcon: { fontSize: 18, marginRight: spacing.sm },
-    perkText: { flex: 1, color: '#2A1C00', fontWeight: '700', fontSize: 14 },
+    // Top-aligned with a fixed icon column so two-line perks stay tidy.
+    perkRow: { flexDirection: 'row', alignItems: 'flex-start' },
+    perkIcon: { fontSize: 15, lineHeight: 20, width: 26 },
+    perkText: { flex: 1, color: '#2A1C00', fontWeight: '700', fontSize: 14, lineHeight: 20 },
     creditsHeader: { marginBottom: spacing.md },
     sectionTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, fontWeight: '600', color: c.text, letterSpacing: -0.3 },
     sectionSub: { ...typography.caption, color: c.textMuted, marginTop: 4, lineHeight: 19 },
