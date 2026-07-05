@@ -155,7 +155,7 @@ export function DiscoverScreen({ navigation }: Props) {
       const limit = unlock?.limit ?? 1;
       Alert.alert(
         'Weekly explores used up',
-        `You've used your ${limit} free profession explore${limit === 1 ? '' : 's'} this week. Go Pro to explore unlimited professions.`,
+        `You've used your ${limit} free profession explore${limit === 1 ? '' : 's'} this week. Pro unlocks unlimited professions.`,
         [
           { text: 'Not now', style: 'cancel' },
           { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) }
@@ -213,10 +213,11 @@ export function DiscoverScreen({ navigation }: Props) {
         if (err.code === 'INSUFFICIENT_SUPERLIKE') {
           Alert.alert(
             'Out of Super Likes ⭐',
-            'You’ve used your Super Likes this week. Get credits or go Pro for more.',
+            'Super Likes get you noticed first. Pro includes more every week, or get credits to pay as you go.',
             [
               { text: 'Not now', style: 'cancel' },
-              { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) }
+              { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) },
+              { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) }
             ]
           );
           return;
@@ -283,10 +284,11 @@ export function DiscoverScreen({ navigation }: Props) {
       if (err.code === 'INSUFFICIENT_BOOST') {
         Alert.alert(
           'Boost needs credits ⚡',
-          'Get credits or go Pro for a free weekly Boost.',
+          'Boost puts you at the front of the deck. Pro includes a free Boost every week, or get credits to pay as you go.',
           [
             { text: 'Not now', style: 'cancel' },
-            { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) }
+            { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) },
+            { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) }
           ]
         );
       } else {

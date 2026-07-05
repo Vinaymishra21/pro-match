@@ -83,10 +83,11 @@ export function LikesScreen({ navigation }: Props) {
     if (credits < revealCost) {
       Alert.alert(
         'Not enough credits',
-        `Revealing one person costs ${revealCost} credits (you have ${credits}). Buy credits or go Pro to see everyone.`,
+        `Revealing one person costs ${revealCost} credits (you have ${credits}). Pro shows everyone who likes you — no reveal costs.`,
         [
-          { text: 'Maybe later', style: 'cancel' },
-          { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) }
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Get credits', onPress: () => navigation.navigate('Paywall', { focus: 'credits' }) },
+          { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) }
         ]
       );
       return;
@@ -94,9 +95,10 @@ export function LikesScreen({ navigation }: Props) {
 
     Alert.alert(
       'Reveal this person?',
-      `Spend ${revealCost} credits to see who in ${like.profession} liked you.`,
+      `Spend ${revealCost} credits to see who in ${like.profession} liked you. Pro shows everyone who likes you — no credits needed.`,
       [
         { text: 'Cancel', style: 'cancel' },
+        { text: 'Go Pro ⭐', onPress: () => navigation.navigate('Paywall', { focus: 'pro' }) },
         { text: `Reveal (${revealCost})`, onPress: () => doReveal(like) }
       ]
     );
