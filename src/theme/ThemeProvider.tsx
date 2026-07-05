@@ -52,8 +52,10 @@ function systemModeNow(): ThemeMode {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Default 'dark': existing users see zero change until they pick otherwise.
-  const [scheme, setSchemeState] = useState<ThemeScheme>('dark');
+  // Default 'system': a fresh install follows the phone's light/dark appearance
+  // (resolved via `Appearance` below). An explicit stored preference still wins —
+  // the AsyncStorage restore overwrites this with any saved 'light'|'dark'|'system'.
+  const [scheme, setSchemeState] = useState<ThemeScheme>('system');
   const [systemMode, setSystemMode] = useState<ThemeMode>(systemModeNow);
 
   // Restore the persisted preference once on mount.

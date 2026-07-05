@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, UIManager, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, Easing, LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, UIManager, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DarkBackground } from '../../components/DarkBackground';
@@ -155,7 +155,8 @@ const makeAgeStyles = (c: ThemeColors) =>
 
 export function ProfileScreen() {
   const navigation = useNavigation<any>();
-  const { colors } = useTheme();
+  // `mode` is aliased: this screen already uses `mode` for its edit/preview state.
+  const { colors, mode: themeMode, setScheme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const topPad = Math.max(insets.top, Platform.OS === 'android' ? 24 : 0);
@@ -174,6 +175,32 @@ export function ProfileScreen() {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }, []);
+
+  // Sun/moon toggle micro-animation: a quick half-turn + opacity dip while the
+  // theme itself re-renders instantly underneath.
+  const themeSpin = useRef(new Animated.Value(0)).current;
+  const themeIconAnimStyle = useMemo(
+    () => ({
+      opacity: themeSpin.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.3, 1] }),
+      transform: [
+        { rotate: themeSpin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }
+      ]
+    }),
+    [themeSpin]
+  );
+
+  function handleThemeToggle() {
+    // Explicit flip to the opposite of the currently-resolved mode. This
+    // intentionally replaces a 'system' preference with an explicit choice.
+    setScheme(themeMode === 'dark' ? 'light' : 'dark');
+    themeSpin.setValue(0);
+    Animated.timing(themeSpin, {
+      toValue: 1,
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true
+    }).start();
+  }
 
   useEffect(() => {
     const next = buildProfileForm(user);
@@ -271,13 +298,26 @@ export function ProfileScreen() {
             <Text style={styles.professionLabel}>{user?.profession || 'Profession not set'}</Text>
           </View>
         </View>
-        <Pressable
-          style={styles.settingsBtn}
-          onPress={() => navigation.navigate('Settings')}
-          hitSlop={10}
-        >
-          <Text style={styles.settingsIcon}>⚙︎</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={styles.settingsBtn}
+            onPress={handleThemeToggle}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <Animated.Text style={[styles.themeIcon, themeIconAnimStyle]}>
+              {themeMode === 'dark' ? '☀︎' : '☾'}
+            </Animated.Text>
+          </Pressable>
+          <Pressable
+            style={styles.settingsBtn}
+            onPress={() => navigation.navigate('Settings')}
+            hitSlop={10}
+          >
+            <Text style={styles.settingsIcon}>⚙︎</Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -559,6 +599,17 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       borderColor: c.border
     },
     settingsIcon: { fontSize: 18, color: c.text },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    // lineHeight = button height + includeFontPadding:false keeps the single
+    // glyph optically centered on Android (see AuthKit's fab arrow).
+    themeIcon: {
+      fontSize: 18,
+      color: c.text,
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false,
+      lineHeight: 40
+    },
     heading: {
       ...typography.title,
       fontFamily: fonts.displayBold,
