@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Easing, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { professionTheme } from '../theme/professionTheme';
 import { useThemedStyles } from '../theme/ThemeProvider';
@@ -38,55 +38,61 @@ export function MatchCelebration({
     ]).start();
   }, [pop, title]);
 
+  // Rendered inside a Modal so it lives in its own native window above ALL app
+  // content. On Android, sibling views with `elevation` (e.g. the swipe action
+  // buttons) would otherwise paint over — and steal touches from — an inline
+  // absolute-positioned overlay, regardless of zIndex.
   return (
-    <View
-      style={styles.overlay}
-      // Absorb all touches so swipes/taps don't fall through to the deck behind
-      // the overlay — the buttons (Pressables) still win via responder bubbling.
-      onStartShouldSetResponder={() => true}
-      onMoveShouldSetResponder={() => true}
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onKeepSwiping}
     >
-      <LinearGradient
-        colors={['rgba(14,11,20,0.94)', 'rgba(14,11,20,0.985)']}
-        style={StyleSheet.absoluteFill}
-      />
+      <View style={styles.overlay}>
+        <LinearGradient
+          colors={['rgba(14,11,20,0.94)', 'rgba(14,11,20,0.985)']}
+          style={StyleSheet.absoluteFill}
+        />
 
-      <Animated.View
-        style={{
-          opacity: title,
-          transform: [
-            { scale: title.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }
-          ],
-          alignItems: 'center'
-        }}
-      >
-        <Text style={styles.kicker}>{theme.emoji} {match.profession || 'Connection'}</Text>
-        <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.titlePill}>
-          <Text style={styles.title}>It's a Match!</Text>
-        </LinearGradient>
-        <Text style={styles.sub}>You and {match.name || 'someone'} liked each other</Text>
-      </Animated.View>
-
-      {/* Paired avatars */}
-      <Animated.View style={[styles.avatarRow, { transform: [{ scale: pop }], opacity: pop }]}>
-        <Avatar photo={match.myPhoto} theme={theme} flip />
-        <View style={styles.heartBadge}>
-          <Text style={styles.heart}>♥</Text>
-        </View>
-        <Avatar photo={match.photo} theme={theme} />
-      </Animated.View>
-
-      <Animated.View style={[styles.actions, { opacity: pop }]}>
-        <Pressable onPress={onSendMessage} style={styles.primaryWrap}>
-          <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.primary}>
-            <Text style={styles.primaryText}>Send a message</Text>
+        <Animated.View
+          style={{
+            opacity: title,
+            transform: [
+              { scale: title.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }
+            ],
+            alignItems: 'center'
+          }}
+        >
+          <Text style={styles.kicker}>{theme.emoji} {match.profession || 'Connection'}</Text>
+          <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.titlePill}>
+            <Text style={styles.title}>It's a Match!</Text>
           </LinearGradient>
-        </Pressable>
-        <Pressable onPress={onKeepSwiping} style={styles.secondary}>
-          <Text style={styles.secondaryText}>Keep swiping</Text>
-        </Pressable>
-      </Animated.View>
-    </View>
+          <Text style={styles.sub}>You and {match.name || 'someone'} liked each other</Text>
+        </Animated.View>
+
+        {/* Paired avatars */}
+        <Animated.View style={[styles.avatarRow, { transform: [{ scale: pop }], opacity: pop }]}>
+          <Avatar photo={match.myPhoto} theme={theme} flip />
+          <View style={styles.heartBadge}>
+            <Text style={styles.heart}>♥</Text>
+          </View>
+          <Avatar photo={match.photo} theme={theme} />
+        </Animated.View>
+
+        <Animated.View style={[styles.actions, { opacity: pop }]}>
+          <Pressable onPress={onSendMessage} style={styles.primaryWrap}>
+            <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.primary}>
+              <Text style={styles.primaryText}>Send a message</Text>
+            </LinearGradient>
+          </Pressable>
+          <Pressable onPress={onKeepSwiping} style={styles.secondary}>
+            <Text style={styles.secondaryText}>Keep swiping</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }
 
@@ -112,7 +118,7 @@ const AV = Math.min(130, width * 0.34);
 // heart reads from the palette, and c.primary is identical in light and dark.
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 100, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   kicker: { ...typography.eyebrow, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.sm },
   titlePill: { paddingHorizontal: 26, paddingVertical: 10, borderRadius: 999 },
   title: {
