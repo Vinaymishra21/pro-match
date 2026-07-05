@@ -89,6 +89,9 @@ async function upsertSwipe(req, res) {
   );
 
   let match = null;
+  // On a match, whether the OTHER person's like was a Super Like — lets the
+  // client show the flattering "they Super Liked you" celebration.
+  let theySuperLiked = false;
 
   if (action === 'like') {
     const reciprocalLike = await Swipe.findOne({
@@ -98,6 +101,7 @@ async function upsertSwipe(req, res) {
     });
 
     if (reciprocalLike) {
+      theySuperLiked = Boolean(reciprocalLike.superLike);
       match = await Match.findOne({
         $or: [
           { userA: fromUserId, userB: toUserId },
@@ -149,7 +153,9 @@ async function upsertSwipe(req, res) {
   return res.json({
     matched: Boolean(match),
     match: match ? match.toJSON() : null,
-    superLike: isSuper,
+    superLike: isSuper, // legacy alias of iSuperLiked (kept for back-compat)
+    iSuperLiked: isSuper,
+    theySuperLiked: Boolean(match) && theySuperLiked,
     ...(superSpend
       ? { superLikeCharged: superSpend.charged, credits: superSpend.user.credits }
       : {})

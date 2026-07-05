@@ -24,6 +24,7 @@ import { VerifiedTick } from '../../components/VerifiedTick';
 import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, DISTANCE_ANY_KM, FilterModal } from '../../components/FilterModal';
 import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
+import { SuperLikeToast } from '../../components/SuperLikeToast';
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
@@ -61,6 +62,9 @@ export function DiscoverScreen({ navigation }: Props) {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS as FilterState);
   // Match celebration overlay (set when a like creates a match).
   const [celebration, setCelebration] = useState<(MatchInfo & { matchId: string }) | null>(null);
+  // Brief "Super Like sent" confirmation (set when a super like does NOT match).
+  // `id` keys the component so back-to-back super likes restart the animation.
+  const [superToast, setSuperToast] = useState<{ id: number; name?: string } | null>(null);
   // Full-screen profile detail (opened by tapping the card).
   const [detailOpen, setDetailOpen] = useState(false);
   const [boost, setBoost] = useState<BoostState | null>(null);
@@ -192,8 +196,15 @@ export function DiscoverScreen({ navigation }: Props) {
             name: target.name,
             profession: target.profession,
             photo: target.photos?.[0],
-            myPhoto: user?.photos?.[0]
+            myPhoto: user?.photos?.[0],
+            // Super-like context: "they super liked me" beats "I super liked them".
+            // (`?? res.superLike` keeps this working against an older backend.)
+            superLike: res.theySuperLiked ? 'them' : (res.iSuperLiked ?? res.superLike) ? 'you' : null
           });
+        } else if (res.superLike && !res.matched) {
+          // Super like landed but no instant match — confirm it briefly without
+          // blocking the deck (the fling already gave heavy haptic feedback).
+          setSuperToast({ id: Date.now(), name: target.name });
         }
       } catch (swipeError) {
         const err = swipeError as ApiError;
@@ -586,6 +597,15 @@ export function DiscoverScreen({ navigation }: Props) {
         onLike={() => flingOff('like')}
         onPass={() => flingOff('pass')}
       />
+
+      {superToast ? (
+        <SuperLikeToast
+          key={superToast.id}
+          name={superToast.name}
+          topOffset={insets.top + spacing.sm}
+          onDone={() => setSuperToast(null)}
+        />
+      ) : null}
 
       {celebration ? (
         <MatchCelebration

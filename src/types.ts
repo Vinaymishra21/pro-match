@@ -269,7 +269,12 @@ export interface CreateOrderResponse {
 export interface SwipeResponse {
   matched: boolean;
   match: { id: string; crossProfession?: boolean } | null;
+  /** Legacy alias of `iSuperLiked` — whether MY swipe was a Super Like. */
   superLike?: boolean;
+  /** Whether my swipe was a Super Like. */
+  iSuperLiked?: boolean;
+  /** On a match: whether the OTHER person's like was a Super Like. */
+  theySuperLiked?: boolean;
   superLikeCharged?: number;
   credits?: number;
 }
