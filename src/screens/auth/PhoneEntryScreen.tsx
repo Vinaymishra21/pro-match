@@ -76,7 +76,7 @@ export function PhoneEntryScreen({ navigation }: Props) {
             <View style={styles.head}>
               <Eyebrow>Verify it’s you</Eyebrow>
               <Text style={authText.title}>What’s your number?</Text>
-              <Text style={authText.desc}>We use your number to keep Pro Match real — it stays private and never appears on your profile.</Text>
+              <Text style={authText.desc}>We use your number to keep Wovnn real — it stays private and never appears on your profile.</Text>
             </View>
 
             <FieldLabel>Mobile number</FieldLabel>

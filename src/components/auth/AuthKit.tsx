@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../DarkBackground';
+import { WovnnMark } from '../WovnnMark';
 import { useTheme, useThemedStyles } from '../../theme/ThemeProvider';
 import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
@@ -56,24 +57,14 @@ export function BackButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-// The Pro Match wordmark with a gradient heart badge.
+// The Wovnn wordmark with the woven brand mark.
 export function BrandMark({ size = 'md' }: { size?: 'md' | 'lg' }) {
-  const { colors } = useTheme();
   const shell = useThemedStyles(makeShellStyles);
   const big = size === 'lg';
   return (
     <View style={shell.brandRow}>
-      <LinearGradient
-        colors={colors.brandGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[shell.brandBadge, big ? shell.brandBadgeLg : null]}
-      >
-        <Text style={[shell.brandHeart, big ? { fontSize: 26 } : null]}>♥</Text>
-      </LinearGradient>
-      <Text style={[shell.brandText, big ? { fontSize: 30 } : null]}>
-        Pro <Text style={shell.brandAccent}>Match</Text>
-      </Text>
+      <WovnnMark size={big ? 52 : 42} />
+      <Text style={[shell.brandText, big ? { fontSize: 30 } : null]}>Wovnn</Text>
     </View>
   );
 }
@@ -210,12 +201,8 @@ const makeShellStyles = (c: ThemeColors) =>
       textAlignVertical: 'center',
       includeFontPadding: false
     },
-    brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    brandBadge: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-    brandBadgeLg: { width: 48, height: 48, borderRadius: 24 },
-    brandHeart: { color: '#fff', fontSize: 20 },
+    brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     brandText: { fontFamily: fonts.displayBold, color: c.text, fontSize: 24, fontWeight: '700', letterSpacing: -0.4 },
-    brandAccent: { color: c.primary },
     eyebrowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
     eyebrowDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.primary, marginRight: spacing.sm },
     eyebrow: {

@@ -31,7 +31,7 @@ export function NameScreen({ navigation }: any) {
       step={1}
       total={TOTAL_STEPS}
       title="What's your name?"
-      subtitle="This is how you'll appear on Pro Match. Use your real first name."
+      subtitle="This is how you'll appear on Wovnn. Use your real first name."
       onNext={next}
       nextDisabled={!valid}
       loading={busy}

@@ -40,7 +40,7 @@ export function MethodScreenBase({
       <BackButton onPress={() => navigation.goBack()} />
 
       <View style={styles.header}>
-        <Eyebrow>{isRegister ? 'Join Pro Match' : 'Welcome back'}</Eyebrow>
+        <Eyebrow>{isRegister ? 'Join Wovnn' : 'Welcome back'}</Eyebrow>
         <Text style={styles.title}>{isRegister ? 'Create your\naccount' : 'Sign in to\nyour account'}</Text>
         <Text style={styles.subtitle}>Choose how you’d like to continue</Text>
       </View>
@@ -71,7 +71,7 @@ export function MethodScreenBase({
         </Pressable>
 
         <View style={styles.switchRow}>
-          <Text style={styles.switchText}>{isRegister ? 'Already have an account?' : 'New to Pro Match?'}</Text>
+          <Text style={styles.switchText}>{isRegister ? 'Already have an account?' : 'New to Wovnn?'}</Text>
           <Text
             style={styles.switchAction}
             onPress={() => navigation.replace(isRegister ? 'LoginMethod' : 'SignUpMethod')}

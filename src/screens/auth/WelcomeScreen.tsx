@@ -1,12 +1,12 @@
 import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthShell, GradientButton, OutlineButton } from '../../components/auth/AuthKit';
 import { HeroCarousel } from '../../components/auth/HeroCarousel';
+import { WovnnMark } from '../../components/WovnnMark';
 import { useAuth } from '../../hooks/useAuth';
 import { DEV_BYPASS_AUTH } from '../../constants/config';
-import { ThemedStatusBar, useTheme, useThemedStyles } from '../../theme/ThemeProvider';
+import { ThemedStatusBar, useThemedStyles } from '../../theme/ThemeProvider';
 import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts } from '../../theme/typography';
@@ -22,7 +22,6 @@ const HIGHLIGHTS = [
 
 export function WelcomeScreen({ navigation }: Props) {
   const { devBypass } = useAuth();
-  const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
 
   async function handleDevSkip() {
@@ -40,20 +39,11 @@ export function WelcomeScreen({ navigation }: Props) {
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.logoGlow}>
-            <LinearGradient
-              colors={colors.brandGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.logoBadge}
-            >
-              <Text style={styles.logoHeart}>♥</Text>
-            </LinearGradient>
+            <WovnnMark size={78} />
           </View>
 
-          <Text style={styles.brand}>
-            Pro <Text style={styles.brandAccent}>Match</Text>
-          </Text>
-          <Text style={styles.tagline}>Where ambition meets attraction.</Text>
+          <Text style={styles.brand}>Wovnn</Text>
+          <Text style={styles.tagline}>Great connections aren't found — they're woven.</Text>
 
           <View style={styles.highlights}>
             {HIGHLIGHTS.map((h, index) => (
@@ -101,8 +91,6 @@ const makeStyles = (c: ThemeColors) =>
       elevation: 12,
       marginBottom: spacing.lg
     },
-    logoBadge: { width: 78, height: 78, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-    logoHeart: { color: '#fff', fontSize: 40 },
     brand: {
       fontFamily: fonts.displayBold,
       color: c.text,
@@ -111,7 +99,6 @@ const makeStyles = (c: ThemeColors) =>
       fontWeight: '700',
       letterSpacing: -1
     },
-    brandAccent: { color: c.primary },
     tagline: {
       fontFamily: fonts.displayItalic,
       color: c.textDim,

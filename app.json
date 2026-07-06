@@ -1,10 +1,11 @@
 {
   "expo": {
-    "name": "Pro Match",
+    "name": "Wovnn",
     "slug": "pro-match",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -14,19 +15,23 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Pro Match uses your location to show you people nearby."
+          "locationWhenInUsePermission": "Wovnn uses your location to show you people nearby."
         }
       ]
     ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow Pro Match to access your photos so you can upload profile pictures.",
-        "NSLocationWhenInUseUsageDescription": "Pro Match uses your location to show you people nearby."
+        "NSPhotoLibraryUsageDescription": "Allow Wovnn to access your photos so you can upload profile pictures.",
+        "NSLocationWhenInUseUsageDescription": "Wovnn uses your location to show you people nearby."
       }
     },
     "android": {
       "package": "com.promatch.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0E0B14"
+      },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [

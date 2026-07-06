@@ -13,9 +13,9 @@ export function AppHeader({ onSettingsPress, trailing }: AppHeaderProps) {
     <View style={styles.container}>
       <View style={styles.brandRow}>
         <View style={styles.logoMark}>
-          <Text style={styles.logoLetter}>P</Text>
+          <Text style={styles.logoLetter}>W</Text>
         </View>
-        <Text style={styles.brandName}>Pro-Match</Text>
+        <Text style={styles.brandName}>Wovnn</Text>
       </View>
       <View style={styles.actions}>
         {trailing}

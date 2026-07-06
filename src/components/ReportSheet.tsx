@@ -86,8 +86,8 @@ export function ReportSheet({ visible, userId, name, onClose, onReported }: Prop
       Alert.alert(
         'Report submitted',
         res.blocked
-          ? `Thanks for keeping Pro Match safe. ${name} has been blocked.`
-          : 'Thanks for keeping Pro Match safe. Our team will review this.'
+          ? `Thanks for keeping Wovnn safe. ${name} has been blocked.`
+          : 'Thanks for keeping Wovnn safe. Our team will review this.'
       );
     } catch (err) {
       Alert.alert('Could not submit', (err as Error).message);

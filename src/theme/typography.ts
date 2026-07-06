@@ -1,4 +1,4 @@
-// Pro Match type system — an editorial luxury pairing:
+// Wovnn type system — an editorial luxury pairing:
 //
 //   • Fraunces (soft "wonky" display serif)  → big emotional headings, the
 //     wordmark, hero moments. Warm, high-contrast, a little romantic.

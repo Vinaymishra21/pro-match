@@ -44,7 +44,7 @@ export function DobScreen({ navigation }: any) {
       return;
     }
     if (age === null || age < 18) {
-      setErr('You must be at least 18 to use Pro Match.');
+      setErr('You must be at least 18 to use Wovnn.');
       return;
     }
     if (age > 100) {

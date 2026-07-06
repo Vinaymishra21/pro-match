@@ -67,7 +67,7 @@ export function AuthScreen({ route, navigation }: Props) {
 
           <View style={styles.head}>
             <Eyebrow>{isRegister ? 'Create account' : 'Welcome back'}</Eyebrow>
-            <Text style={authText.title}>{isRegister ? 'Join Pro Match' : 'Sign in'}</Text>
+            <Text style={authText.title}>{isRegister ? 'Join Wovnn' : 'Sign in'}</Text>
             <Text style={authText.desc}>Professionals matching with professionals.</Text>
           </View>
 

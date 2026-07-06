@@ -125,7 +125,7 @@ export function PaywallScreen({ navigation, route }: Props) {
         {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.crown}>⭐</Text>
-          <Text style={styles.heroTitle}>Pro Match Pro</Text>
+          <Text style={styles.heroTitle}>Wovnn Pro</Text>
           <Text style={styles.heroSub}>
             See who already likes you, stand out with Super Likes, and date across every profession.
           </Text>
