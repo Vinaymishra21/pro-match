@@ -28,7 +28,13 @@ import { SuperLikeToast } from '../../components/SuperLikeToast';
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
-import { activateBoost, getDiscoverProfiles, swipeProfile, undoSwipe } from '../../services/apiService';
+import {
+  activateBoost,
+  getActiveProfessions,
+  getDiscoverProfiles,
+  swipeProfile,
+  undoSwipe
+} from '../../services/apiService';
 import { ApiError } from '../../services/apiClient';
 import type { FilterState } from '../../types';
 import { professionTheme } from '../../theme/professionTheme';
@@ -70,6 +76,27 @@ export function DiscoverScreen({ navigation }: Props) {
   const [boost, setBoost] = useState<BoostState | null>(null);
   const [boostBusy, setBoostBusy] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
+  // Professions that actually have browsable accounts (most active first).
+  // Empty until loaded — the selector falls back to the static PROFESSIONS list.
+  const [activeProfessions, setActiveProfessions] = useState<string[]>([]);
+
+  // One-time fetch of the professions that have real accounts, so the selector
+  // never advertises an empty deck. On failure we keep the static fallback.
+  useEffect(() => {
+    let cancelled = false;
+    getActiveProfessions(token)
+      .then((res) => {
+        if (cancelled) return;
+        const names = (res.professions || []).map((p) => p.profession).filter(Boolean);
+        if (names.length) setActiveProfessions(names);
+      })
+      .catch(() => {
+        // Fallback handled at render time (static PROFESSIONS list).
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const current = profiles[0] || null;
   const viewingTheme = professionTheme(activeProfession);
@@ -418,7 +445,12 @@ export function DiscoverScreen({ navigation }: Props) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipRow}
           >
-            {[myProfession, ...PROFESSIONS.filter((p) => p !== myProfession)].map((profession) => {
+            {[
+              myProfession,
+              ...(activeProfessions.length ? activeProfessions : PROFESSIONS).filter(
+                (p) => p && p !== myProfession
+              )
+            ].map((profession) => {
               if (!profession) return null;
               const theme = professionTheme(profession);
               const active = profession === activeProfession;

@@ -1,5 +1,6 @@
 import { apiRequest } from './apiClient';
 import type {
+  ActiveProfessionsResponse,
   AuthPayload,
   AuthResponse,
   BillingCatalog,
@@ -210,6 +211,11 @@ export function getDiscoverProfiles(token: string, profession?: string, filters?
 
 export function getDiscoverAccess(token: string) {
   return apiRequest<DiscoverAccessResponse>('/discover/access', { method: 'GET' }, token);
+}
+
+// Professions that currently have browsable accounts, most active first.
+export function getActiveProfessions(token: string) {
+  return apiRequest<ActiveProfessionsResponse>('/discover/professions', { method: 'GET' }, token);
 }
 
 export function getIncomingLikes(token: string) {

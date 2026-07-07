@@ -1,11 +1,12 @@
 const express = require('express');
 const { authGuard } = require('../middleware/authGuard');
-const { getDiscover, getAccess } = require('../controllers/discoverController');
+const { getDiscover, getAccess, getProfessions } = require('../controllers/discoverController');
 
 const router = express.Router();
 
-// Specific route before the catch-all so /access isn't swallowed by '/'.
+// Specific routes before the catch-all so they aren't swallowed by '/'.
 router.get('/access', authGuard, getAccess);
+router.get('/professions', authGuard, getProfessions);
 router.get('/', authGuard, getDiscover);
 
 module.exports = router;

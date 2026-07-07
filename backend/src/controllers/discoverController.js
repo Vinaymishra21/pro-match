@@ -251,7 +251,32 @@ async function getAccess(req, res) {
   });
 }
 
+// GET /discover/professions — professions that actually have browsable accounts,
+// most active first. Uses the same eligibility gates as the deck so the client's
+// profession selector never advertises an empty deck.
+async function getProfessions(req, res) {
+  const rows = await User.aggregate([
+    {
+      $match: {
+        isDeactivated: { $ne: true },
+        isBanned: { $ne: true },
+        isShadowBanned: { $ne: true },
+        'photos.0': { $exists: true },
+        age: { $ne: null },
+        profession: { $nin: ['', null] }
+      }
+    },
+    { $group: { _id: '$profession', count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]);
+
+  return res.json({
+    professions: rows.map((r) => ({ profession: r._id, count: r.count }))
+  });
+}
+
 module.exports = {
   getDiscover,
-  getAccess
+  getAccess,
+  getProfessions
 };

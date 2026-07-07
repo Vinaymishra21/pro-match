@@ -165,6 +165,15 @@ export interface DiscoverAccessResponse {
   isPro: boolean;
 }
 
+export interface ActiveProfession {
+  profession: string;
+  count: number;
+}
+
+export interface ActiveProfessionsResponse {
+  professions: ActiveProfession[];
+}
+
 export interface IncomingLike extends Partial<User> {
   likerId: string;
   blurred: boolean;
