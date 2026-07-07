@@ -123,8 +123,9 @@ async function getDiscover(req, res) {
     query.languages = { $in: wantLanguages };
   }
 
-  // Verified-only filter.
-  if (req.query.verifiedOnly === 'true') {
+  // Verified-only filter — only available to users who are themselves
+  // profession-verified (unverified clients can't bypass the gate via the API).
+  if (req.query.verifiedOnly === 'true' && me.professionVerified) {
     query.professionVerified = true;
   }
 

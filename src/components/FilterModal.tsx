@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useCallback, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Modal,
   PanResponder,
@@ -10,6 +11,7 @@ import {
   Text,
   View
 } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
 import { useThemedStyles, type ThemeMode } from '../theme/ThemeProvider';
 import type { ThemeColors } from '../theme/themes';
 import { spacing } from '../theme/spacing';
@@ -198,6 +200,9 @@ function DistanceSlider({ value, onChange }) {
       </View>
       <View
         style={styles.sliderHitArea}
+        // The hit area is only as tall as the thumb now — grow the touch
+        // target with hitSlop instead of padding (padding broke centering).
+        hitSlop={{ top: spacing.sm, bottom: spacing.sm }}
         {...panResponder.panHandlers}
         onLayout={(e) => {
           trackWidthRef.current = e.nativeEvent.layout.width;
@@ -217,15 +222,26 @@ function DistanceSlider({ value, onChange }) {
   );
 }
 
-function ToggleRow({ label, description, value, onToggle }) {
+function ToggleRow({ label, description, value, onToggle, disabled = false, disabledHint }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <Pressable style={styles.toggleRow} onPress={onToggle}>
       <View style={styles.toggleTextWrap}>
-        <Text style={styles.toggleLabel}>{label}</Text>
-        {description ? <Text style={styles.toggleDesc}>{description}</Text> : null}
+        <Text style={[styles.toggleLabel, disabled ? styles.toggleMuted : null]}>{label}</Text>
+        {description ? (
+          <Text style={[styles.toggleDesc, disabled ? styles.toggleMuted : null]}>
+            {description}
+          </Text>
+        ) : null}
+        {disabled && disabledHint ? <Text style={styles.toggleHint}>{disabledHint}</Text> : null}
       </View>
-      <View style={[styles.toggleTrack, value ? styles.toggleTrackOn : null]}>
+      <View
+        style={[
+          styles.toggleTrack,
+          value ? styles.toggleTrackOn : null,
+          disabled ? styles.toggleMuted : null
+        ]}
+      >
         <View style={[styles.toggleThumb, value ? styles.toggleThumbOn : null]} />
       </View>
     </Pressable>
@@ -234,6 +250,9 @@ function ToggleRow({ label, description, value, onToggle }) {
 
 export function FilterModal({ visible, onClose, filters: externalFilters, onApply }) {
   const styles = useThemedStyles(makeStyles);
+  const { user } = useAuth();
+  // Only profession-verified members may filter the deck to verified-only.
+  const isVerified = Boolean(user?.professionVerified);
   const [filters, setFilters] = useState(() => {
     const initial = { ...DEFAULT_FILTERS, ...(externalFilters || {}) };
     // Older saved filters stored distance as a display string ('25 km').
@@ -255,8 +274,24 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
     });
   }
 
+  // Verified-only is gated on the user's own verification. Unverified users
+  // get an explainer instead of a toggle, and the value is never sent as true.
+  function handleVerifiedToggle() {
+    if (!isVerified) {
+      Alert.alert(
+        'Verify your profession',
+        'Filtering by verified members is available once your own profession is verified. You can get verified from your profile.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    update('verifiedOnly', !filters.verifiedOnly);
+  }
+
   function handleApply() {
-    onApply(filters);
+    // Guard at the source: an unverified user can never apply verifiedOnly,
+    // even if a stale saved filter had it on.
+    onApply(isVerified ? filters : { ...filters, verifiedOnly: false });
     onClose();
   }
 
@@ -293,12 +328,14 @@ export function FilterModal({ visible, onClose, filters: externalFilters, onAppl
 
           <View style={styles.divider} />
 
-          {/* Verified only */}
+          {/* Verified only — gated: only verified members can use this filter. */}
           <ToggleRow
             label="Verified profiles only"
             description="Show only people who verified their profession"
-            value={filters.verifiedOnly}
-            onToggle={() => update('verifiedOnly', !filters.verifiedOnly)}
+            value={isVerified ? filters.verifiedOnly : false}
+            onToggle={handleVerifiedToggle}
+            disabled={!isVerified}
+            disabledHint="Verify your profession to filter by verified members."
           />
 
           <View style={styles.divider} />
@@ -573,9 +610,12 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       minWidth: 28,
       textAlign: 'center'
     },
+    // Fixed height equal to the thumb: the 6px track centers vertically via
+    // justifyContent, and the absolutely-positioned thumb at top:0 lands dead
+    // centre on it (percentage-top + negative-margin misplaces the thumb on RN).
     sliderHitArea: {
+      height: SLIDER_THUMB,
       justifyContent: 'center',
-      paddingVertical: spacing.sm,
       marginTop: spacing.xs
     },
     // The white-wash track predates the theme system; keep it byte-identical in
@@ -593,8 +633,7 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     },
     sliderThumb: {
       position: 'absolute',
-      top: '50%',
-      marginTop: -SLIDER_THUMB / 2,
+      top: 0,
       width: SLIDER_THUMB,
       height: SLIDER_THUMB,
       borderRadius: SLIDER_THUMB / 2,
@@ -664,6 +703,17 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     },
     toggleThumbOn: {
       alignSelf: 'flex-end'
+    },
+    // Muted state for a gated toggle row (works in both light and dark since
+    // it only dims the already-themed colors).
+    toggleMuted: {
+      opacity: 0.45
+    },
+    toggleHint: {
+      ...typography.caption,
+      color: c.textMuted,
+      marginTop: spacing.xs,
+      fontWeight: '600'
     },
     bottomPad: {
       height: 100
