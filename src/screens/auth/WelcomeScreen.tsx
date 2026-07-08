@@ -1,11 +1,12 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthShell, GradientButton, OutlineButton } from '../../components/auth/AuthKit';
 import { HeroCarousel } from '../../components/auth/HeroCarousel';
 import { WovnnMark } from '../../components/WovnnMark';
 import { useAuth } from '../../hooks/useAuth';
 import { DEV_BYPASS_AUTH } from '../../constants/config';
+import { API_BASE_URL } from '../../constants/api';
 import { ThemedStatusBar, useThemedStyles } from '../../theme/ThemeProvider';
 import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
@@ -71,7 +72,15 @@ export function WelcomeScreen({ navigation }: Props) {
           ) : null}
 
           <Text style={styles.legal}>
-            By continuing you agree to our Terms & Privacy Policy.
+            By continuing you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => Linking.openURL(`${API_BASE_URL}/terms`)}>
+              Terms
+            </Text>
+            {' & '}
+            <Text style={styles.legalLink} onPress={() => Linking.openURL(`${API_BASE_URL}/privacy`)}>
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </View>
       </View>
@@ -144,5 +153,10 @@ const makeStyles = (c: ThemeColors) =>
       textAlign: 'center',
       marginTop: spacing.sm,
       lineHeight: 18
+    },
+    legalLink: {
+      color: c.brandText,
+      fontWeight: '700',
+      textDecorationLine: 'underline'
     }
   });

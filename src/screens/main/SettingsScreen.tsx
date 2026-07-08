@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
+import { API_BASE_URL } from '../../constants/api';
 import { useAuth } from '../../hooks/useAuth';
 import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode, type ThemeScheme } from '../../theme/ThemeProvider';
 import type { ThemeColors } from '../../theme/themes';
@@ -154,6 +155,27 @@ export function SettingsScreen({ navigation }: Props) {
             label="Deactivate account"
             sublabel="Hide your profile — restore anytime by logging in"
             onPress={confirmDeactivate}
+            last
+            styles={styles}
+          />
+        </View>
+
+        <Text style={styles.sectionTitle}>Support & Legal</Text>
+        <View style={styles.card}>
+          <Row
+            label="Contact support"
+            sublabel="wovnnsupport@gmail.com"
+            onPress={() => Linking.openURL('mailto:wovnnsupport@gmail.com?subject=Wovnn%20Support')}
+            styles={styles}
+          />
+          <Row
+            label="Terms of Service"
+            onPress={() => Linking.openURL(`${API_BASE_URL}/terms`)}
+            styles={styles}
+          />
+          <Row
+            label="Privacy Policy"
+            onPress={() => Linking.openURL(`${API_BASE_URL}/privacy`)}
             last
             styles={styles}
           />

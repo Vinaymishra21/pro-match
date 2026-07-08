@@ -25,6 +25,7 @@ const billingRoutes = require('./routes/billingRoutes');
 const boostRoutes = require('./routes/boostRoutes');
 const safetyRoutes = require('./routes/safetyRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const legal = require('./controllers/legalController');
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -44,6 +45,12 @@ app.use(PUBLIC_PATH, express.static(UPLOAD_DIR));
 app.get('/health', (_, res) => {
   res.json({ status: 'ok', service: 'pro-match-backend' });
 });
+
+// Public legal pages — these URLs double as the App Store / Play Store
+// submission links, so they stay before auth + the rate limiter so reviewers
+// (and users) can always reach them.
+app.get('/terms', legal.terms);
+app.get('/privacy', legal.privacy);
 
 // Broad per-IP backstop across the whole API (health check stays exempt above).
 app.use(globalLimiter);
