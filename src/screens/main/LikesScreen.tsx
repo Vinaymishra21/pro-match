@@ -156,9 +156,12 @@ export function LikesScreen({ navigation }: Props) {
             {likes.length === 1 ? 'person likes you' : 'people like you'} 💘
           </Text>
           {!isPro ? (
-            <View style={styles.creditChip}>
-              <Text style={styles.creditChipText}>🪙 {credits} credits</Text>
-            </View>
+            <Pressable
+              style={({ pressed }) => [styles.creditChip, pressed ? { opacity: 0.6 } : null]}
+              onPress={() => navigation.navigate('Paywall', { focus: 'credits' })}
+            >
+              <Text style={styles.creditChipText}>🪙 {credits} credits ›</Text>
+            </Pressable>
           ) : (
             <View style={[styles.creditChip, styles.proChip]}>
               <Text style={styles.creditChipText}>⭐ PRO · everyone unlocked</Text>

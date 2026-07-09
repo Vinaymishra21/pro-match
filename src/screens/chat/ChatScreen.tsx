@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -154,7 +154,14 @@ export function ChatScreen({ route, navigation }: Props) {
       <KeyboardAvoidingView
         behavior="padding"
         keyboardVerticalOffset={0}
-        style={[styles.container, { paddingTop: insets.top + spacing.xs, paddingBottom: insets.bottom + spacing.xs }]}
+        style={[
+          styles.container,
+          {
+            // Floor insets.top: edge-to-edge Android can report it as 0.
+            paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.xs,
+            paddingBottom: insets.bottom + spacing.xs
+          }
+        ]}
       >
         <View style={styles.headerRow}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>

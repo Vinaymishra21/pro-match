@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -115,7 +115,12 @@ export function PaywallScreen({ navigation, route }: Props) {
     <DarkBackground orbColor="rgba(251,191,36,0.22)">
       <ThemedStatusBar />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.md }]}
+        contentContainerStyle={[
+          styles.scroll,
+          // Edge-to-edge Android can report insets.top === 0 — floor it so content
+          // never sits under the status bar (same fix as OnboardingScaffold).
+          { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md }
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.close}>

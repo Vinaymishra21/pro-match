@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
@@ -110,7 +110,17 @@ export function SettingsScreen({ navigation }: Props) {
   return (
     <DarkBackground orbColor={mode === 'dark' ? 'rgba(232,65,90,0.18)' : undefined}>
       <ThemedStatusBar />
-      <View style={[styles.container, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom }]}>
+      <View
+        style={[
+          styles.container,
+          {
+            // Edge-to-edge Android can report insets.top === 0 — floor it so the
+            // header never sits under the status bar (same fix as OnboardingScaffold).
+            paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md,
+            paddingBottom: insets.bottom
+          }
+        ]}
+      >
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back}>
           <Text style={styles.backText}>‹</Text>

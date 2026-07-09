@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme, useThemedStyles } from '../../../theme/ThemeProvider';
+import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';
 import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
@@ -117,10 +117,12 @@ export function ProfileHeaderCard({ completion, mode, onModeChange }) {
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
+const makeStyles = (c: ThemeColors, mode: ThemeMode) => StyleSheet.create({
   card: {
-    backgroundColor: c.surface,
-    borderWidth: 1,
+    // Light mode uses a clean warm-white card — the translucent-ink surface +
+    // grey border read as a clunky grey box on cream. Dark stays byte-identical.
+    backgroundColor: mode === 'dark' ? c.surface : c.card,
+    borderWidth: mode === 'dark' ? 1 : 0,
     borderColor: c.border,
     borderRadius: 20,
     padding: spacing.lg,
