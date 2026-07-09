@@ -9,6 +9,7 @@ import { AnimatedProfileSection } from '../../features/profile/components/Animat
 import { ChipSelector } from '../../features/profile/components/ChipSelector';
 import { ProfileSection } from '../../features/profile/components/ProfileSection';
 import { ProfileHeaderCard } from '../../features/profile/components/ProfileHeaderCard';
+import { WovnnProCard } from '../../components/WovnnProCard';
 import { ProfilePhotoGallery } from '../../features/profile/components/ProfilePhotoGallery';
 import { ProfilePreview } from '../../features/profile/components/ProfilePreview';
 import { ProfessionLoveMeter } from '../../features/profile/components/ProfessionLoveMeter';
@@ -30,6 +31,7 @@ import {
 import { getProfileCompletion } from '../../features/profile/profileCompletion';
 import { buildProfileForm, parseInterestInput } from '../../features/profile/profileForm';
 import { useAuth } from '../../hooks/useAuth';
+import { isProUser } from '../../utils/entitlements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { updateProfile } from '../../services/apiService';
 import { useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
@@ -325,6 +327,12 @@ export function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        {!isProUser(user) ? (
+          <AnimatedProfileSection index={0}>
+            <WovnnProCard onGoPro={() => navigation.navigate('Paywall', { focus: 'pro' })} />
+          </AnimatedProfileSection>
+        ) : null}
+
         <AnimatedProfileSection index={0}>
           <ProfileHeaderCard completion={completion} mode={mode} onModeChange={changeMode} />
         </AnimatedProfileSection>
