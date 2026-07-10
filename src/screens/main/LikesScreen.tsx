@@ -4,6 +4,7 @@ import {
   Alert,
   Dimensions,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -22,6 +23,7 @@ import { DarkBackground } from '../../components/DarkBackground';
 import { GradientButton } from '../../components/GradientButton';
 import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
+import { WovnnLoader } from '../../components/WovnnLoader';
 import { useAuth } from '../../hooks/useAuth';
 import { getIncomingLikes, revealLiker, swipeProfile } from '../../services/apiService';
 import { ApiError } from '../../services/apiClient';
@@ -187,7 +189,11 @@ export function LikesScreen({ navigation }: Props) {
   return (
     <DarkBackground orbColor="rgba(139,92,246,0.22)">
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.md }]}
+        contentContainerStyle={[
+          styles.scroll,
+          // Edge-to-edge Android reports insets.top === 0 — floor it.
+          { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md }
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -244,7 +250,7 @@ export function LikesScreen({ navigation }: Props) {
         {/* Content */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={colors.primary} />
+            <WovnnLoader message="Loading your likes" />
           </View>
         ) : likes.length === 0 ? (
           <View style={styles.empty}>

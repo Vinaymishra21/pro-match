@@ -114,7 +114,9 @@ export function PromptField({
                     }
                   }}
                   placeholder={placeholder}
-                  placeholderTextColor={colors.textMuted + '80'}
+                  // Was `colors.textMuted + '80'` — appending to an rgba()
+                  // string is invalid. textFaint is the palette's placeholder tone.
+                  placeholderTextColor={colors.textFaint}
                   multiline
                   numberOfLines={3}
                   style={styles.input}

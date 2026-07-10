@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
+import { WovnnLoader } from '../../components/WovnnLoader';
 import { useAuth } from '../../hooks/useAuth';
 import { devGrant, getBillingCatalog } from '../../services/apiService';
 import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
@@ -147,7 +148,7 @@ export function PaywallScreen({ navigation, route }: Props) {
 
         {loading || !catalog ? (
           <View style={styles.center}>
-            <ActivityIndicator color={colors.primary} />
+            <WovnnLoader message="Loading plans" />
           </View>
         ) : (
           <>

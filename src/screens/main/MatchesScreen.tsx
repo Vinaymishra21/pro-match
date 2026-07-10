@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
@@ -118,7 +118,11 @@ export function MatchesScreen({ navigation }: Props) {
       <FlatList
         data={matches}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.list, { paddingTop: insets.top + spacing.md }]}
+        contentContainerStyle={[
+          styles.list,
+          // Edge-to-edge Android reports insets.top === 0 — floor it.
+          { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md }
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={load} tintColor={colors.primary} />

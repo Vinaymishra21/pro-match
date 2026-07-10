@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
   Image,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -25,6 +25,7 @@ import { GradientButton } from '../../components/GradientButton';
 import { DEFAULT_FILTERS, DISTANCE_ANY_KM, FilterModal } from '../../components/FilterModal';
 import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
 import { SuperLikeToast } from '../../components/SuperLikeToast';
+import { WovnnLoader } from '../../components/WovnnLoader';
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { PROFESSIONS } from '../../constants/professions';
 import { useAuth } from '../../hooks/useAuth';
@@ -54,6 +55,9 @@ export function DiscoverScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
+  // Edge-to-edge Android reports insets.top === 0 — floor it so the header and
+  // the super-like toast never sit under the status bar.
+  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 24 : 0);
   const myProfession = user?.profession || '';
 
   const [activeProfession, setActiveProfession] = useState(myProfession);
@@ -109,6 +113,15 @@ export function DiscoverScreen({ navigation }: Props) {
   useEffect(() => {
     pan.setValue({ x: 0, y: 0 });
   }, [current?.id, pan]);
+
+  // Warm the next couple of cards' photos into the image cache so a swipe
+  // reveals the next face instantly instead of flashing an empty card.
+  useEffect(() => {
+    profiles.slice(1, 3).forEach((p) => {
+      const uri = p.photos?.[0];
+      if (uri) Image.prefetch(uri).catch(() => {});
+    });
+  }, [profiles]);
 
   // Count non-default filters for the badge on the filter button.
   const activeFilterCount =
@@ -396,7 +409,7 @@ export function DiscoverScreen({ navigation }: Props) {
 
   return (
     <DarkBackground orbColor={viewingTheme.accent + '40'}>
-      <View style={[styles.container, { paddingTop: insets.top + spacing.xs }]}>
+      <View style={[styles.container, { paddingTop: topPad + spacing.xs }]}>
         {/* Top bar */}
         <View style={styles.topBar}>
           <View style={styles.topLeft}>
@@ -486,7 +499,7 @@ export function DiscoverScreen({ navigation }: Props) {
         <View style={styles.cardArea}>
           {loading ? (
             <View style={styles.center}>
-              <ActivityIndicator color={viewingTheme.accent} />
+              <WovnnLoader message="Finding people near you" />
             </View>
           ) : locked ? (
             <View style={styles.stateCard}>
@@ -636,7 +649,7 @@ export function DiscoverScreen({ navigation }: Props) {
         <SuperLikeToast
           key={superToast.id}
           name={superToast.name}
-          topOffset={insets.top + spacing.sm}
+          topOffset={topPad + spacing.sm}
           onDone={() => setSuperToast(null)}
         />
       ) : null}
