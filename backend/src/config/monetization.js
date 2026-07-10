@@ -15,7 +15,7 @@ module.exports = {
 
   // Credits wallet — 1 credit = ₹1. A spot-reveal costs 10 credits (≈ ₹10).
   CREDIT_VALUE_INR: 1,
-  REVEAL_COST_CREDITS: 10,
+  REVEAL_COST_CREDITS: 20,
 
   // Purchasable credit packs (priced for India; bonus credits scale with size)
   CREDIT_PACKS: [

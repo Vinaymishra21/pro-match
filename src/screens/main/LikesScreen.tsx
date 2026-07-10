@@ -20,8 +20,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { DarkBackground } from '../../components/DarkBackground';
 import { GradientButton } from '../../components/GradientButton';
+import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
+import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { useAuth } from '../../hooks/useAuth';
-import { getIncomingLikes, revealLiker } from '../../services/apiService';
+import { getIncomingLikes, revealLiker, swipeProfile } from '../../services/apiService';
 import { ApiError } from '../../services/apiClient';
 import { professionTheme } from '../../theme/professionTheme';
 import { gradients } from '../../theme/gradients';
@@ -29,7 +31,7 @@ import { useTheme, useThemedStyles } from '../../theme/ThemeProvider';
 import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
-import type { IncomingLike, MainTabParamList, RootStackParamList } from '../../types';
+import type { DiscoverProfile, IncomingLike, MainTabParamList, RootStackParamList } from '../../types';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Likes'>,
@@ -51,17 +53,22 @@ function articleFor(word: string) {
 }
 
 export function LikesScreen({ navigation }: Props) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [likes, setLikes] = useState<IncomingLike[]>([]);
   const [isPro, setIsPro] = useState(false);
   const [credits, setCredits] = useState(0);
-  const [revealCost, setRevealCost] = useState(10);
+  // Fallback only — the server sends the real cost with every likes fetch.
+  const [revealCost, setRevealCost] = useState(20);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [revealingId, setRevealingId] = useState<string | null>(null);
+  // Tapping an unblurred card opens the full profile. These people already
+  // liked you, so liking back is always a match; passing removes them.
+  const [detail, setDetail] = useState<IncomingLike | null>(null);
+  const [celebration, setCelebration] = useState<(MatchInfo & { matchId: string }) | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -83,6 +90,46 @@ export function LikesScreen({ navigation }: Props) {
       load();
     }, [load])
   );
+
+  function removeLike(likerId: string) {
+    setLikes((prev) => prev.filter((l) => l.likerId !== likerId));
+  }
+
+  // They already liked you → liking back always creates a match.
+  async function handleLike() {
+    const target = detail;
+    if (!target) return;
+    setDetail(null);
+    try {
+      const res = await swipeProfile({ toUserId: target.likerId, action: 'like' }, token);
+      removeLike(target.likerId);
+      if (res.matched && res.match) {
+        setCelebration({
+          matchId: res.match.id,
+          name: target.name,
+          profession: target.profession,
+          photo: target.photos?.[0],
+          myPhoto: user?.photos?.[0],
+          superLike: res.theySuperLiked ? 'them' : (res.iSuperLiked ?? res.superLike) ? 'you' : null
+        });
+      }
+    } catch (e) {
+      Alert.alert('Could not like', (e as Error).message);
+    }
+  }
+
+  // Passing drops them from your likes for good.
+  async function handlePass() {
+    const target = detail;
+    if (!target) return;
+    setDetail(null);
+    try {
+      await swipeProfile({ toUserId: target.likerId, action: 'pass' }, token);
+      removeLike(target.likerId);
+    } catch (e) {
+      Alert.alert('Could not pass', (e as Error).message);
+    }
+  }
 
   function confirmReveal(like: IncomingLike) {
     if (credits < revealCost) {
@@ -216,11 +263,35 @@ export function LikesScreen({ navigation }: Props) {
                 revealing={revealingId === like.likerId}
                 revealCost={revealCost}
                 onReveal={() => confirmReveal(like)}
+                onOpen={() => setDetail(like)}
               />
             ))}
           </View>
         )}
       </ScrollView>
+
+      {/* A revealed like IS a full public profile — the modal only reads
+          profile fields, so the cast is safe. */}
+      <ProfileDetailModal
+        profile={(detail as unknown as DiscoverProfile) ?? null}
+        visible={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        onLike={handleLike}
+        onPass={handlePass}
+      />
+
+      {celebration ? (
+        <MatchCelebration
+          key={celebration.matchId}
+          match={celebration}
+          onKeepSwiping={() => setCelebration(null)}
+          onSendMessage={() => {
+            const c = celebration;
+            setCelebration(null);
+            navigation.navigate('Chat', { matchId: c.matchId, matchName: c.name || 'Chat' });
+          }}
+        />
+      ) : null}
     </DarkBackground>
   );
 }
@@ -229,12 +300,14 @@ function LikeCard({
   like,
   revealing,
   revealCost,
-  onReveal
+  onReveal,
+  onOpen
 }: {
   like: IncomingLike;
   revealing: boolean;
   revealCost: number;
   onReveal: () => void;
+  onOpen: () => void;
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -282,7 +355,10 @@ function LikeCard({
   // Revealed card
   const photo = like.photos && like.photos.length > 0 ? like.photos[0] : null;
   return (
-    <View style={[styles.card, isSuper && styles.cardSuper]}>
+    <Pressable
+      onPress={onOpen}
+      style={({ pressed }) => [styles.card, isSuper && styles.cardSuper, pressed ? { opacity: 0.92 } : null]}
+    >
       {/* Always paint a gradient base: a missing OR failed-to-load photo can
           then never leave a blank card. The photo simply covers it when it loads. */}
       <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -310,7 +386,7 @@ function LikeCard({
           </Text>
         </View>
       </LinearGradient>
-    </View>
+    </Pressable>
   );
 }
 

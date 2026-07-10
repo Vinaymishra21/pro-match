@@ -13,7 +13,8 @@ const {
   BOOST_COST_CREDITS,
   BOOST_DURATION_MINUTES,
   FREE_WEEKLY_BOOSTS,
-  PRO_WEEKLY_BOOSTS
+  PRO_WEEKLY_BOOSTS,
+  REVEAL_COST_CREDITS
 } = require('../config/monetization');
 
 const BILLING_DEV_MODE = process.env.BILLING_DEV_MODE !== 'false' && !payments.LIVE;
@@ -85,6 +86,8 @@ function getCatalog(req, res) {
     proPlans: PRO_PLANS,
     creditPacks: CREDIT_PACKS,
     creditValueInr: CREDIT_VALUE_INR,
+    // Exposed so the paywall never hardcodes (and drifts from) the real cost.
+    revealCost: REVEAL_COST_CREDITS,
     superLike: {
       costCredits: SUPERLIKE_COST_CREDITS,
       freeWeekly: FREE_WEEKLY_SUPERLIKES,

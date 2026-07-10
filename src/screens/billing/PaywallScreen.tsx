@@ -251,7 +251,7 @@ export function PaywallScreen({ navigation, route }: Props) {
             <View style={[styles.creditsHeader, focus === 'credits' ? styles.creditsFocused : null]}>
               <Text style={styles.sectionTitle}>Or pay as you go 🪙</Text>
               <Text style={styles.sectionSub}>
-                No subscription — credits work anytime. Reveal a like for 10
+                No subscription — credits work anytime. Reveal a like for {catalog.revealCost ?? 20}
                 {catalog.superLike ? `, a Super Like for ${catalog.superLike.costCredits}` : ''}
                 {catalog.boost ? `, a Boost for ${catalog.boost.costCredits}` : ''} credits. 1 credit
                 = ₹{catalog.creditValueInr}.

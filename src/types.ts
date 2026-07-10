@@ -228,6 +228,8 @@ export interface BillingCatalog {
   proPlans: ProPlan[];
   creditPacks: CreditPack[];
   creditValueInr: number;
+  /** Credits to reveal one liker. Server-driven so the paywall can't drift. */
+  revealCost?: number;
   superLike?: SuperLikeConfig;
   boost?: BoostConfig;
   devMode: boolean;
