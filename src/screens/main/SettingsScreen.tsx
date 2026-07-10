@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
+import { useTopInset } from '../../hooks/useTopInset';
 import { API_BASE_URL } from '../../constants/api';
 import { useAuth } from '../../hooks/useAuth';
 import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode, type ThemeScheme } from '../../theme/ThemeProvider';
@@ -39,6 +40,7 @@ export function SettingsScreen({ navigation }: Props) {
   const { colors, mode, scheme, setScheme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
+  const topPad = useTopInset();
   const [busy, setBusy] = useState('');
 
   function confirmLogout() {
@@ -114,9 +116,7 @@ export function SettingsScreen({ navigation }: Props) {
         style={[
           styles.container,
           {
-            // Edge-to-edge Android can report insets.top === 0 — floor it so the
-            // header never sits under the status bar (same fix as OnboardingScaffold).
-            paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md,
+            paddingTop: topPad + spacing.md,
             paddingBottom: insets.bottom
           }
         ]}

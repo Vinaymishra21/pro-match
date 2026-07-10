@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
+import { useTopInset } from '../../hooks/useTopInset';
 import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMessages, sendMessage, unmatch } from '../../services/apiService';
@@ -29,6 +30,7 @@ export function ChatScreen({ route, navigation }: Props) {
   const { colors, mode } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
+  const topPad = useTopInset();
   const { matchId, matchName, matchUserId } = route.params;
   const [messages, setMessages] = useState<MessageRecord[]>([]);
   const [text, setText] = useState('');
@@ -158,7 +160,7 @@ export function ChatScreen({ route, navigation }: Props) {
           styles.container,
           {
             // Floor insets.top: edge-to-edge Android can report it as 0.
-            paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.xs,
+            paddingTop: topPad + spacing.xs,
             paddingBottom: insets.bottom + spacing.xs
           }
         ]}

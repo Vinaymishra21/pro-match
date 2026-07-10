@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { promptPool } from '../constants/profileOptions';
 import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';

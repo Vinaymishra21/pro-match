@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { WovnnMark } from './WovnnMark';
 import { useThemedStyles } from '../theme/ThemeProvider';

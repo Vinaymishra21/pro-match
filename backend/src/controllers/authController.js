@@ -95,7 +95,7 @@ async function requestOtp(req, res) {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  await sendSms(phone, `Your Pro Match verification code is ${code}`);
+  await sendSms(phone, `Your Wovnn verification code is ${code}`);
 
   // Only leak the code back to the client in dev mode.
   return res.json({ sent: true, ...(DEV_MODE ? { devCode: code } : {}) });

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pro Match — Admin',
-  description: 'Moderation & analytics dashboard for Pro Match'
+  title: 'Wovnn — Admin',
+  description: 'Moderation & analytics dashboard for Wovnn'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { DarkBackground } from '../../components/DarkBackground';
 import { WovnnMark } from '../../components/WovnnMark';

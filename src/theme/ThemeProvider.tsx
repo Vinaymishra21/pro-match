@@ -15,7 +15,7 @@
 // Keep `makeStyles` at MODULE scope — useThemedStyles memoizes on the palette,
 // not the factory, so an inline factory would defeat the memo.
 // ────────────────────────────────────────────────────────────────────────────
-import React, {
+import {
   createContext,
   useCallback,
   useContext,

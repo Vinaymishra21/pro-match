@@ -189,7 +189,7 @@ async function updateProfile(req, res) {
     const m = now.getMonth() - d.getMonth();
     if (m < 0 || (m === 0 && now.getDate() < d.getDate())) derivedAge -= 1;
     if (derivedAge < 18) {
-      return res.status(400).json({ message: 'You must be at least 18 to use Pro Match.', code: 'UNDERAGE' });
+      return res.status(400).json({ message: 'You must be at least 18 to use Wovnn.', code: 'UNDERAGE' });
     }
     if (derivedAge > 100) {
       return res.status(400).json({ message: 'Please enter a valid date of birth.', code: 'BAD_DOB' });

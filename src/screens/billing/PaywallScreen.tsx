@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
+import { useTopInset } from '../../hooks/useTopInset';
 import { WovnnLoader } from '../../components/WovnnLoader';
 import { useAuth } from '../../hooks/useAuth';
 import { devGrant, getBillingCatalog } from '../../services/apiService';
@@ -51,9 +51,9 @@ const perWeekOf = (p: ProPlan) => (p.priceInr * 7) / p.periodDays;
 
 export function PaywallScreen({ navigation, route }: Props) {
   const focus = route.params?.focus ?? 'pro';
-  const { colors, mode } = useTheme();
+  const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
+  const topPad = useTopInset();
   const { token, refreshUser } = useAuth();
   const [catalog, setCatalog] = useState<BillingCatalog | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,9 +117,7 @@ export function PaywallScreen({ navigation, route }: Props) {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          // Edge-to-edge Android can report insets.top === 0 — floor it so content
-          // never sits under the status bar.
-          { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md }
+          { paddingTop: topPad + spacing.md }
         ]}
         showsVerticalScrollIndicator={false}
       >

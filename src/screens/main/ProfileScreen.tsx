@@ -1,9 +1,10 @@
 // @ts-nocheck
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Easing, LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, UIManager, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DarkBackground } from '../../components/DarkBackground';
+import { useTopInset } from '../../hooks/useTopInset';
 import { Dropdown } from '../../components/Dropdown';
 import { AnimatedProfileSection } from '../../features/profile/components/AnimatedProfileSection';
 import { ChipSelector } from '../../features/profile/components/ChipSelector';
@@ -40,9 +41,7 @@ import { professionTheme } from '../../theme/professionTheme';
 import { spacing } from '../../theme/spacing';
 import { fonts, typography } from '../../theme/typography';
 
-// Dark text input matching the new design (used in place of the shared AppInput,
-// which is light-themed and shared with Chat/Auth).
-function DarkInput({ value, onChangeText, placeholder, style, ...rest }) {
+function ThemedInput({ value, onChangeText, placeholder, style, ...rest }) {
   const { colors } = useTheme();
   const inputStyles = useThemedStyles(makeInputStyles);
   return (
@@ -161,8 +160,8 @@ export function ProfileScreen() {
   const { colors, mode: themeMode, setScheme } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 24 : 0);
-  const { user, token, updateLocalUser, signOut } = useAuth();
+  const topPad = useTopInset();
+  const { user, token, updateLocalUser } = useAuth();
   const [form, setForm] = useState(buildProfileForm(user));
   const [interestInput, setInterestInput] = useState((form.interests || []).join(', '));
   const [mode, setMode] = useState('edit');
@@ -359,8 +358,8 @@ export function ProfileScreen() {
 
             <AnimatedProfileSection index={2}>
               <ProfileSection title="Basics" subtitle="The essentials people see first" icon={'\uD83D\uDC64'} collapsible>
-                <DarkInput value={form.name} onChangeText={(value) => updateField('name', value)} placeholder="Full name" />
-                <DarkInput
+                <ThemedInput value={form.name} onChangeText={(value) => updateField('name', value)} placeholder="Full name" />
+                <ThemedInput
                   value={form.age}
                   onChangeText={(value) => updateField('age', value)}
                   placeholder="Age"
@@ -373,7 +372,7 @@ export function ProfileScreen() {
                   placeholder="Select your gender"
                   onChange={(value) => updateField('gender', value)}
                 />
-                <DarkInput
+                <ThemedInput
                   value={form.location}
                   onChangeText={(value) => updateField('location', value)}
                   placeholder="City, Country"
@@ -400,13 +399,13 @@ export function ProfileScreen() {
                   multi
                 />
                 <Text style={[styles.fieldLabel, styles.fieldLabelAfterChips]}>Headline</Text>
-                <DarkInput
+                <ThemedInput
                   value={form.headline}
                   onChangeText={(value) => updateField('headline', value)}
                   placeholder="One-line headline"
                 />
                 <Text style={styles.fieldLabel}>Bio</Text>
-                <DarkInput
+                <ThemedInput
                   value={form.bio}
                   onChangeText={(value) => updateField('bio', value)}
                   placeholder="Tell people a little about yourself"
@@ -453,17 +452,17 @@ export function ProfileScreen() {
 
             <AnimatedProfileSection index={4}>
               <ProfileSection title="Work & Education" subtitle="Show your professional side" icon={'\uD83D\uDCBC'} collapsible>
-                <DarkInput
+                <ThemedInput
                   value={form.jobTitle}
                   onChangeText={(value) => updateField('jobTitle', value)}
                   placeholder="Job title"
                 />
-                <DarkInput
+                <ThemedInput
                   value={form.company}
                   onChangeText={(value) => updateField('company', value)}
                   placeholder="Company"
                 />
-                <DarkInput
+                <ThemedInput
                   value={form.education}
                   onChangeText={(value) => updateField('education', value)}
                   placeholder="Education"
@@ -473,7 +472,7 @@ export function ProfileScreen() {
 
             <AnimatedProfileSection index={5}>
               <ProfileSection title="Interests" subtitle="Tap quick picks or type your own" icon={'\u2B50'} collapsible>
-                <DarkInput
+                <ThemedInput
                   value={interestInput}
                   onChangeText={setInterestInput}
                   placeholder="Travel, Coffee, Reading, Music..."

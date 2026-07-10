@@ -1,8 +1,6 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { professionTheme } from '../theme/professionTheme';
-import { colors } from '../theme/colors';
 
 // A vibrant, profession-coloured pill: emoji + label on the profession's own
 // gradient. The signature recurring element of the PRISM system.
@@ -43,7 +41,7 @@ const styles = StyleSheet.create({
   sm: { paddingHorizontal: 10, paddingVertical: 4 },
   emoji: { fontSize: 15, marginRight: 6 },
   emojiSm: { fontSize: 12, marginRight: 4 },
-  label: { color: colors.white, fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
+  label: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
   labelSm: { fontSize: 11 },
-  tick: { color: colors.white, fontWeight: '900', fontSize: 13 }
+  tick: { color: '#FFFFFF', fontWeight: '900', fontSize: 13 }
 });

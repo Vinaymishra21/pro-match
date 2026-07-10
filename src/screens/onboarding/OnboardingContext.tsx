@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { updateProfession, updateProfile } from '../../services/apiService';
 

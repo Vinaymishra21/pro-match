@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthShell, BackButton, Eyebrow } from '../../components/auth/AuthKit';

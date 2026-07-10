@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Alert,
   Animated,

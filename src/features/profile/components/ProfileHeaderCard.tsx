@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';
 import type { ThemeColors } from '../../../theme/themes';

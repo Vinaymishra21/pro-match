@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ChipSelector } from './ChipSelector';
 import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';

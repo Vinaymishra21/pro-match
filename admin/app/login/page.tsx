@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div className="login-wrap">
       <form className="login-card fade-in" onSubmit={submit}>
         <div className="login-logo">⚡</div>
-        <div className="login-title">Pro Match Admin</div>
+        <div className="login-title">Wovnn Admin</div>
         <div className="login-sub">Sign in to the moderation dashboard</div>
 
         <label className="field-label">Email</label>

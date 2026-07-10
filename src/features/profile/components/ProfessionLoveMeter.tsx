@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme, useThemedStyles } from '../../../theme/ThemeProvider';
 import type { ThemeColors } from '../../../theme/themes';
@@ -13,7 +13,7 @@ const LEVELS = [
   { label: "It's my calling", emoji: '\uD83D\uDD25', bg: '#FCE4EC' }
 ];
 
-function LevelOption({ level, index, selected, onPress }) {
+function LevelOption({ level, selected, onPress }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const scale = useRef(new Animated.Value(1)).current;
@@ -74,11 +74,10 @@ export function ProfessionLoveMeter({ value, onChange }) {
       ) : null}
 
       <View style={styles.grid}>
-        {LEVELS.map((level, index) => (
+        {LEVELS.map((level) => (
           <LevelOption
             key={level.label}
             level={level}
-            index={index}
             selected={value === level.label}
             onPress={onChange}
           />

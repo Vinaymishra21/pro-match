@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
   Dimensions,
   Image,
   PanResponder,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,8 +16,8 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
+import { useTopInset } from '../../hooks/useTopInset';
 import { ProfessionBadge } from '../../components/ProfessionBadge';
 import { VerifiedTick } from '../../components/VerifiedTick';
 import { GradientButton } from '../../components/GradientButton';
@@ -54,10 +53,7 @@ export function DiscoverScreen({ navigation }: Props) {
   const { token, user } = useAuth();
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
-  // Edge-to-edge Android reports insets.top === 0 — floor it so the header and
-  // the super-like toast never sit under the status bar.
-  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 24 : 0);
+  const topPad = useTopInset();
   const myProfession = user?.profession || '';
 
   const [activeProfession, setActiveProfession] = useState(myProfession);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Text } from 'react-native';
 import { useAuthText } from '../../components/auth/AuthKit';
 import { OnboardingScaffold } from './OnboardingScaffold';

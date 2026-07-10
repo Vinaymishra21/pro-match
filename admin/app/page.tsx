@@ -67,7 +67,7 @@ export default function OverviewPage() {
   return (
     <Shell
       title="Overview"
-      subtitle="A live snapshot of Pro Match"
+      subtitle="A live snapshot of Wovnn"
       actions={
         <span className="live-pill">
           <span className="live-dot" /> Live · {updatedAt}

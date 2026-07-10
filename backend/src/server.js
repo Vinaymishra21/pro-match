@@ -82,7 +82,7 @@ async function start() {
     const server = http.createServer(app);
     initIo(server);
     server.listen(port, () => {
-      console.log(`Pro Match backend running on http://localhost:${port} (REST + Socket.IO)`);
+      console.log(`Wovnn backend running on http://localhost:${port} (REST + Socket.IO)`);
     });
   } catch (err) {
     console.error('Failed to start server:', err.message);

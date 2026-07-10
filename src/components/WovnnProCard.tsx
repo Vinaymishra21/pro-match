@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, useThemedStyles, type ThemeMode } from '../theme/ThemeProvider';
@@ -18,7 +18,7 @@ const BENEFITS = [
 ];
 
 export function WovnnProCard({ onGoPro }: { onGoPro: () => void }) {
-  const { colors, mode } = useTheme();
+  const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { token } = useAuth();
   const [fromPerWeek, setFromPerWeek] = useState<number | null>(null);

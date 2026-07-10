@@ -87,7 +87,7 @@ export function Shell({
         <div className="brand">
           <div className="brand-logo">P</div>
           <div>
-            <div className="brand-name">Pro Match</div>
+            <div className="brand-name">Wovnn</div>
             <div className="brand-sub">Admin</div>
           </div>
         </div>

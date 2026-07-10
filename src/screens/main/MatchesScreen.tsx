@@ -1,12 +1,12 @@
-import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Image, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkBackground } from '../../components/DarkBackground';
+import { useTopInset } from '../../hooks/useTopInset';
 import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { blockUser, getMatches, unmatch } from '../../services/apiService';
@@ -27,7 +27,7 @@ export function MatchesScreen({ navigation }: Props) {
   const { token, user } = useAuth();
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
+  const topPad = useTopInset();
   const pro = isProUser(user);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -120,8 +120,7 @@ export function MatchesScreen({ navigation }: Props) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.list,
-          // Edge-to-edge Android reports insets.top === 0 — floor it.
-          { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md }
+          { paddingTop: topPad + spacing.md }
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={

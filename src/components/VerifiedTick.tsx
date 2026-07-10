@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 // The classic "blue tick" — shown next to the name of a profession-verified

@@ -14,10 +14,9 @@ import { BlurView } from 'expo-blur';
 import { ProfessionBadge } from './ProfessionBadge';
 import { VerifiedTick } from './VerifiedTick';
 import { professionTheme } from '../theme/professionTheme';
-import { darkRadius } from '../theme/darkColors';
 import { useTheme, useThemedStyles, type ThemeMode } from '../theme/ThemeProvider';
 import type { ThemeColors } from '../theme/themes';
-import { spacing } from '../theme/spacing';
+import { radius, spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import type { DiscoverProfile } from '../types';
 
@@ -313,7 +312,7 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       position: 'absolute',
       top: spacing.lg,
       right: spacing.lg,
-      borderRadius: darkRadius.pill,
+      borderRadius: radius.pill,
       overflow: 'hidden',
       paddingHorizontal: 12,
       paddingVertical: 6
@@ -352,7 +351,7 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       backgroundColor: c.surface,
       borderWidth: 1,
       borderColor: c.border,
-      borderRadius: darkRadius.lg,
+      borderRadius: radius.lg,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs
     },
@@ -361,14 +360,14 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     rowLabel: { ...typography.caption, color: c.textMuted, fontWeight: '700', width: 100, fontSize: 13 },
     rowValue: { ...typography.body, color: c.text, fontWeight: '700', flex: 1, fontSize: 14 },
     chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-    chip: { borderWidth: 1, borderRadius: darkRadius.pill, paddingHorizontal: 14, paddingVertical: 9 },
+    chip: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 9 },
     chipText: { ...typography.caption, fontWeight: '700', fontSize: 13 },
     promptCard: {
       flexDirection: 'row',
       backgroundColor: c.card,
       borderWidth: 1,
       borderColor: c.border,
-      borderRadius: darkRadius.xl,
+      borderRadius: radius.xl,
       marginBottom: spacing.md,
       overflow: 'hidden'
     },
@@ -379,7 +378,7 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     galleryImg: {
       width: '100%',
       height: width * 1.05,
-      borderRadius: darkRadius.xl,
+      borderRadius: radius.xl,
       marginBottom: spacing.sm,
       backgroundColor: c.card
     },
@@ -419,7 +418,7 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     closeMid: {
       paddingHorizontal: spacing.md,
       paddingVertical: 11,
-      borderRadius: darkRadius.pill,
+      borderRadius: radius.pill,
       backgroundColor: c.surface,
       borderWidth: 1,
       borderColor: c.border

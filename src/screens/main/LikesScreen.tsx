@@ -1,10 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Image,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,14 +12,13 @@ import {
   View
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { DarkBackground } from '../../components/DarkBackground';
-import { GradientButton } from '../../components/GradientButton';
+import { useTopInset } from '../../hooks/useTopInset';
 import { MatchCelebration, type MatchInfo } from '../../components/MatchCelebration';
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { WovnnLoader } from '../../components/WovnnLoader';
@@ -58,7 +56,7 @@ export function LikesScreen({ navigation }: Props) {
   const { token, user } = useAuth();
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const insets = useSafeAreaInsets();
+  const topPad = useTopInset();
   const [likes, setLikes] = useState<IncomingLike[]>([]);
   const [isPro, setIsPro] = useState(false);
   const [credits, setCredits] = useState(0);
@@ -191,8 +189,7 @@ export function LikesScreen({ navigation }: Props) {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          // Edge-to-edge Android reports insets.top === 0 — floor it.
-          { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 24 : 0) + spacing.md }
+          { paddingTop: topPad + spacing.md }
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={

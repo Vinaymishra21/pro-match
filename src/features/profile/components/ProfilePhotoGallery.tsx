@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, Alert, Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { uploadPhoto } from '../../../services/apiService';

@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User, Match, Message, Report, Swipe, Reveal, VerificationRequest } = require('../models');
+const { User, Match, Message, Report, Reveal, VerificationRequest } = require('../models');
 const { CREDIT_PACKS, PRO_PRICE_INR, REVEAL_COST_CREDITS, CREDIT_VALUE_INR } = require('../config/monetization');
 const { blocklistUserIdentifiers } = require('../utils/identity');
 

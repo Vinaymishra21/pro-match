@@ -1,8 +1,7 @@
-import React, { useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients } from '../theme/gradients';
-import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 
 type GradientButtonProps = {
@@ -49,7 +48,7 @@ export function GradientButton({
           style={[styles.button, size === 'md' ? styles.md : styles.lg]}
         >
           {loading ? (
-            <ActivityIndicator color={colors.white} />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={styles.label}>
               {icon ? `${icon}  ` : ''}
@@ -67,7 +66,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#E76F51',
+    shadowColor: '#E8415A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.28,
     shadowRadius: 16,
@@ -77,7 +76,7 @@ const styles = StyleSheet.create({
   md: { height: 46, paddingHorizontal: 20 },
   label: {
     fontFamily: fonts.sansExtraBold,
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     lineHeight: 20,
     fontWeight: '800',

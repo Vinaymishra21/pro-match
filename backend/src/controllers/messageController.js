@@ -75,7 +75,7 @@ async function sendMessage(req, res) {
   if (!scan.clean) {
     const strike = await recordSpamStrike(userId, 'blocked chat content');
     return res.status(400).json({
-      message: `Message blocked — it looks like it contains ${describe(scan.reasons)}. For your safety, keep chats on Pro Match and don't share contact details.`,
+      message: `Message blocked — it looks like it contains ${describe(scan.reasons)}. For your safety, keep chats on Wovnn and don't share contact details.`,
       code: 'CONTENT_BLOCKED',
       reasons: scan.reasons.map((r) => r.code),
       shadowBanned: strike.shadowBanned
