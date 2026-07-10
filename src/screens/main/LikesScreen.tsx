@@ -38,6 +38,11 @@ type Props = CompositeScreenProps<
 
 const COLUMN_GAP = spacing.md;
 const CARD_WIDTH = (Dimensions.get('window').width - spacing.lg * 2 - COLUMN_GAP) / 2;
+// Explicit height (was `aspectRatio: 0.74`). The revealed card has ONLY
+// absolutely-positioned children, so it has no intrinsic height — if Yoga
+// doesn't resolve the aspect ratio it collapses to 0 and the card vanishes.
+// The blurred card never hit this because `mystery` is an in-flow flex child.
+const CARD_HEIGHT = CARD_WIDTH / 0.74;
 
 // "An" before vowel-initial professions ("An Architect"), "A" otherwise.
 // Mirrors the server's teaser phrasing — this is only the fallback.
@@ -278,15 +283,16 @@ function LikeCard({
   const photo = like.photos && like.photos.length > 0 ? like.photos[0] : null;
   return (
     <View style={[styles.card, isSuper && styles.cardSuper]}>
+      {/* Always paint a gradient base: a missing OR failed-to-load photo can
+          then never leave a blank card. The photo simply covers it when it loads. */}
+      <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+        <View style={styles.mystery}>
+          <Text style={styles.avatarLetter}>{(like.name || '?').charAt(0).toUpperCase()}</Text>
+        </View>
+      </LinearGradient>
       {photo ? (
         <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-      ) : (
-        <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-          <View style={styles.mystery}>
-            <Text style={styles.avatarLetter}>{(like.name || '?').charAt(0).toUpperCase()}</Text>
-          </View>
-        </LinearGradient>
-      )}
+      ) : null}
       {isSuper ? (
         <View style={styles.superRibbon}>
           <Text style={styles.superRibbonText}>★ SUPER LIKE</Text>
@@ -364,7 +370,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     card: {
       width: CARD_WIDTH,
-      aspectRatio: 0.74,
+      height: CARD_HEIGHT,
       borderRadius: 22,
       overflow: 'hidden',
       backgroundColor: c.card,
