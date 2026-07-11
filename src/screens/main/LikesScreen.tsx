@@ -64,6 +64,7 @@ export function LikesScreen({ navigation }: Props) {
   const [revealCost, setRevealCost] = useState(20);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
   const [revealingId, setRevealingId] = useState<string | null>(null);
   // Tapping an unblurred card opens the full profile. These people already
   // liked you, so liking back is always a match; passing removes them.
@@ -77,8 +78,10 @@ export function LikesScreen({ navigation }: Props) {
       setIsPro(res.isPro);
       setCredits(res.credits);
       setRevealCost(res.revealCost);
+      setError('');
     } catch (err) {
-      // Quietly ignore; pull-to-refresh lets the user retry.
+      // Surface the failure instead of showing a false "no likes" empty state.
+      setError((err as Error).message || "Couldn't load your likes.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,6 +109,7 @@ export function LikesScreen({ navigation }: Props) {
       if (res.matched && res.match) {
         setCelebration({
           matchId: res.match.id,
+          matchUserId: target.likerId,
           name: target.name,
           profession: target.profession,
           photo: target.photos?.[0],
@@ -249,6 +253,12 @@ export function LikesScreen({ navigation }: Props) {
           <View style={styles.center}>
             <WovnnLoader message="Loading your likes" />
           </View>
+        ) : error && likes.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyEmoji}>😕</Text>
+            <Text style={styles.emptyTitle}>Couldn't load your likes</Text>
+            <Text style={styles.emptyText}>Pull down to try again.</Text>
+          </View>
         ) : likes.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🫶</Text>
@@ -291,7 +301,7 @@ export function LikesScreen({ navigation }: Props) {
           onSendMessage={() => {
             const c = celebration;
             setCelebration(null);
-            navigation.navigate('Chat', { matchId: c.matchId, matchName: c.name || 'Chat' });
+            navigation.navigate('Chat', { matchId: c.matchId, matchUserId: c.matchUserId, matchName: c.name || 'Chat' });
           }}
         />
       ) : null}

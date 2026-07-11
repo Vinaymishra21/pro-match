@@ -229,6 +229,7 @@ export function DiscoverScreen({ navigation }: Props) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setCelebration({
             matchId: res.match.id,
+            matchUserId: target.id,
             name: target.name,
             profession: target.profession,
             photo: target.photos?.[0],
@@ -658,7 +659,7 @@ export function DiscoverScreen({ navigation }: Props) {
           onSendMessage={() => {
             const c = celebration;
             setCelebration(null);
-            navigation.navigate('Chat', { matchId: c.matchId, matchName: c.name || 'Chat' });
+            navigation.navigate('Chat', { matchId: c.matchId, matchUserId: c.matchUserId, matchName: c.name || 'Chat' });
           }}
         />
       ) : null}

@@ -46,4 +46,27 @@ async function spendAllowanceOrCredits(user, { field, freeLimit, proLimit, costC
   return { ok: false, code: 'INSUFFICIENT', costCredits, credits: user.credits || 0 };
 }
 
-module.exports = { spendAllowanceOrCredits };
+// Reverses a spend when the action it paid for is undone (e.g. rewinding a Super
+// Like). `via` says which bucket to credit back — must match what the original
+// spend returned, so we never over-refund (a credit refund for an allowance
+// spend would let Pro users farm credits by super-like-then-undo).
+async function refundAllowanceOrCredits(user, { field, freeLimit, proLimit, costCredits, via }) {
+  if (via === 'credits') {
+    return User.findOneAndUpdate({ _id: user.id }, { $inc: { credits: costCredits } }, { new: true });
+  }
+  if (via === 'allowance') {
+    // Give the weekly unit back only if we're still in the same week it was
+    // spent; getWeeklyCounterState returns used:0 once the week has rolled over,
+    // in which case the allowance already reset and there's nothing to refund.
+    const state = getWeeklyCounterState(user, field, freeLimit, proLimit);
+    if (state.used <= 0) return user;
+    return User.findOneAndUpdate(
+      { _id: user.id },
+      { $set: { [field]: { weekStart: state.weekStart, count: state.used - 1 } } },
+      { new: true }
+    );
+  }
+  return user;
+}
+
+module.exports = { spendAllowanceOrCredits, refundAllowanceOrCredits };

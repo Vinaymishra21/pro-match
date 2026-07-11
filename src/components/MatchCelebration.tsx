@@ -14,6 +14,8 @@ export type MatchInfo = {
   profession?: string;
   photo?: string;
   myPhoto?: string;
+  /** The matched person's user id — carried through so Chat can block/report them. */
+  matchUserId?: string;
   /**
    * Super-like context for the match: 'them' = they super liked me (the most
    * flattering framing wins), 'you' = my swipe was the super like.

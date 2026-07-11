@@ -39,9 +39,7 @@ export function getProfileCompletion(form: ProfileForm): ProfileCompletion {
     form.interests,
     form.photos,
     form.professionWhy,
-    form.professionLoveLevel,
-    form.firstDateIdea,
-    form.weekendVibe
+    form.professionLoveLevel
   ];
 
   const completed = checks.filter(isFilled).length;

@@ -11,17 +11,6 @@ import { typography } from '../../../theme/typography';
 const MAX_PHOTOS = 6;
 const MIN_PHOTOS = 2;
 
-function getPhotoScore(asset) {
-  const width = asset?.width || 0;
-  const height = asset?.height || 0;
-  const area = width * height;
-  const ratio = height ? width / height : 1;
-  const portraitBonus = height >= width ? 200000 : 0;
-  const ratioPenalty = Math.abs(ratio - 0.8) * 150000;
-
-  return area + portraitBonus - ratioPenalty;
-}
-
 function PhotoTile({ photo, index, selected, isHero, uploading, onPress, onLongPress, onRemove }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -108,7 +97,6 @@ export function ProfilePhotoGallery({ photos = [], onChange, token }) {
   }, [photos]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
-  const [photoScores, setPhotoScores] = useState({});
   const [uploadingIndex, setUploadingIndex] = useState(-1);
 
   async function pickPhoto(index) {
@@ -155,16 +143,12 @@ export function ProfilePhotoGallery({ photos = [], onChange, token }) {
         }
       }
 
+      // Keep the photo in the slot the user chose — don't auto-reorder, which
+      // used to yank every new upload into the Main slot and clobber manual order.
       const next = [...normalized];
       next[index] = storedUri;
-      const cleaned = next.filter(Boolean);
-      const score = getPhotoScore(selected);
-      const nextScores = { ...photoScores, [storedUri]: score };
-      setPhotoScores(nextScores);
-      const ranked = [...cleaned].sort((a, b) => (nextScores[b] || 0) - (nextScores[a] || 0));
-      onChange(ranked);
-
-      setSelectedIndex(0);
+      onChange(next.filter(Boolean));
+      setSelectedIndex(index);
     } catch (error) {
       setUploadingIndex(-1);
       Alert.alert('Upload failed', error?.message || 'Unable to open gallery right now.');

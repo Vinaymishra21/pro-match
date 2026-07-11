@@ -2,7 +2,7 @@ const { User, Swipe, Match } = require('../models');
 const { publicProfile } = require('../utils/auth');
 const { sendPush } = require('../utils/push');
 const { isProActive, getWeeklyUnlockState } = require('../utils/entitlements');
-const { spendAllowanceOrCredits } = require('../utils/consumables');
+const { spendAllowanceOrCredits, refundAllowanceOrCredits } = require('../utils/consumables');
 const {
   SUPERLIKE_COST_CREDITS,
   FREE_WEEKLY_SUPERLIKES,
@@ -82,9 +82,13 @@ async function upsertSwipe(req, res) {
     }
   }
 
+  const swipeUpdate = { fromUserId, toUserId, action, crossProfession, superLike: isSuper };
+  // Record how a NEW super like was paid so undo can refund it. Omit on a
+  // re-like (superSpend null) so the original bucket isn't overwritten.
+  if (superSpend) swipeUpdate.superVia = superSpend.via;
   await Swipe.findOneAndUpdate(
     { fromUserId, toUserId },
-    { fromUserId, toUserId, action, crossProfession, superLike: isSuper },
+    swipeUpdate,
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
@@ -234,15 +238,29 @@ async function undoSwipe(req, res) {
   });
 
   const profile = await User.findById(last.toUserId);
-  await Swipe.deleteOne({ _id: last._id });
 
-  // Count the undo for free users (Pro is unlimited, no need to track).
-  if (!pro) {
-    me.undosUsed = (me.undosUsed || 0) + 1;
-    await me.save();
+  // Refund a Super Like's charge — the like it paid for is being removed.
+  if (last.superLike && last.superVia) {
+    await refundAllowanceOrCredits(me, {
+      field: 'superLikeUsage',
+      freeLimit: FREE_WEEKLY_SUPERLIKES,
+      proLimit: PRO_WEEKLY_SUPERLIKES,
+      costCredits: SUPERLIKE_COST_CREDITS,
+      via: last.superVia
+    });
   }
 
-  const undosLeft = pro ? null : Math.max(0, FREE_UNDO_LIMIT - me.undosUsed);
+  await Swipe.deleteOne({ _id: last._id });
+
+  // Count the undo for free users (Pro is unlimited). Atomic $inc so it can't
+  // clobber the refund above (both touch the same user doc).
+  let undosUsed = me.undosUsed || 0;
+  if (!pro) {
+    const updated = await User.findOneAndUpdate({ _id: fromUserId }, { $inc: { undosUsed: 1 } }, { new: true });
+    undosUsed = updated?.undosUsed ?? undosUsed + 1;
+  }
+
+  const undosLeft = pro ? null : Math.max(0, FREE_UNDO_LIMIT - undosUsed);
   return res.json({ ok: true, profile: profile ? publicProfile(profile) : null, isPro: pro, undosLeft });
 }
 

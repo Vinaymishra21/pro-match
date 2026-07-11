@@ -20,7 +20,10 @@ const swipeSchema = new Schema(
     crossProfession: { type: Boolean, default: false },
     // A Super Like is still an action:'like' (so all match logic is unchanged) —
     // this flag just marks it as the standout variant for the Likes list.
-    superLike: { type: Boolean, default: false }
+    superLike: { type: Boolean, default: false },
+    // How the Super Like was paid for, so undo can refund the right bucket
+    // (null = not charged / re-like of an existing super like).
+    superVia: { type: String, enum: ['allowance', 'credits', null], default: null }
   },
   { timestamps: true, toJSON, toObject: toJSON }
 );
