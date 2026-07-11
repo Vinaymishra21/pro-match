@@ -333,7 +333,16 @@ export function ProfileScreen() {
         ) : null}
 
         <AnimatedProfileSection index={0}>
-          <ProfileHeaderCard completion={completion} mode={mode} onModeChange={changeMode} />
+          <ProfileHeaderCard
+            completion={completion}
+            mode={mode}
+            onModeChange={changeMode}
+            name={form.name}
+            age={form.age}
+            photo={form.photos?.[0]}
+            profession={user?.profession}
+            verified={Boolean(user?.professionVerified)}
+          />
         </AnimatedProfileSection>
 
         {mode === 'preview' ? (

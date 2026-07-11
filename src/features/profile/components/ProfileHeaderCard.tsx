@@ -1,264 +1,250 @@
 // @ts-nocheck
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { VerifiedTick } from '../../../components/VerifiedTick';
+import { professionTheme } from '../../../theme/professionTheme';
 import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';
 import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
-import { typography } from '../../../theme/typography';
+import { fonts, typography } from '../../../theme/typography';
 
-function AnimatedProgressRing({ percent }) {
+const AVATAR = 104;
+const STROKE = 3.5;
+const R = (AVATAR - STROKE) / 2;
+const CIRC = 2 * Math.PI * R;
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// Avatar wrapped in an animated completion ring — the profile's premium
+// centerpiece. The ring fills to `percent`; the avatar shows the main photo,
+// or the initial on the profession's own gradient when there's no photo yet.
+function CompletionRing({ percent, photo, initial, profession }) {
   const { colors } = useTheme();
-  const styles = useThemedStyles(makeStyles);
-  const animated = useRef(new Animated.Value(0)).current;
+  const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.spring(animated, {
-      toValue: percent,
-      useNativeDriver: false,
-      tension: 30,
-      friction: 10
-    }).start();
-  }, [animated, percent]);
+    Animated.spring(anim, { toValue: percent, useNativeDriver: false, tension: 26, friction: 11 }).start();
+  }, [anim, percent]);
 
-  const width = animated.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-    extrapolate: 'clamp'
-  });
-
-  const barColor = percent >= 80 ? colors.secondary : percent >= 50 ? '#F4A261' : colors.primary;
+  const offset = anim.interpolate({ inputRange: [0, 100], outputRange: [CIRC, 0], extrapolate: 'clamp' });
 
   return (
-    <View style={styles.progressTrack}>
-      <Animated.View style={[styles.progressFill, { width, backgroundColor: barColor }]} />
+    <View style={{ width: AVATAR, height: AVATAR }}>
+      <Svg width={AVATAR} height={AVATAR} style={StyleSheet.absoluteFill}>
+        <Circle cx={AVATAR / 2} cy={AVATAR / 2} r={R} fill="none" stroke={colors.border} strokeWidth={STROKE} />
+        <AnimatedCircle
+          cx={AVATAR / 2}
+          cy={AVATAR / 2}
+          r={R}
+          fill="none"
+          stroke={colors.primary}
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${AVATAR / 2} ${AVATAR / 2})`}
+        />
+      </Svg>
+      <View style={styles.avatarInner}>
+        {photo ? (
+          <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <LinearGradient
+            colors={professionTheme(profession).gradient}
+            start={{ x: 0.15, y: 0 }}
+            end={{ x: 0.85, y: 1 }}
+            style={[StyleSheet.absoluteFill, styles.avatarFallback]}
+          >
+            <Text style={styles.avatarInitial}>{initial}</Text>
+          </LinearGradient>
+        )}
+      </View>
     </View>
   );
 }
 
-export function ProfileHeaderCard({ completion, mode, onModeChange }) {
-  const styles = useThemedStyles(makeStyles);
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+const styles = StyleSheet.create({
+  avatarInner: {
+    position: 'absolute',
+    top: 7,
+    left: 7,
+    width: AVATAR - 14,
+    height: AVATAR - 14,
+    borderRadius: (AVATAR - 14) / 2,
+    overflow: 'hidden'
+  },
+  avatarFallback: { alignItems: 'center', justifyContent: 'center' },
+  avatarInitial: { fontFamily: fonts.display, fontSize: 34, color: '#FFFFFF' }
+});
+
+export function ProfileHeaderCard({ completion, mode, onModeChange, name, age, photo, profession, verified }) {
+  const themed = useThemedStyles(makeStyles);
+  const scaleAnim = useRef(new Animated.Value(0.96)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 50,
-        friction: 7
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true
-      })
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 50, friction: 8 }),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 400, useNativeDriver: true })
     ]).start();
   }, [scaleAnim, opacityAnim]);
 
+  const hasProfession = Boolean(profession) && profession !== 'Not set';
+  const initial = (String(name || '').trim()[0] || '?').toUpperCase();
+  const displayName = name ? (age ? `${name}, ${age}` : name) : 'Your name';
   const isComplete = completion.percent === 100;
 
   return (
-    <Animated.View style={[styles.card, { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }]}>
-      <View style={styles.topRow}>
-        <View style={styles.iconCircle}>
-          <Text style={styles.iconEmoji}>{isComplete ? '\u2728' : '\uD83D\uDCDD'}</Text>
-        </View>
-        <View style={styles.topTextWrap}>
-          <Text style={styles.title}>{isComplete ? 'Profile Complete!' : 'Build Your Best Profile'}</Text>
-          <Text style={styles.subtitle}>
-            {isComplete
-              ? 'You\'re ready to get matched with professionals.'
-              : 'Stronger profiles get better profession matches.'}
+    <Animated.View style={[themed.card, { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }]}>
+      <View style={themed.identityRow}>
+        <CompletionRing percent={completion.percent} photo={photo} initial={initial} profession={profession} />
+        <View style={themed.identityText}>
+          <View style={themed.nameRow}>
+            <Text style={themed.name} numberOfLines={1}>
+              {displayName}
+            </Text>
+            {verified ? <VerifiedTick size={18} /> : null}
+          </View>
+
+          {hasProfession ? (
+            <LinearGradient
+              colors={professionTheme(profession).gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={themed.professionPill}
+            >
+              <Text style={themed.professionText} numberOfLines={1}>
+                {profession}
+              </Text>
+            </LinearGradient>
+          ) : (
+            <View style={themed.addProfession}>
+              <Text style={themed.addProfessionText}>+ Add profession</Text>
+            </View>
+          )}
+
+          <Text style={themed.percent}>
+            {isComplete ? 'Profile complete ✨' : `${completion.percent}% complete`}
           </Text>
         </View>
       </View>
 
-      <AnimatedProgressRing percent={completion.percent} />
-      <View style={styles.progressRow}>
-        <Text style={styles.progressPercent}>{completion.percent}%</Text>
-        <Text style={styles.progressMeta}>
-          {completion.completed}/{completion.total} fields
-        </Text>
-      </View>
-
-      {completion.missing?.length ? (
-        <View style={styles.missingWrap}>
-          <Text style={styles.missingLabel}>Complete these next:</Text>
-          <View style={styles.badgesWrap}>
+      {!isComplete && completion.missing?.length ? (
+        <View style={themed.missingWrap}>
+          <Text style={themed.missingLabel}>Complete these next</Text>
+          <View style={themed.badgesWrap}>
             {completion.missing.slice(0, 4).map((item) => (
-              <View key={item} style={styles.badge}>
-                <Text style={styles.badgeText}>{item}</Text>
+              <View key={item} style={themed.badge}>
+                <Text style={themed.badgeText}>{item}</Text>
               </View>
             ))}
           </View>
         </View>
-      ) : (
-        <View style={styles.doneBadge}>
-          <Text style={styles.doneText}>All sections filled in</Text>
-        </View>
-      )}
+      ) : null}
 
-      <View style={styles.toggleRow}>
+      <View style={themed.toggleRow}>
         <Pressable
           onPress={() => onModeChange('edit')}
-          style={[styles.toggle, mode === 'edit' ? styles.toggleActive : null]}
+          style={[themed.toggle, mode === 'edit' ? themed.toggleActive : null]}
         >
-          <Text style={[styles.toggleLabel, mode === 'edit' ? styles.toggleLabelActive : null]}>Edit</Text>
+          <Text style={[themed.toggleLabel, mode === 'edit' ? themed.toggleLabelActive : null]}>Edit</Text>
         </Pressable>
         <Pressable
           onPress={() => onModeChange('preview')}
-          style={[styles.toggle, mode === 'preview' ? styles.toggleActive : null]}
+          style={[themed.toggle, mode === 'preview' ? themed.toggleActive : null]}
         >
-          <Text style={[styles.toggleLabel, mode === 'preview' ? styles.toggleLabelActive : null]}>Preview</Text>
+          <Text style={[themed.toggleLabel, mode === 'preview' ? themed.toggleLabelActive : null]}>Preview</Text>
         </Pressable>
       </View>
     </Animated.View>
   );
 }
 
-const makeStyles = (c: ThemeColors, mode: ThemeMode) => StyleSheet.create({
-  card: {
-    // Light mode uses a clean warm-white card — the translucent-ink surface +
-    // grey border read as a clunky grey box on cream. Dark stays byte-identical.
-    backgroundColor: mode === 'dark' ? c.surface : c.card,
-    borderWidth: mode === 'dark' ? 1 : 0,
-    borderColor: c.border,
-    borderRadius: 20,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: c.brandSoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.sm
-  },
-  iconEmoji: {
-    fontSize: 22
-  },
-  topTextWrap: {
-    flex: 1
-  },
-  title: {
-    ...typography.subtitle,
-    color: c.text,
-    fontWeight: '700'
-  },
-  subtitle: {
-    ...typography.caption,
-    color: c.textMuted,
-    marginTop: 2
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: c.border,
-    overflow: 'hidden'
-  },
-  progressFill: {
-    height: 8,
-    borderRadius: 999
-  },
-  progressRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.xs
-  },
-  progressPercent: {
-    ...typography.subtitle,
-    color: c.text,
-    fontWeight: '700',
-    fontSize: 16
-  },
-  progressMeta: {
-    ...typography.caption,
-    color: c.textMuted
-  },
-  missingWrap: {
-    marginTop: spacing.md
-  },
-  missingLabel: {
-    ...typography.caption,
-    color: c.textMuted,
-    fontWeight: '600',
-    marginBottom: spacing.xs
-  },
-  badgesWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs
-  },
-  badge: {
-    backgroundColor: 'rgba(232,65,90,0.12)',
-    borderColor: '#F4A261',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6
-  },
-  badgeText: {
-    ...typography.caption,
-    color: c.gold,
-    fontWeight: '600',
-    fontSize: 12
-  },
-  doneBadge: {
-    marginTop: spacing.md,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(52,211,153,0.18)',
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8
-  },
-  doneText: {
-    ...typography.caption,
-    color: c.secondary,
-    fontWeight: '700'
-  },
-  toggleRow: {
-    marginTop: spacing.md,
-    backgroundColor: c.inputBg,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: c.border,
-    flexDirection: 'row',
-    padding: 4
-  },
-  toggle: {
-    flex: 1,
-    borderRadius: 999,
-    paddingVertical: 10,
-    alignItems: 'center'
-  },
-  toggleActive: {
-    backgroundColor: c.primary,
-    shadowColor: c.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  toggleLabel: {
-    ...typography.caption,
-    color: c.textMuted,
-    fontWeight: '700'
-  },
-  toggleLabelActive: {
-    color: c.white
-  }
-});
+const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: mode === 'dark' ? c.surface : c.card,
+      borderWidth: mode === 'dark' ? 1 : 0,
+      borderColor: c.border,
+      borderRadius: 22,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      elevation: 3
+    },
+    identityRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    identityText: { flex: 1, gap: 8, minWidth: 0 },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    name: {
+      fontFamily: fonts.display,
+      color: c.text,
+      fontSize: 25,
+      letterSpacing: -0.3,
+      flexShrink: 1
+    },
+    professionPill: {
+      alignSelf: 'flex-start',
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 5
+    },
+    professionText: {
+      fontFamily: fonts.sansBold,
+      color: '#FFFFFF',
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.2
+    },
+    addProfession: {
+      alignSelf: 'flex-start',
+      borderRadius: 999,
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      borderColor: c.border,
+      paddingHorizontal: 12,
+      paddingVertical: 5
+    },
+    addProfessionText: { fontFamily: fonts.sansBold, color: c.textMuted, fontSize: 11, fontWeight: '700' },
+    percent: { fontFamily: fonts.sansBold, color: c.primary, fontSize: 11.5, fontWeight: '700' },
+    missingWrap: { marginTop: spacing.md },
+    missingLabel: {
+      ...typography.caption,
+      color: c.textMuted,
+      fontWeight: '600',
+      marginBottom: spacing.xs
+    },
+    badgesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    badge: {
+      backgroundColor: 'rgba(232,65,90,0.12)',
+      borderColor: '#F4A261',
+      borderWidth: 1,
+      borderRadius: 999,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6
+    },
+    badgeText: { ...typography.caption, color: c.gold, fontWeight: '600', fontSize: 12 },
+    toggleRow: {
+      marginTop: spacing.md,
+      backgroundColor: c.inputBg,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.border,
+      flexDirection: 'row',
+      padding: 4
+    },
+    toggle: { flex: 1, borderRadius: 999, paddingVertical: 10, alignItems: 'center' },
+    toggleActive: {
+      backgroundColor: c.primary,
+      shadowColor: c.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 2
+    },
+    toggleLabel: { ...typography.caption, color: c.textMuted, fontWeight: '700' },
+    toggleLabelActive: { color: '#FFFFFF' }
+  });
