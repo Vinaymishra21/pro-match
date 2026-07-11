@@ -5,7 +5,7 @@ import { ChipSelector } from './ChipSelector';
 import { useTheme, useThemedStyles, type ThemeMode } from '../../../theme/ThemeProvider';
 import type { ThemeColors } from '../../../theme/themes';
 import { spacing } from '../../../theme/spacing';
-import { typography } from '../../../theme/typography';
+import { fonts, typography } from '../../../theme/typography';
 
 function Row({ label, value, icon }) {
   const styles = useThemedStyles(makeStyles);
@@ -97,17 +97,23 @@ export function ProfilePreview({ form, profession, verified }) {
         </View>
       ) : null}
 
+      {form.jobTitle || form.company || form.education ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Work &amp; Education</Text>
+          <Row label="Work" value={form.jobTitle} icon={'\uD83D\uDCBC'} />
+          <Row label="Company" value={form.company} icon={'\uD83C\uDFE2'} />
+          <Row label="Education" value={form.education} icon={'\uD83C\uDF93'} />
+        </View>
+      ) : null}
+
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Quick facts</Text>
-        <Row label="Location" value={form.location} icon={'\uD83D\uDCCD'} />
+        <Text style={styles.cardTitle}>Details</Text>
         <Row label="Gender" value={form.gender} icon={'\uD83E\uDDD1'} />
         <Row label="Height" value={form.height} icon={'\uD83D\uDCCF'} />
         <Row label="Religion" value={form.religion} icon={'\uD83D\uDD4A\uFE0F'} />
-        <Row label="Languages" value={(form.languages || []).join(', ')} icon={'\uD83D\uDDE3\uFE0F'} />
         <Row label="Looking for" value={form.lookingFor} icon={'\u2764\uFE0F'} />
-        <Row label="Job" value={form.jobTitle} icon={'\uD83D\uDCBC'} />
-        <Row label="Company" value={form.company} icon={'\uD83C\uDFE2'} />
-        <Row label="Education" value={form.education} icon={'\uD83C\uDF93'} />
+        <Row label="Languages" value={(form.languages || []).join(', ')} icon={'\uD83D\uDDE3\uFE0F'} />
+        <Row label="Location" value={form.location} icon={'\uD83D\uDCCD'} />
       </View>
 
       <View style={styles.card}>
@@ -223,8 +229,9 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) => StyleSheet.create({
     padding: spacing.lg
   },
   name: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontFamily: fonts.display,
+    fontSize: 27,
+    letterSpacing: -0.3,
     color: c.text
   },
   professionBadge: {
@@ -264,9 +271,12 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) => StyleSheet.create({
     elevation: 1
   },
   cardTitle: {
-    ...typography.subtitle,
-    color: c.text,
+    fontFamily: fonts.sansBold,
+    color: c.textMuted,
+    fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
     marginBottom: spacing.sm
   },
   body: {
@@ -356,10 +366,10 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) => StyleSheet.create({
     marginTop: -2
   },
   promptAnswer: {
-    ...typography.body,
+    fontFamily: fonts.display,
     color: c.text,
-    fontWeight: '500',
-    lineHeight: 24,
+    fontSize: 18,
+    lineHeight: 25,
     flex: 1
   },
   loveCard: {
