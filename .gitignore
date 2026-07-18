@@ -6,3 +6,6 @@ backend/.env
 *.log
 
 .npm-cache/
+
+# Local Claude Code tooling config
+.claude/

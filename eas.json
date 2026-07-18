@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pro-match-1.onrender.com",
+        "EXPO_PUBLIC_API_URL": "https://pro-match-h01y.onrender.com",
         "EXPO_PUBLIC_DEV_BYPASS_AUTH": "true"
       }
     },
@@ -20,7 +20,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pro-match-1.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://pro-match-h01y.onrender.com"
       }
     }
   }
