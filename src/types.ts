@@ -313,6 +313,7 @@ export interface AuthContextValue {
   signIn: (payload: AuthPayload) => Promise<User>;
   requestOtp: (phone: string) => Promise<OtpRequestResponse>;
   verifyOtp: (phone: string, code: string) => Promise<User>;
+  googleSignIn: () => Promise<User | null>;
   devBypass: () => Promise<User>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;

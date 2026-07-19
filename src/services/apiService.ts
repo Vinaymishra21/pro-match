@@ -52,6 +52,13 @@ export function verifyOtp(phone: string, code: string) {
   });
 }
 
+export function googleSignIn(idToken: string) {
+  return apiRequest<OtpVerifyResponse>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken })
+  });
+}
+
 export function getMe(token: string) {
   return apiRequest<{ user: User }>('/users/me', { method: 'GET' }, token);
 }

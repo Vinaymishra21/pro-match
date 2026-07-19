@@ -10,6 +10,12 @@
 // a valid token and the whole app works end to end.
 export const DEV_BYPASS_AUTH = process.env.EXPO_PUBLIC_DEV_BYPASS_AUTH === 'true';
 
+// Google Web OAuth client ID — passed as `webClientId` to google-signin so the
+// native flow returns an ID token the backend verifies. Public value (safe to
+// ship). Must match GOOGLE_WEB_CLIENT_ID on the backend.
+export const GOOGLE_WEB_CLIENT_ID =
+  '266858166964-55u47a6jscb2agplvq33o3aveik086pd.apps.googleusercontent.com';
+
 // The phone number the dev bypass logs in as. It goes through the normal OTP
 // flow against the backend (which must run with AUTH_DEV_MODE=true).
 export const DEV_BYPASS_PHONE = '+910000000000';

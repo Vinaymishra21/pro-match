@@ -16,10 +16,26 @@ export function MethodScreenBase({
   navigation: any;
   mode: 'register' | 'login';
 }) {
-  const { devBypass } = useAuth();
+  const { devBypass, googleSignIn } = useAuth();
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const isRegister = mode === 'register';
+
+  async function handleGoogle() {
+    if (DEV_BYPASS_AUTH) {
+      try {
+        await devBypass();
+      } catch (error) {
+        Alert.alert('Dev login failed', (error as Error).message);
+      }
+      return;
+    }
+    try {
+      await googleSignIn(); // null = user cancelled; navigation happens on session set
+    } catch (error) {
+      Alert.alert('Google sign-in failed', (error as Error).message);
+    }
+  }
 
   async function handleSocial() {
     if (DEV_BYPASS_AUTH) {
@@ -53,7 +69,7 @@ export function MethodScreenBase({
           onPress={() => navigation.navigate('PhoneEntry')}
           gradientIcon
         />
-        <MethodRow icon="G" iconBg={['#FFFFFF', '#F1F1F1']} iconColor="#444" title="Continue with Google" hint="Fast and secure" onPress={handleSocial} />
+        <MethodRow icon="G" iconBg={['#FFFFFF', '#F1F1F1']} iconColor="#444" title="Continue with Google" hint="Fast and secure" onPress={handleGoogle} />
         <MethodRow icon="f" iconBg={['#1877F2', '#0E5FD8']} title="Continue with Facebook" hint="Use your Facebook profile" onPress={handleSocial} />
 
         <View style={styles.dividerRow}>

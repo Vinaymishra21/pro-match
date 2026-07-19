@@ -37,3 +37,6 @@ services:
       # If omitted, the server derives it from the request host (works on Render).
       - key: PUBLIC_BASE_URL
         sync: false
+      # Google sign-in: Web OAuth client ID (public — it ships in the app too).
+      - key: GOOGLE_WEB_CLIENT_ID
+        value: "266858166964-55u47a6jscb2agplvq33o3aveik086pd.apps.googleusercontent.com"

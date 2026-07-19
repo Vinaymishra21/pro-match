@@ -1,9 +1,15 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const { User, Otp } = require('../models');
 const { createToken, sanitizeUser } = require('../utils/auth');
 const { isIdentifierBanned } = require('../utils/identity');
 const { sendSms, DEV_MODE } = require('../utils/sms');
+
+// Verifies Google ID tokens against our Web OAuth client. Optional: if the env
+// var is unset, /auth/google returns 503 rather than crashing the server.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_WEB_CLIENT_ID;
+const googleClient = new OAuth2Client();
 
 const BANNED_RESPONSE = { message: 'This account has been suspended.', code: 'BANNED' };
 
@@ -158,9 +164,62 @@ async function verifyOtp(req, res) {
   return res.json({ token, user: sanitizeUser(user), isNewUser });
 }
 
+// ---------- Google (ID token) ----------
+
+async function googleAuth(req, res) {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    return res.status(400).json({ message: 'idToken is required' });
+  }
+  if (!GOOGLE_CLIENT_ID) {
+    return res.status(503).json({ message: 'Google sign-in is not configured' });
+  }
+
+  // Verify the token's signature, audience and issuer against Google's keys.
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
+    payload = ticket.getPayload();
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid Google token' });
+  }
+
+  if (!payload || !payload.email || !payload.email_verified) {
+    return res.status(401).json({ message: 'Google account email not verified' });
+  }
+
+  const normalizedEmail = payload.email.trim().toLowerCase();
+
+  if (await isIdentifierBanned(normalizedEmail)) {
+    return res.status(403).json(BANNED_RESPONSE);
+  }
+
+  // Find-or-create by email — same shape as verifyOtp's phone path.
+  let user = await User.findOne({ email: normalizedEmail });
+  let isNewUser = false;
+
+  if (user && user.isBanned) {
+    return res.status(403).json(BANNED_RESPONSE);
+  }
+
+  if (!user) {
+    isNewUser = true;
+    user = await User.create({ name: payload.name || 'New User', email: normalizedEmail });
+  } else if (user.isDeactivated) {
+    user.isDeactivated = false;
+    user.deactivatedAt = null;
+    await user.save();
+  }
+
+  const token = createToken(user);
+  return res.json({ token, user: sanitizeUser(user), isNewUser });
+}
+
 module.exports = {
   register,
   login,
   requestOtp,
-  verifyOtp
+  verifyOtp,
+  googleAuth
 };

@@ -6,9 +6,11 @@ import {
   register,
   requestOtp as requestOtpApi,
   verifyOtp as verifyOtpApi,
+  googleSignIn as googleSignInApi,
   deactivateAccount as deactivateAccountApi,
   deleteAccount as deleteAccountApi
 } from '../services/apiService';
+import { signInWithGoogle } from '../services/googleSignin';
 import { ApiError, setAuthErrorHandler } from '../services/apiClient';
 import { DEV_BYPASS_PHONE, DEV_OFFLINE_USER } from '../constants/config';
 import { registerForPushNotifications } from '../services/push';
@@ -106,6 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [onAuthSuccess]
   );
 
+  // Native Google Sign-In: get an ID token, exchange it for our session.
+  // Returns null if the user dismissed the Google sheet.
+  const googleSignIn = useCallback(async () => {
+    const idToken = await signInWithGoogle();
+    if (!idToken) return null;
+    const response = await googleSignInApi(idToken);
+    await onAuthSuccess(response);
+    return response.user;
+  }, [onAuthSuccess]);
+
   // Dev-only shortcut: runs the real OTP flow against the backend dev code so
   // we end up with a valid token and a real user record.
   const devBypass = useCallback(async () => {
@@ -185,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       requestOtp,
       verifyOtp,
+      googleSignIn,
       devBypass,
       signOut,
       refreshUser,
@@ -200,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       requestOtp,
       verifyOtp,
+      googleSignIn,
       devBypass,
       signOut,
       refreshUser,
