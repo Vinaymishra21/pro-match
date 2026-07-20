@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,13 +8,15 @@ import { DarkBackground } from '../../components/DarkBackground';
 import { useTopInset } from '../../hooks/useTopInset';
 import { ReportSheet } from '../../components/ReportSheet';
 import { useAuth } from '../../hooks/useAuth';
-import { blockUser, getMessages, sendMessage, unmatch } from '../../services/apiService';
+import { useUnread } from '../../context/UnreadContext';
+import { blockUser, getMessages, markMessagesRead, sendMessage, unmatch } from '../../services/apiService';
 import { getSocket } from '../../services/socket';
 import { ThemedStatusBar, useTheme, useThemedStyles, type ThemeMode } from '../../theme/ThemeProvider';
 import type { ThemeColors } from '../../theme/themes';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import type { MessageRecord, RootStackParamList } from '../../types';
+import { buildPromptOpeners, ICEBREAKERS, promptPrefill } from './openers';
+import type { DiscoverProfile, MessageRecord, RootStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -25,24 +27,67 @@ function formatTime(iso?: string) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+function formatLastSeen(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay
+    ? `last seen ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+    : `last seen ${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+}
+
 export function ChatScreen({ route, navigation }: Props) {
   const { token, user } = useAuth();
+  const { refresh: refreshUnread } = useUnread();
   const { colors, mode } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const topPad = useTopInset();
   const { matchId, matchName, matchUserId } = route.params;
   const [messages, setMessages] = useState<MessageRecord[]>([]);
+  const [otherUser, setOtherUser] = useState<DiscoverProfile | null>(null);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [reportOpen, setReportOpen] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [otherOnline, setOtherOnline] = useState(false);
+  const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
   const listRef = useRef<FlatList<MessageRecord>>(null);
+  const inputRef = useRef<TextInput>(null);
+  // Only auto-scroll to the bottom for NEW messages, never when prepending history.
+  const pendingScrollEnd = useRef(false);
+  // Timers: auto-clear a stale "typing" flag, and debounce my own typing-stop.
+  const typingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Append a message, de-duping by id. The sender also receives its own
   // broadcast over the socket, and history load may overlap a live event.
   const appendMessage = useCallback((message: MessageRecord) => {
+    pendingScrollEnd.current = true;
     setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
   }, []);
+
+  // Older-history pagination: fetch the page before our oldest message and
+  // prepend it. maintainVisibleContentPosition keeps the scroll from jumping.
+  const loadOlder = useCallback(async () => {
+    const oldest = messages[0]?.createdAt;
+    if (!oldest || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const res = await getMessages(matchId, token, oldest);
+      setMessages((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        return [...(res.messages || []).filter((m) => !seen.has(m.id)), ...prev];
+      });
+      setHasMore(Boolean(res.hasMore));
+    } catch {
+      // Non-fatal: keep what we have; the user can retry by scrolling again.
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [messages, loadingOlder, matchId, token]);
 
   // Initial history via REST.
   useEffect(() => {
@@ -51,7 +96,14 @@ export function ChatScreen({ route, navigation }: Props) {
       try {
         setError('');
         const response = await getMessages(matchId, token);
-        if (active) setMessages(response.messages || []);
+        if (active) {
+          pendingScrollEnd.current = true;
+          setMessages(response.messages || []);
+          setHasMore(Boolean(response.hasMore));
+          setOtherUser(response.otherUser ?? null);
+          // Opening marked their messages read server-side → sync the tab badge.
+          refreshUnread();
+        }
       } catch (loadError) {
         if (active) setError((loadError as Error).message);
       }
@@ -67,20 +119,52 @@ export function ChatScreen({ route, navigation }: Props) {
 
     const socket = getSocket(token);
     const handleNew = (message: MessageRecord) => {
-      if (message.matchId === matchId) appendMessage(message);
+      if (message.matchId !== matchId) return;
+      appendMessage(message);
+      // Their message arrived while I'm viewing → mark read + sync the badge.
+      if (message.senderId !== user?.id) {
+        markMessagesRead(matchId, token).then(refreshUnread).catch(() => {});
+      }
+    };
+    // The other person opened the chat → mark my delivered messages as read.
+    const handleRead = (payload: { matchId: string; readerId: string; readAt: string }) => {
+      if (payload.matchId !== matchId || payload.readerId === user?.id) return;
+      setMessages((prev) =>
+        prev.map((m) => (m.senderId === user?.id && !m.readAt ? { ...m, readAt: payload.readAt } : m))
+      );
+    };
+    // The other person is typing (auto-clears if their "stopped" event is lost).
+    const handleTyping = (payload: { matchId: string; userId: string; typing: boolean }) => {
+      if (payload.matchId !== matchId || payload.userId === user?.id) return;
+      setOtherTyping(payload.typing);
+      if (typingClearRef.current) clearTimeout(typingClearRef.current);
+      if (payload.typing) typingClearRef.current = setTimeout(() => setOtherTyping(false), 4000);
+    };
+    // The other person's online/last-seen status (only their id is ever sent here).
+    const handlePresence = (payload: { userId: string; online: boolean; lastSeen: string | null }) => {
+      if (payload.userId === user?.id) return;
+      setOtherOnline(payload.online);
+      setOtherLastSeen(payload.lastSeen || null);
     };
     const joinRoom = () => socket.emit('match:join', matchId);
 
     joinRoom();
     socket.on('message:new', handleNew);
+    socket.on('messages:read', handleRead);
+    socket.on('typing', handleTyping);
+    socket.on('presence', handlePresence);
     socket.on('connect', joinRoom); // re-join after a reconnect
 
     return () => {
       socket.emit('match:leave', matchId);
       socket.off('message:new', handleNew);
+      socket.off('messages:read', handleRead);
+      socket.off('typing', handleTyping);
+      socket.off('presence', handlePresence);
       socket.off('connect', joinRoom);
+      if (typingClearRef.current) clearTimeout(typingClearRef.current);
     };
-  }, [matchId, token, appendMessage]);
+  }, [matchId, token, appendMessage, user?.id, refreshUnread]);
 
   function confirmUnmatch() {
     Alert.alert('Unmatch?', `You'll no longer see ${matchName} or this conversation.`, [
@@ -133,10 +217,25 @@ export function ChatScreen({ route, navigation }: Props) {
     ]);
   }
 
+  function emitTyping(typing: boolean) {
+    if (!token) return;
+    getSocket(token).emit('typing', { matchId, typing });
+  }
+
+  // Emit "typing" as the user types; debounce a "stopped" after 2s of no input.
+  function handleChangeText(next: string) {
+    setText(next);
+    emitTyping(true);
+    if (typingStopRef.current) clearTimeout(typingStopRef.current);
+    typingStopRef.current = setTimeout(() => emitTyping(false), 2000);
+  }
+
   async function handleSend() {
     const trimmed = text.trim();
     if (!trimmed) return;
 
+    if (typingStopRef.current) clearTimeout(typingStopRef.current);
+    emitTyping(false);
     setText('');
     try {
       // REST send persists + the server broadcasts it back; appendMessage de-dupes.
@@ -149,6 +248,15 @@ export function ChatScreen({ route, navigation }: Props) {
   }
 
   const canSend = Boolean(text.trim());
+
+  // Opener suggestions for an empty chat: riff on their profile, or an icebreaker.
+  const promptOpeners = useMemo(() => buildPromptOpeners(otherUser), [otherUser]);
+  const firstName = matchName?.split(' ')[0] || 'them';
+
+  const pickOpener = useCallback((prefill: string) => {
+    setText(prefill);
+    inputRef.current?.focus();
+  }, []);
 
   return (
     <DarkBackground orbColor="rgba(232,65,90,0.18)">
@@ -171,7 +279,15 @@ export function ChatScreen({ route, navigation }: Props) {
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={styles.heading} numberOfLines={1}>{matchName}</Text>
-            <Text style={styles.headerSub}>Matched · say hello</Text>
+            <Text style={[styles.headerSub, otherTyping && styles.headerSubActive]} numberOfLines={1}>
+              {otherTyping
+                ? 'typing…'
+                : otherOnline
+                ? 'Online'
+                : otherLastSeen
+                ? formatLastSeen(otherLastSeen)
+                : 'Matched · say hello'}
+            </Text>
           </View>
           <Pressable onPress={openActions} hitSlop={12} style={styles.menuBtn}>
             <Text style={styles.menuDots}>⋯</Text>
@@ -185,12 +301,44 @@ export function ChatScreen({ route, navigation }: Props) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
+          maintainVisibleContentPosition={{ minIndexForVisible: 1 }}
+          scrollEventThrottle={200}
+          onScroll={(e) => {
+            if (e.nativeEvent.contentOffset.y < 60 && hasMore && !loadingOlder) loadOlder();
+          }}
+          onContentSizeChange={() => {
+            if (pendingScrollEnd.current) {
+              pendingScrollEnd.current = false;
+              listRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
+          ListHeaderComponent={loadingOlder ? <ActivityIndicator style={styles.olderSpinner} color={colors.textMuted} /> : null}
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <Text style={styles.emptyEmoji}>💬</Text>
-              <Text style={styles.emptyHint}>Say hi 👋 Start the conversation.</Text>
+            <View style={styles.openerWrap}>
+              <Text style={styles.openerTitle}>Break the ice</Text>
+              <Text style={styles.openerSub}>Skip the “hi” — open with something they’ll want to reply to.</Text>
+
+              {promptOpeners.length > 0 ? (
+                <>
+                  <Text style={styles.openerGroup}>Riff on {firstName}’s profile</Text>
+                  {promptOpeners.map((o) => (
+                    <Pressable key={o.id} style={styles.promptCard} onPress={() => pickOpener(promptPrefill(o))}>
+                      <Text style={styles.promptLabel}>{o.label}</Text>
+                      <Text style={styles.promptAnswer} numberOfLines={2}>“{o.answer}”</Text>
+                      <Text style={styles.promptCta}>Reply to this ↗</Text>
+                    </Pressable>
+                  ))}
+                </>
+              ) : null}
+
+              <Text style={styles.openerGroup}>Or try an icebreaker</Text>
+              <View style={styles.chipWrap}>
+                {ICEBREAKERS.map((line) => (
+                  <Pressable key={line} style={styles.chip} onPress={() => pickOpener(line)}>
+                    <Text style={styles.chipText}>{line}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           }
           renderItem={({ item }) => {
@@ -223,8 +371,9 @@ export function ChatScreen({ route, navigation }: Props) {
 
         <View style={styles.composer}>
           <TextInput
+            ref={inputRef}
             value={text}
-            onChangeText={setText}
+            onChangeText={handleChangeText}
             placeholder="Type a message"
             placeholderTextColor={colors.textMuted}
             style={styles.composerInput}
@@ -308,6 +457,7 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       fontWeight: '600',
       marginTop: 1
     },
+    headerSubActive: { color: c.brandText },
     menuBtn: {
       width: 40,
       height: 40,
@@ -331,17 +481,75 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
       paddingBottom: spacing.md,
       flexGrow: 1
     },
-    emptyWrap: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: spacing.xxl
+    olderSpinner: { paddingVertical: spacing.sm },
+    openerWrap: {
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.md,
+      gap: spacing.sm
     },
-    emptyEmoji: { fontSize: 44, marginBottom: spacing.sm },
-    emptyHint: {
-      ...typography.caption,
+    openerTitle: {
+      ...typography.subtitle,
+      color: c.text,
+      fontWeight: '900'
+    },
+    openerSub: {
+      fontSize: 13,
       color: c.textMuted,
-      textAlign: 'center'
+      fontWeight: '500',
+      marginBottom: spacing.xs
+    },
+    openerGroup: {
+      fontSize: 11,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      color: c.textMuted,
+      fontWeight: '800',
+      marginTop: spacing.sm
+    },
+    promptCard: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      padding: spacing.md,
+      gap: 4
+    },
+    promptLabel: {
+      fontSize: 11,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      color: c.textMuted,
+      fontWeight: '700'
+    },
+    promptAnswer: {
+      color: c.text,
+      fontSize: 15,
+      fontWeight: '600',
+      lineHeight: 20
+    },
+    promptCta: {
+      color: c.brandText,
+      fontSize: 12.5,
+      fontWeight: '800',
+      marginTop: 2
+    },
+    chipWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm
+    },
+    chip: {
+      backgroundColor: c.surfaceStrong,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 18,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm
+    },
+    chipText: {
+      color: c.text,
+      fontSize: 13,
+      fontWeight: '600'
     },
     bubbleRow: {
       flexDirection: 'row',

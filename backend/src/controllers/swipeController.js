@@ -1,4 +1,5 @@
-const { User, Swipe, Match } = require('../models');
+const mongoose = require('mongoose');
+const { User, Swipe, Match, Message } = require('../models');
 const { publicProfile } = require('../utils/auth');
 const { sendPush } = require('../utils/push');
 const { isProActive, getWeeklyUnlockState } = require('../utils/entitlements');
@@ -177,6 +178,14 @@ async function getMatches(req, res) {
     .populate('userB', 'name profession bio photos')
     .sort({ createdAt: -1 });
 
+  // Unread counts per match: the other person's messages I haven't read yet.
+  const meId = new mongoose.Types.ObjectId(userId);
+  const unreadAgg = await Message.aggregate([
+    { $match: { matchId: { $in: matches.map((m) => m._id) }, readAt: null, senderId: { $ne: meId } } },
+    { $group: { _id: '$matchId', count: { $sum: 1 } } }
+  ]);
+  const unreadByMatch = new Map(unreadAgg.map((u) => [String(u._id), u.count]));
+
   const userMatches = matches
     .map((m) => {
       const other =
@@ -185,6 +194,8 @@ async function getMatches(req, res) {
       return {
         id: m.id,
         createdAt: m.createdAt,
+        lastMessageAt: m.lastMessageAt,
+        unreadCount: unreadByMatch.get(m.id) || 0,
         crossProfession: Boolean(m.crossProfession),
         user: other
           ? {
@@ -197,9 +208,30 @@ async function getMatches(req, res) {
           : null
       };
     })
-    .filter((m) => m.user);
+    .filter((m) => m.user)
+    // Most recent conversation first; matches with no messages fall back to when matched.
+    .sort((a, b) => new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt));
 
   return res.json({ matches: userMatches });
+}
+
+// GET /swipes/matches/unread — total unread messages across all my matches (tab badge).
+async function getUnreadTotal(req, res) {
+  const userId = req.auth.id;
+  const meId = new mongoose.Types.ObjectId(userId);
+
+  const matches = await Match.find({
+    status: 'active',
+    $or: [{ userA: userId }, { userB: userId }]
+  }).select('_id');
+
+  const total = await Message.countDocuments({
+    matchId: { $in: matches.map((m) => m._id) },
+    readAt: null,
+    senderId: { $ne: meId }
+  });
+
+  return res.json({ total });
 }
 
 // POST /swipes/undo — rewind your most recent swipe so that person reappears.
@@ -267,5 +299,6 @@ async function undoSwipe(req, res) {
 module.exports = {
   upsertSwipe,
   getMatches,
+  getUnreadTotal,
   undoSwipe
 };

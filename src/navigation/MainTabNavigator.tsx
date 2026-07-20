@@ -7,6 +7,7 @@ import { LikesScreen } from '../screens/main/LikesScreen';
 import { MatchesScreen } from '../screens/main/MatchesScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
 import { useTheme } from '../theme/ThemeProvider';
+import { useUnread } from '../context/UnreadContext';
 import type { MainTabParamList } from '../types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -21,6 +22,7 @@ const tabIcon = {
 export function MainTabNavigator() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { total: unreadTotal } = useUnread();
   // Sit the tab bar above the Android gesture/nav bar (and iPhone home bar).
   const bottomPad = Math.max(insets.bottom, 8);
 
@@ -47,7 +49,11 @@ export function MainTabNavigator() {
     >
       <Tab.Screen name="Discover" component={DiscoverScreen} />
       <Tab.Screen name="Likes" component={LikesScreen} />
-      <Tab.Screen name="Matches" component={MatchesScreen} />
+      <Tab.Screen
+        name="Matches"
+        component={MatchesScreen}
+        options={{ tabBarBadge: unreadTotal > 0 ? (unreadTotal > 99 ? '99+' : unreadTotal) : undefined }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

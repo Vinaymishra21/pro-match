@@ -9,6 +9,7 @@ export interface User {
   id?: string;
   name?: string;
   email?: string;
+  emailVerified?: boolean;
   phone?: string;
   profession?: string;
   tier?: 'free' | 'pro';
@@ -115,6 +116,9 @@ export interface MatchRecord {
   id: string;
   user: User;
   crossProfession?: boolean;
+  unreadCount?: number;
+  lastMessageAt?: string | null;
+  createdAt?: string;
 }
 
 export interface MessageRecord {
@@ -296,6 +300,10 @@ export interface MatchesResponse {
 
 export interface MessagesResponse {
   messages: MessageRecord[];
+  // True when older messages exist beyond this page (fetch with `before`).
+  hasMore?: boolean;
+  // The other participant's public profile — used to build opener suggestions.
+  otherUser?: DiscoverProfile | null;
 }
 
 export interface AuthPayload {
@@ -334,6 +342,7 @@ export type AuthStackParamList = {
   Auth: {
     initialMode?: AuthMode;
   } | undefined;
+  ForgotPassword: { email?: string } | undefined;
 };
 
 export type MainTabParamList = {

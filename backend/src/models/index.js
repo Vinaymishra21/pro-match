@@ -4,6 +4,8 @@ module.exports = {
   Match: require('./Match'),
   Message: require('./Message'),
   Otp: require('./Otp'),
+  PasswordReset: require('./PasswordReset'),
+  EmailVerification: require('./EmailVerification'),
   Reveal: require('./Reveal'),
   Report: require('./Report'),
   ProcessedPayment: require('./ProcessedPayment'),

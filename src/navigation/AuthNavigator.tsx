@@ -3,6 +3,7 @@ import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
 import { SignUpMethodScreen } from '../screens/auth/SignUpMethodScreen';
 import { LoginMethodScreen } from '../screens/auth/LoginMethodScreen';
 import { AuthScreen } from '../screens/auth/AuthScreen';
+import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
 import { PhoneEntryScreen } from '../screens/auth/PhoneEntryScreen';
 import { OtpVerificationScreen } from '../screens/auth/OtpVerificationScreen';
 import type { AuthStackParamList } from '../types';
@@ -18,6 +19,7 @@ export function AuthNavigator() {
       <Stack.Screen name="PhoneEntry" component={PhoneEntryScreen} />
       <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
       <Stack.Screen name="Auth" component={AuthScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </Stack.Navigator>
   );
 }

@@ -91,6 +91,12 @@ export function AuthScreen({ route, navigation }: Props) {
             </View>
           )}
 
+          {!isPhone && !isRegister ? (
+            <Text style={styles.forgotLink} onPress={() => navigation.navigate('ForgotPassword', { email })}>
+              Forgot password?
+            </Text>
+          ) : null}
+
           {error ? <Text style={authText.error}>{error}</Text> : null}
 
           <GradientButton
@@ -142,6 +148,7 @@ const makeStyles = (c: ThemeColors) =>
       fontWeight: '600'
     },
     phoneHint: { color: c.textMuted, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
+    forgotLink: { color: c.brandText, fontSize: 13, fontWeight: '700', alignSelf: 'flex-end', marginTop: spacing.sm },
     switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
     switchText: { color: c.textMuted, fontSize: 14 },
     switchAction: { color: c.brandText, fontSize: 14, fontWeight: '800' }

@@ -1,6 +1,7 @@
 const { Match, Message, User } = require('../models');
-const { emitNewMessage } = require('../realtime/io');
+const { emitNewMessage, emitMessagesRead, emitToUser } = require('../realtime/io');
 const { sendPush } = require('../utils/push');
+const { publicProfile } = require('../utils/auth');
 const { isProActive } = require('../utils/entitlements');
 const { scanText, describe } = require('../utils/contentFilter');
 const { recordSpamStrike } = require('../utils/moderation');
@@ -34,6 +35,25 @@ async function ensureChatAllowed(match, userId, res) {
   return true;
 }
 
+// Marks the OTHER participant's unread messages as read and, if any changed,
+// tells the room so their "· Read" updates live. Returns how many were marked.
+async function markOtherMessagesRead(match, userId) {
+  const otherId = String(match.userA) === String(userId) ? match.userB : match.userA;
+  const readAt = new Date();
+  const result = await Message.updateMany(
+    { matchId: match._id, senderId: otherId, readAt: null },
+    { $set: { readAt } }
+  );
+  if (result.modifiedCount > 0) {
+    emitMessagesRead(match._id, {
+      matchId: String(match._id),
+      readerId: String(userId),
+      readAt: readAt.toISOString()
+    });
+  }
+  return result.modifiedCount;
+}
+
 async function getMessages(req, res) {
   const { matchId } = req.params;
   const userId = req.auth.id;
@@ -52,9 +72,31 @@ async function getMessages(req, res) {
     return undefined;
   }
 
-  const messages = await Message.find({ matchId }).sort({ createdAt: 1 });
+  const otherId = String(match.userA) === String(userId) ? match.userB : match.userA;
 
-  return res.json({ messages: messages.map((m) => m.toJSON()) });
+  // Opening the chat marks the other person's messages read (+ live receipt).
+  await markOtherMessagesRead(match, userId);
+
+  // Pagination: newest `limit` messages, older ones fetched via `?before=<ISO>`.
+  // We query newest-first with the cursor, then reverse to chronological order.
+  const limit = Math.min(Number(req.query.limit) || 30, 100);
+  const query = { matchId };
+  if (req.query.before) {
+    const before = new Date(req.query.before);
+    if (!Number.isNaN(before.getTime())) query.createdAt = { $lt: before };
+  }
+  const page = await Message.find(query).sort({ createdAt: -1 }).limit(limit + 1);
+  const hasMore = page.length > limit;
+  const messages = page.slice(0, limit).reverse();
+
+  // Only the first page (no cursor) needs the profile for opener suggestions.
+  const other = req.query.before ? null : await User.findById(otherId);
+
+  return res.json({
+    messages: messages.map((m) => m.toJSON()),
+    hasMore,
+    otherUser: other ? publicProfile(other) : null
+  });
 }
 
 async function sendMessage(req, res) {
@@ -111,6 +153,10 @@ async function sendMessage(req, res) {
 
   // Push-notify the recipient (fire-and-forget; never blocks the response).
   const recipientId = String(match.userA) === String(userId) ? match.userB : match.userA;
+
+  // Live unread-badge bump — reaches the recipient even if they aren't in this
+  // chat room (personal user room), so the Matches tab badge updates instantly.
+  emitToUser(recipientId, 'unread:bump', { matchId: String(matchId) });
   Promise.all([User.findById(recipientId), User.findById(userId)])
     .then(([recipient, sender]) => {
       if (recipient?.pushToken) {
@@ -126,7 +172,27 @@ async function sendMessage(req, res) {
   return res.status(201).json({ message: payload });
 }
 
+// POST /messages/:matchId/read — mark the other person's messages read. Called
+// when a message arrives while the chat is already open (open itself goes
+// through getMessages).
+async function markRead(req, res) {
+  const { matchId } = req.params;
+  const userId = req.auth.id;
+
+  const match = await Match.findById(matchId);
+  if (!match) {
+    return res.status(404).json({ message: 'Match not found' });
+  }
+  if (!isParticipant(match, userId)) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const readCount = await markOtherMessagesRead(match, userId);
+  return res.json({ readCount });
+}
+
 module.exports = {
   getMessages,
-  sendMessage
+  sendMessage,
+  markRead
 };

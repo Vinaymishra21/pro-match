@@ -19,6 +19,7 @@ import { SplashScreen } from './src/screens/auth/SplashScreen';
 import { navThemeDark, navThemeLight } from './src/theme/theme';
 import { ThemedStatusBar, ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 import { AuthProvider } from './src/context/AuthContext';
+import { UnreadProvider } from './src/context/UnreadContext';
 
 function ThemedApp() {
   const { mode } = useTheme();
@@ -44,10 +45,12 @@ function ThemedApp() {
 
   return (
     <AuthProvider>
-      <NavigationContainer theme={mode === 'dark' ? navThemeDark : navThemeLight}>
-        <ThemedStatusBar />
-        <RootNavigator />
-      </NavigationContainer>
+      <UnreadProvider>
+        <NavigationContainer theme={mode === 'dark' ? navThemeDark : navThemeLight}>
+          <ThemedStatusBar />
+          <RootNavigator />
+        </NavigationContainer>
+      </UnreadProvider>
     </AuthProvider>
   );
 }

@@ -45,6 +45,32 @@ export function requestOtp(phone: string) {
   });
 }
 
+export function forgotPassword(email: string) {
+  return apiRequest<{ sent: boolean; devCode?: string }>('/auth/password/forgot', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  });
+}
+
+export function resetPassword(email: string, code: string, newPassword: string) {
+  return apiRequest<AuthResponse>('/auth/password/reset', {
+    method: 'POST',
+    body: JSON.stringify({ email, code, newPassword })
+  });
+}
+
+export function verifyEmail(code: string, token: string) {
+  return apiRequest<{ user: User }>('/auth/email/verify', { method: 'POST', body: JSON.stringify({ code }) }, token);
+}
+
+export function resendEmailVerification(token: string) {
+  return apiRequest<{ sent: boolean; devCode?: string; alreadyVerified?: boolean }>(
+    '/auth/email/resend',
+    { method: 'POST' },
+    token
+  );
+}
+
 export function verifyOtp(phone: string, code: string) {
   return apiRequest<OtpVerifyResponse>('/auth/otp/verify', {
     method: 'POST',
@@ -315,8 +341,17 @@ export function getMatches(token: string) {
   return apiRequest<MatchesResponse>('/swipes/matches', { method: 'GET' }, token);
 }
 
-export function getMessages(matchId: string, token: string) {
-  return apiRequest<MessagesResponse>(`/messages/${matchId}`, { method: 'GET' }, token);
+export function getMessages(matchId: string, token: string, before?: string) {
+  const qs = before ? `?before=${encodeURIComponent(before)}` : '';
+  return apiRequest<MessagesResponse>(`/messages/${matchId}${qs}`, { method: 'GET' }, token);
+}
+
+export function getUnreadTotal(token: string) {
+  return apiRequest<{ total: number }>('/swipes/matches/unread', { method: 'GET' }, token);
+}
+
+export function markMessagesRead(matchId: string, token: string) {
+  return apiRequest<{ readCount: number }>(`/messages/${matchId}/read`, { method: 'POST' }, token);
 }
 
 export function sendMessage(matchId: string, text: string, token: string) {

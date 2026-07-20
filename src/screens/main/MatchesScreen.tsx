@@ -148,6 +148,7 @@ export function MatchesScreen({ navigation }: Props) {
           const theme = professionTheme(item.user.profession);
           const locked = item.crossProfession && !pro;
           const photo = item.user.photos && item.user.photos.length > 0 ? item.user.photos[0] : null;
+          const unread = item.unreadCount || 0;
 
           return (
             <Pressable
@@ -165,7 +166,7 @@ export function MatchesScreen({ navigation }: Props) {
               )}
 
               <View style={styles.rowText}>
-                <Text style={styles.name}>{item.user.name}</Text>
+                <Text style={[styles.name, unread > 0 && styles.nameUnread]}>{item.user.name}</Text>
                 <View style={styles.metaRow}>
                   <Text style={styles.metaEmoji}>{theme.emoji}</Text>
                   <Text style={styles.meta} numberOfLines={1}>
@@ -178,6 +179,10 @@ export function MatchesScreen({ navigation }: Props) {
                 <View style={styles.lockTag}>
                   <Text style={styles.lockTagText}>⭐ Pro to chat</Text>
                 </View>
+              ) : unread > 0 ? (
+                <LinearGradient colors={colors.brandGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>{unread > 99 ? '99+' : unread}</Text>
+                </LinearGradient>
               ) : (
                 <Text style={styles.chevron}>{'›'}</Text>
               )}
@@ -239,6 +244,17 @@ const makeStyles = (c: ThemeColors, mode: ThemeMode) =>
     avatarLetter: { fontSize: 22, fontWeight: '900', color: c.white },
     rowText: { flex: 1 },
     name: { ...typography.body, color: c.text, fontWeight: '800' },
+    nameUnread: { fontWeight: '900' },
+    unreadBadge: {
+      minWidth: 24,
+      height: 24,
+      borderRadius: 12,
+      paddingHorizontal: 7,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: spacing.xs
+    },
+    unreadBadgeText: { color: c.white, fontSize: 12, fontWeight: '900' },
     metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
     metaEmoji: { fontSize: 12, marginRight: 4 },
     meta: { ...typography.caption, color: c.textMuted, flex: 1 },

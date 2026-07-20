@@ -11,6 +11,7 @@ import { ChipSelector } from '../../features/profile/components/ChipSelector';
 import { ProfileSection } from '../../features/profile/components/ProfileSection';
 import { ProfileHeaderCard } from '../../features/profile/components/ProfileHeaderCard';
 import { WovnnProCard } from '../../components/WovnnProCard';
+import { EmailVerifyBanner } from '../../components/EmailVerifyBanner';
 import { ProfilePhotoGallery } from '../../features/profile/components/ProfilePhotoGallery';
 import { ProfilePreview } from '../../features/profile/components/ProfilePreview';
 import { ProfessionLoveMeter } from '../../features/profile/components/ProfessionLoveMeter';
@@ -326,6 +327,10 @@ export function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <View style={{ marginBottom: spacing.md }}>
+          <EmailVerifyBanner />
+        </View>
+
         {!isProUser(user) ? (
           <AnimatedProfileSection index={0}>
             <WovnnProCard onGoPro={() => navigation.navigate('Paywall', { focus: 'pro' })} />
